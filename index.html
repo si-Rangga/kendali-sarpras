@@ -470,35 +470,46 @@
     }
 
     @media print {
-      body {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      html, body {
         background: #FFFFFF !important;
-        color: #000000 !important;
+        color: #0F172A !important;
         padding: 0 !important;
         margin: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       /* Sembunyikan elemen web aplikasi biasa saat mencetak PDF */
       #mainApp, .navbar-custom, .bottom-nav-bar, .modal, .loading-overlay, #loginView, .desktop-pills, .btn {
         display: none !important;
       }
+      #printableReportContainer, #printableReportContainer * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
       #printableReportContainer {
         display: block !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 10mm 12mm !important;
+        padding: 8mm 10mm !important;
         background: #FFFFFF !important;
       }
       .page-break {
         page-break-after: always !important;
       }
       @page {
-        margin: 10mm;
+        margin: 8mm;
         size: auto;
       }
     }
 
-</style>
+  </style>
 </head>
 <body>
 
@@ -1015,39 +1026,52 @@
             </div>
 
             <!-- FILTER BAR -->
-            <div class="row g-2 p-3 bg-light rounded-3 mb-3">
-              <div class="col-12 col-md-3">
-                <label class="small text-secondary fw-semibold">Pencarian</label>
-                <input type="text" id="filterKeyword" class="form-control form-control-sm" placeholder="Ketik aset, lokasi, masalah..." onkeyup="filterHistoryLocal()">
+            <div class="p-3 bg-light rounded-3 mb-3 border">
+              <div class="row g-2">
+                <div class="col-12 col-md-3">
+                  <label class="small text-secondary fw-semibold">Pencarian</label>
+                  <input type="text" id="filterKeyword" class="form-control form-control-sm" placeholder="Ketik objek, aset, masalah..." onkeyup="filterHistoryLocal()">
+                </div>
+                <div class="col-6 col-md-2">
+                  <label class="small text-secondary fw-semibold">Kategori</label>
+                  <select id="filterKategori" class="form-select form-select-sm" onchange="filterHistoryLocal()">
+                    <option value="semua">Semua Kategori</option>
+                    <option value="sarana">Sarana</option>
+                    <option value="prasarana">Prasarana</option>
+                    <option value="proyek">Proyek</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <label class="small text-secondary fw-semibold">Status</label>
+                  <select id="filterStatus" class="form-select form-select-sm" onchange="filterHistoryLocal()">
+                    <option value="semua">Semua Status</option>
+                    <option value="perlu tindak lanjut">Perlu Tindak Lanjut</option>
+                    <option value="on progress">On Progress</option>
+                    <option value="selesai">Selesai</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2" id="filterPetugasContainer">
+                  <label class="small text-secondary fw-semibold"><i class="bi bi-person-fill text-primary me-1"></i>Petugas</label>
+                  <select id="filterPetugas" class="form-select form-select-sm" onchange="filterHistoryLocal()">
+                    <option value="semua">Semua Petugas</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="small text-secondary fw-semibold">Rentang Tanggal</label>
+                  <div class="input-group input-group-sm">
+                    <input type="date" id="filterStartDate" class="form-control" onchange="filterHistoryLocal()" title="Dari Tanggal">
+                    <span class="input-group-text p-1">-</span>
+                    <input type="date" id="filterEndDate" class="form-control" onchange="filterHistoryLocal()" title="Sampai Tanggal">
+                  </div>
+                </div>
               </div>
-              <div class="col-6 col-md-2">
-                <label class="small text-secondary fw-semibold">Kategori</label>
-                <select id="filterKategori" class="form-select form-select-sm" onchange="filterHistoryLocal()">
-                  <option value="semua">Semua Kategori</option>
-                  <option value="sarana">Sarana</option>
-                  <option value="prasarana">Prasarana</option>
-                  <option value="proyek">Proyek</option>
-                </select>
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="small text-secondary fw-semibold">Status</label>
-                <select id="filterStatus" class="form-select form-select-sm" onchange="filterHistoryLocal()">
-                  <option value="semua">Semua Status</option>
-                  <option value="perlu tindak lanjut">Perlu Tindak Lanjut</option>
-                  <option value="on progress">On Progress</option>
-                  <option value="selesai">Selesai</option>
-                </select>
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="small text-secondary fw-semibold">Dari Tanggal</label>
-                <input type="date" id="filterStartDate" class="form-control form-control-sm" onchange="filterHistoryLocal()">
-              </div>
-              <div class="col-6 col-md-2">
-                <label class="small text-secondary fw-semibold">Sampai Tanggal</label>
-                <input type="date" id="filterEndDate" class="form-control form-control-sm" onchange="filterHistoryLocal()">
-              </div>
-              <div class="col-12 col-md-1 d-flex align-items-end">
-                <button class="btn btn-sm btn-secondary w-100" onclick="resetFilterHistory()">Reset</button>
+              <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                <div class="small text-muted" id="filterCountBadge">
+                  Menampilkan <b id="filterCountVal">0</b> dari total <b id="filterTotalVal">0</b> data riwayat
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetFilterHistory()">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filter
+                </button>
               </div>
             </div>
 
@@ -1325,6 +1349,7 @@
     let masterAsets = [];
     let masterUsers = [];
     let currentHistoryData = [];
+    let lastFilteredHistoryData = null;
     const globalItemsCache = {};
     let base64FotoSebelum = "";
     let base64FotoSesudah = "";
@@ -1615,16 +1640,42 @@
     }
 
     function handlePrintFilteredHistory() {
-      if (!currentHistoryData || currentHistoryData.length === 0) {
-        Swal.fire("Info", "Tidak ada data riwayat yang dapat dicetak.", "info");
+      // Pastikan data yang dicetak adalah DATA YANG SEDANG DIFILTER
+      const dataToPrint = lastFilteredHistoryData !== null ? lastFilteredHistoryData : currentHistoryData;
+
+      if (!dataToPrint || dataToPrint.length === 0) {
+        Swal.fire({
+          icon: "info",
+          title: "Tidak Ada Data",
+          text: "Tidak ada data riwayat yang sesuai dengan filter saat ini."
+        });
         return;
       }
 
-      showLoading("Menyiapkan lembar rekap formulir...");
+      showLoading("Menyiapkan dokumen rekap PDF berwarna...");
       const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+      // Ambil label filter aktif untuk header PDF
+      const katEl = document.getElementById("filterKategori");
+      const statEl = document.getElementById("filterStatus");
+      const petEl = document.getElementById("filterPetugas");
+      const startEl = document.getElementById("filterStartDate");
+      const endEl = document.getElementById("filterEndDate");
+
+      const katLabel = katEl && katEl.value !== "semua" ? katEl.options[katEl.selectedIndex].text : "Semua Kategori";
+      const statLabel = statEl && statEl.value !== "semua" ? statEl.options[statEl.selectedIndex].text : "Semua Status";
+      const petLabel = petEl && petEl.value !== "semua" ? petEl.options[petEl.selectedIndex].text : "Semua Petugas";
+      let periodeLabel = "Semua Periode";
+      if (startEl && startEl.value && endEl && endEl.value) {
+        periodeLabel = startEl.value + " s/d " + endEl.value;
+      } else if (startEl && startEl.value) {
+        periodeLabel = "Sejak " + startEl.value;
+      } else if (endEl && endEl.value) {
+        periodeLabel = "Sampai " + endEl.value;
+      }
+
       let rowsHtml = "";
-      currentHistoryData.forEach((item, idx) => {
+      dataToPrint.forEach((item, idx) => {
         const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
         const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
 
@@ -1633,55 +1684,88 @@
 
         const fotoHtml = `
           <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-            ${sblmUrl ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #2563EB;">` : '<span style="font-size: 7.5pt; color: #94A3B8;">-</span>'}
-            ${ssdhUrl ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #16A34A;">` : ''}
+            ${sblmUrl ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1.5px solid #DC2626 !important;" alt="Sebelum">` : '<span style="font-size: 7.5pt; color: #94A3B8;">-</span>'}
+            ${ssdhUrl ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1.5px solid #16A34A !important;" alt="Sesudah">` : ''}
           </div>
         `;
 
+        // Warna status kontras tinggi untuk cetak berwarna
+        let statusBg = "#DCFCE7";
+        let statusColor = "#14532D";
+        let statusBorder = "#16A34A";
+        const stLow = (item.status || "").toLowerCase();
+        if (stLow.indexOf("tindak") !== -1) {
+          statusBg = "#FEE2E2";
+          statusColor = "#991B1B";
+          statusBorder = "#DC2626";
+        } else if (stLow.indexOf("progress") !== -1) {
+          statusBg = "#FEF3C7";
+          statusColor = "#78350F";
+          statusBorder = "#D97706";
+        }
+
+        const rowBg = idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+
         rowsHtml += `
-          <tr>
-            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${idx + 1}</td>
+          <tr style="background-color: ${rowBg} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-weight: 700;">${idx + 1}</td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; white-space: nowrap;">${escapeHtml(item.tanggal)}</td>
             <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">
-              <b>${escapeHtml(item.objekLokasi)}</b>
-              ${item.kodeAset ? `<br><small style="color: #64748B; font-family: monospace;">Kode: ${escapeHtml(item.kodeAset)}</small>` : ''}
+              <b style="color: #0F172A;">${escapeHtml(item.objekLokasi)}</b>
+              ${item.kodeAset ? `<br><small style="color: #475569; font-family: monospace; font-size: 7.5pt;">Aset: ${escapeHtml(item.kodeAset)}</small>` : ''}
             </td>
-            <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">${escapeHtml(item.temuan)}</td>
-            <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">${escapeHtml(item.tindakan)}</td>
-            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 8pt;">
-              ${escapeHtml(item.status)}
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1; color: #334155;">${escapeHtml(item.temuan)}</td>
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1; color: #1E293B;">${escapeHtml(item.tindakan)}</td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 7.5pt; background-color: ${statusBg} !important; color: ${statusColor} !important; border: 1.5px solid ${statusBorder} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                ${escapeHtml(item.status)}
+              </span>
             </td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${fotoHtml}</td>
-            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt;">${escapeHtml(item.petugas || '-')}</td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; font-weight: 600; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
           </tr>
         `;
       });
 
       const printHtml = `
         <div style="font-family: Arial, sans-serif; color: #0F172A; width: 100%; margin: 0 auto; line-height: 1.3;">
-          <div style="border-bottom: 2px solid #0F172A; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
+          
+          <!-- KOP RESMI LAPORAN -->
+          <div style="border-bottom: 2.5px solid #1E3A8A; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
-              <h2 style="margin: 0; font-size: 14pt; font-weight: 800; color: #0F172A; text-transform: uppercase;">
+              <h2 style="margin: 0; font-size: 14pt; font-weight: 800; color: #1E3A8A; text-transform: uppercase; letter-spacing: 0.5px;">
                 REKAPITULASI PEMANTAUAN & PEMELIHARAAN SARPRAS
               </h2>
-              <div style="font-size: 8.5pt; color: #475569;">
-                Laporan Hasil Pemeriksaan Rutin Lapangan
+              <div style="font-size: 8.5pt; color: #475569; margin-top: 2px;">
+                Laporan Monitoring & Penanganan Fasilitas Fisik Lapangan
               </div>
             </div>
-            <div style="text-align: right; font-size: 8.5pt; color: #64748B;">
-              Tanggal Rekap: <b>${todayStr}</b> | Total: <b>${currentHistoryData.length} Kegiatan</b>
+            <div style="text-align: right; font-size: 8pt; color: #475569;">
+              <div>Tanggal Rekap: <b>${todayStr}</b></div>
+              <div>Jumlah Data: <b style="color: #1E3A8A; font-size: 9pt;">${dataToPrint.length} Pekerjaan</b></div>
             </div>
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 20px;">
+          <!-- KOTAK INFORMASI FILTER AKTIF -->
+          <div style="background-color: #F8FAFC !important; border: 1px solid #CBD5E1; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 8pt; display: flex; flex-wrap: wrap; gap: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+            <div><b>Kategori:</b> <span style="color: #1E3A8A;">${escapeHtml(katLabel)}</span></div>
+            <div><b>Status:</b> <span style="color: #1E3A8A;">${escapeHtml(statLabel)}</span></div>
+            <div><b>Petugas:</b> <span style="color: #1E3A8A; font-weight: 700;">${escapeHtml(petLabel)}</span></div>
+            <div><b>Periode:</b> <span style="color: #1E3A8A;">${escapeHtml(periodeLabel)}</span></div>
+          </div>
+
+          <!-- TABEL DATA BERWARNA -->
+          <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 18px;">
             <thead>
-              <tr style="background: #0F172A; color: #FFFFFF; font-weight: 700;">
-                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 4%;">No</th>
-                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Objek & Lokasi</th>
-                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Temuan Masalah</th>
-                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Tindakan Teknis</th>
-                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 12%; text-align: center;">Status</th>
-                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 10%; text-align: center;">Foto</th>
-                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 8%; text-align: center;">Petugas</th>
+              <tr style="background-color: #1E3A8A !important; color: #FFFFFF !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 4%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">No</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 9%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 20%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 22%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 20%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tindakan Teknis</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 11%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Status</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 6%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Foto</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 8%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Petugas</th>
               </tr>
             </thead>
             <tbody>
@@ -1689,22 +1773,24 @@
             </tbody>
           </table>
 
-          <div style="page-break-inside: avoid; margin-top: 25px;">
-            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+          <!-- KOLOM TANDA TANGAN -->
+          <div style="page-break-inside: avoid; margin-top: 20px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
               <tr>
                 <td style="width: 50%; padding-bottom: 50px;">
-                  Petugas Pelaksana,
+                  Petugas Pelaksana Lapangan,
                 </td>
                 <td style="width: 50%; padding-bottom: 50px;">
                   Mengetahui / Pengawas Sarpras,
                 </td>
               </tr>
               <tr>
-                <td>( .................................................. )</td>
-                <td>( .................................................. )</td>
+                <td><b style="text-decoration: underline;">( ${escapeHtml(petLabel !== "Semua Petugas" ? petLabel : "Petugas Lapangan")} )</b></td>
+                <td><b style="text-decoration: underline;">( Pengawas / Administrator Sarpras )</b></td>
               </tr>
             </table>
           </div>
+
         </div>
       `;
 
@@ -1809,6 +1895,7 @@
           masterUsers = res.users || [];
           populateAsetDropdown();
           if (!isPetugas) populateUserDropdown();
+            populatePetugasFilter();
           renderMasterAsetTable();
           renderDashboardStats(res.stats);
         }
@@ -1897,6 +1984,29 @@
           kodeInput.value = match.kode;
         }
       }
+    }
+
+    function populatePetugasFilter() {
+      const select = document.getElementById("filterPetugas");
+      if (!select) return;
+      const currentVal = (select.value || "semua").toLowerCase();
+      select.innerHTML = '<option value="semua">Semua Petugas</option>';
+      
+      const setPetugas = new Set();
+      (masterUsers || []).forEach(u => {
+        if (u && u.nama) setPetugas.add(u.nama.trim());
+      });
+      (currentHistoryData || []).forEach(item => {
+        if (item && item.petugas) setPetugas.add(item.petugas.trim());
+      });
+
+      Array.from(setPetugas).sort().forEach(nama => {
+        const opt = document.createElement("option");
+        opt.value = nama.toLowerCase();
+        opt.text = nama;
+        if (nama.toLowerCase() === currentVal) opt.selected = true;
+        select.appendChild(opt);
+      });
     }
 
     function populateUserDropdown() {
@@ -2325,6 +2435,7 @@
         (currentHistoryData || []).forEach(item => {
           if (item && item.id) globalItemsCache[item.id] = item;
         });
+        populatePetugasFilter();
         filterHistoryLocal();
       }, function(err) {
         hideLoading();
@@ -2333,13 +2444,14 @@
     }
 
     function filterHistoryLocal() {
-      const kw = document.getElementById("filterKeyword").value.toLowerCase().trim();
-      const kat = document.getElementById("filterKategori").value.toLowerCase();
-      const stat = document.getElementById("filterStatus").value.toLowerCase();
-      const startDate = document.getElementById("filterStartDate").value;
-      const endDate = document.getElementById("filterEndDate").value;
+      const kw = (document.getElementById("filterKeyword") ? document.getElementById("filterKeyword").value : "").toLowerCase().trim();
+      const kat = (document.getElementById("filterKategori") ? document.getElementById("filterKategori").value : "semua").toLowerCase();
+      const stat = (document.getElementById("filterStatus") ? document.getElementById("filterStatus").value : "semua").toLowerCase();
+      const petugas = (document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase();
+      const startDate = document.getElementById("filterStartDate") ? document.getElementById("filterStartDate").value : "";
+      const endDate = document.getElementById("filterEndDate") ? document.getElementById("filterEndDate").value : "";
 
-      const filtered = currentHistoryData.filter(item => {
+      const filtered = (currentHistoryData || []).filter(item => {
         if (kat !== "semua") {
           const kLow = (item.kategori || "").toLowerCase().trim();
           if (kat === "prasarana" && kLow.indexOf("prasarana") === -1) return false;
@@ -2347,9 +2459,14 @@
           if (kat === "proyek" && kLow.indexOf("proyek") === -1) return false;
         }
         if (stat !== "semua") {
-          if (stat === "selesai" && item.status.toLowerCase().indexOf("selesai") === -1) return false;
-          if (stat === "on progress" && item.status.toLowerCase().indexOf("progress") === -1) return false;
-          if (stat === "perlu tindak lanjut" && item.status.toLowerCase().indexOf("tindak") === -1) return false;
+          const sLow = (item.status || "").toLowerCase().trim();
+          if (stat === "selesai" && sLow.indexOf("selesai") === -1) return false;
+          if (stat === "on progress" && sLow.indexOf("progress") === -1) return false;
+          if (stat === "perlu tindak lanjut" && sLow.indexOf("tindak") === -1) return false;
+        }
+        if (petugas !== "semua") {
+          const pLow = (item.petugas || "").toLowerCase().trim();
+          if (pLow.indexOf(petugas) === -1) return false;
         }
         if (kw) {
           const combined = (item.objekLokasi + " " + item.kodeAset + " " + item.temuan + " " + item.tindakan + " " + item.petugas).toLowerCase();
@@ -2360,15 +2477,25 @@
         return true;
       });
 
+      lastFilteredHistoryData = filtered;
+
+      const countValEl = document.getElementById("filterCountVal");
+      const totalValEl = document.getElementById("filterTotalVal");
+      if (countValEl && totalValEl) {
+        countValEl.innerText = filtered.length;
+        totalValEl.innerText = (currentHistoryData || []).length;
+      }
+
       renderHistoryTable(filtered);
     }
 
     function resetFilterHistory() {
-      document.getElementById("filterKeyword").value = "";
-      document.getElementById("filterKategori").value = "semua";
-      document.getElementById("filterStatus").value = "semua";
-      document.getElementById("filterStartDate").value = "";
-      document.getElementById("filterEndDate").value = "";
+      if (document.getElementById("filterKeyword")) document.getElementById("filterKeyword").value = "";
+      if (document.getElementById("filterKategori")) document.getElementById("filterKategori").value = "semua";
+      if (document.getElementById("filterStatus")) document.getElementById("filterStatus").value = "semua";
+      if (document.getElementById("filterPetugas")) document.getElementById("filterPetugas").value = "semua";
+      if (document.getElementById("filterStartDate")) document.getElementById("filterStartDate").value = "";
+      if (document.getElementById("filterEndDate")) document.getElementById("filterEndDate").value = "";
       filterHistoryLocal();
     }
 
