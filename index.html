@@ -1,0 +1,2766 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Aplikasi Kendali Sarana & Prasarana</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+
+    :root {
+      --primary-color: #1E3A8A; /* Navy Pekat */
+      --primary-gradient: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%);
+      --accent-color: #2563EB;
+      --bg-app: #F1F5F9; /* Background kontras bersih */
+      --card-bg: #FFFFFF;
+      --border-crisp: #CBD5E1; /* Border jelas, tidak samar */
+      --text-dark: #0F172A; /* Hitam pekat tajam */
+      --text-body: #1E293B; /* Abu-abu sangat gelap untuk teks baca */
+      --text-subtle: #475569; /* Keterangan sekunder tetap terbaca jelas */
+      
+      /* Status Kontras Tinggi (Mudah dilihat di bawah terik matahari lapangan) */
+      --tindak-bg: #FEE2E2;
+      --tindak-border: #DC2626;
+      --tindak-text: #991B1B;
+
+      --progress-bg: #FEF3C7;
+      --progress-border: #D97706;
+      --progress-text: #78350F;
+
+      --selesai-bg: #DCFCE7;
+      --selesai-border: #16A34A;
+      --selesai-text: #14532D;
+    }
+
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+      width: 100% !important;
+      touch-action: pan-y !important; /* Mencegah layar goyang / geser kanan-kiri di HP */
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-body);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 85px;
+      position: relative;
+    }
+
+    /* TOP HEADER / NAVBAR (KONTRAS TINGGI & TOMBOL LOGOUT JELAS) */
+    .navbar-custom {
+      background: #0F172A; /* Slate Navy Sangat Gelap */
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      border-bottom: 2px solid #1E293B;
+    }
+
+    .btn-logout-header {
+      background-color: #DC2626 !important;
+      color: #FFFFFF !important;
+      font-weight: 700 !important;
+      border: 1px solid #B91C1C !important;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+    }
+    .btn-logout-header:hover, .btn-logout-header:active {
+      background-color: #B91C1C !important;
+      color: #FFFFFF !important;
+      transform: scale(0.96);
+    }
+
+    /* CARD STYLING BERSIH & TEGAS */
+    .card-custom {
+      border: 1.5px solid var(--border-crisp);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+      background: var(--card-bg);
+    }
+
+    /* SUMMARY STAT CARDS */
+    .stat-card {
+      border-left: 6px solid !important;
+    }
+    .stat-card.stat-total { border-color: #1E3A8A !important; background: #F8FAFC; }
+    .stat-card.stat-tindak { border-color: var(--tindak-border) !important; background: var(--tindak-bg); }
+    .stat-card.stat-progress { border-color: var(--progress-border) !important; background: var(--progress-bg); }
+    .stat-card.stat-selesai { border-color: var(--selesai-border) !important; background: var(--selesai-bg); }
+
+    /* BADGES KONTRAS TINGGI */
+    .badge-tindak {
+      background-color: var(--tindak-bg) !important;
+      color: var(--tindak-text) !important;
+      border: 1.5px solid var(--tindak-border) !important;
+      font-weight: 700;
+    }
+    .badge-progress {
+      background-color: var(--progress-bg) !important;
+      color: var(--progress-text) !important;
+      border: 1.5px solid var(--progress-border) !important;
+      font-weight: 700;
+    }
+    .badge-selesai {
+      background-color: var(--selesai-bg) !important;
+      color: var(--selesai-text) !important;
+      border: 1.5px solid var(--selesai-border) !important;
+      font-weight: 700;
+    }
+
+    /* KATEGORI TILES (TERPISAH WARNA JELAS) */
+    .category-card-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .category-tile {
+      border: 2px solid var(--border-crisp);
+      border-radius: 14px;
+      padding: 12px 6px;
+      text-align: center;
+      cursor: pointer;
+      background: #FFFFFF;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+    .category-tile i {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .category-tile .tile-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: block;
+    }
+    .category-tile .tile-desc {
+      font-size: 0.68rem;
+      color: var(--text-subtle);
+      display: block;
+    }
+    .btn-check:checked + .category-tile.tile-sarana {
+      border-color: #1D4ED8;
+      background: #DBEAFE;
+      color: #1E3A8A;
+      box-shadow: 0 0 0 2px #1D4ED8;
+    }
+    .btn-check:checked + .category-tile.tile-prasarana {
+      border-color: #0F766E;
+      background: #CCFBF1;
+      color: #115E59;
+      box-shadow: 0 0 0 2px #0F766E;
+    }
+    .btn-check:checked + .category-tile.tile-proyek {
+      border-color: #C2410C;
+      background: #FFEDD5;
+      color: #9A3412;
+      box-shadow: 0 0 0 2px #C2410C;
+    }
+
+    /* STATUS SELECTOR CARDS */
+    .status-card-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .status-tile {
+      border: 2px solid var(--border-crisp);
+      border-radius: 12px;
+      padding: 11px 4px;
+      text-align: center;
+      cursor: pointer;
+      background: #FFFFFF;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+    .status-tile i {
+      font-size: 1.25rem;
+      display: block;
+      margin-bottom: 3px;
+    }
+    .status-tile .status-title {
+      font-size: 0.76rem;
+      font-weight: 700;
+      display: block;
+    }
+    .btn-check:checked + .status-tile.tile-tindak {
+      border-color: var(--tindak-border);
+      background: var(--tindak-bg);
+      color: var(--tindak-text);
+      box-shadow: 0 0 0 2px var(--tindak-border);
+    }
+    .btn-check:checked + .status-tile.tile-progress {
+      border-color: var(--progress-border);
+      background: var(--progress-bg);
+      color: var(--progress-text);
+      box-shadow: 0 0 0 2px var(--progress-border);
+    }
+    .btn-check:checked + .status-tile.tile-selesai {
+      border-color: var(--selesai-border);
+      background: var(--selesai-bg);
+      color: var(--selesai-text);
+      box-shadow: 0 0 0 2px var(--selesai-border);
+    }
+
+    /* MODERN INPUT & FORM CONTROLS */
+    .form-control-modern, .form-control, .form-select {
+      border: 1.5px solid #94A3B8 !important; /* Border tegas, tidak samar */
+      border-radius: 10px;
+      color: var(--text-dark) !important;
+      font-weight: 500;
+      background-color: #FFFFFF;
+    }
+    .form-control-modern:focus, .form-control:focus, .form-select:focus {
+      border-color: #1D4ED8 !important;
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15) !important;
+    }
+    .form-label {
+      color: #0F172A !important; /* Label hitam tegas */
+      font-weight: 700 !important;
+    }
+
+    /* CHIP PILIHAN CEPAT */
+    .chip-container {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 6px;
+      padding-bottom: 6px;
+    }
+    .chip-item {
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 20px;
+      padding: 6px 13px;
+      background: #FFFFFF;
+      border: 1.5px solid #94A3B8; /* Border tajam */
+      color: #0F172A; /* Teks hitam pekat */
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .chip-item:hover, .chip-item:active {
+      background: #E2E8F0;
+      border-color: #475569;
+    }
+
+    /* KAMERA CARD */
+    .photo-camera-card {
+      border: 2px dashed #64748B;
+      border-radius: 14px;
+      background: #FFFFFF;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-circle-icon {
+      width: 48px;
+      height: 48px;
+      background: #E2E8F0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0F172A;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    /* SUBMIT BUTTON */
+    .btn-submit-action {
+      background: #1E3A8A;
+      background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%);
+      color: #FFFFFF;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
+      width: 100%;
+    }
+
+    /* TABEL RIWAYAT */
+    .table-custom-header {
+      background-color: #0F172A !important;
+      color: #FFFFFF !important;
+    }
+    .table-custom-header th {
+      color: #FFFFFF !important;
+      font-weight: 700 !important;
+      border: none;
+    }
+
+    /* FLOATING BOTTOM NAV BAR SMARTPHONE */
+    .bottom-nav-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 68px;
+      background: #FFFFFF;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+      z-index: 1040;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 2px solid #CBD5E1;
+      padding: 0 4px;
+    }
+    .b-nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569; /* Abu tua tegas */
+      text-decoration: none;
+      font-size: 0.74rem;
+      font-weight: 600;
+      flex: 1;
+      height: 100%;
+      cursor: pointer;
+    }
+    .b-nav-tab.active {
+      color: #1D4ED8;
+      font-weight: 800;
+    }
+    .b-nav-tab i {
+      font-size: 1.35rem;
+      margin-bottom: 2px;
+    }
+    .b-nav-tab.center-action i {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%);
+      color: white;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-top: -18px;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.45);
+    }
+    .b-nav-tab.logout-tab {
+      color: #DC2626;
+    }
+
+    @media (max-width: 768px) {
+      .desktop-pills { display: none !important; }
+      
+      body {
+        padding-bottom: 95px !important;
+      }
+
+      /* Jarak aman lega & estetis dari pinggiran bezel HP (16px standard) */
+      .container-fluid { 
+        padding-left: 16px !important; 
+        padding-right: 16px !important; 
+        padding-top: 12px !important;
+        padding-bottom: 24px !important;
+        overflow-x: hidden !important; 
+        max-width: 100vw !important; 
+      }
+
+      /* Kartu isi form lapang dan tidak mepet pinggiran */
+      .card-custom { 
+        border-radius: 18px !important; 
+        padding: 1.3rem 1.15rem !important; 
+        margin-bottom: 16px !important; 
+        max-width: 100% !important; 
+        overflow-x: hidden !important;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
+      }
+
+      .navbar-custom {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      /* Grid spacing yang pas tanpa meluber keluar */
+      .row {
+        margin-left: -6px !important;
+        margin-right: -6px !important;
+      }
+      .row > * {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+      }
+
+      /* Kategori dan Status Tiles yang nyaman disentuh jempol */
+      .category-card-group {
+        gap: 8px !important;
+      }
+      .category-tile {
+        padding: 10px 4px !important;
+        border-radius: 12px !important;
+      }
+      .category-tile .tile-title {
+        font-size: 0.82rem !important;
+      }
+      .category-tile .tile-desc {
+        font-size: 0.65rem !important;
+      }
+
+      .status-card-group {
+        gap: 6px !important;
+      }
+      .status-tile {
+        padding: 10px 2px !important;
+        border-radius: 12px !important;
+      }
+      .status-tile .status-title {
+        font-size: 0.74rem !important;
+      }
+
+      /* Kartu Kamera & Tombol proporsional dan mudah diklik */
+      .photo-camera-card {
+        min-height: 130px !important;
+        padding: 12px 8px !important;
+        border-radius: 14px !important;
+      }
+      .photo-btn-group .btn {
+        font-size: 0.74rem !important;
+        padding: 7px 4px !important;
+        font-weight: 700 !important;
+      }
+
+      .form-control, .form-select {
+        font-size: 0.92rem !important;
+        padding: 10px 12px !important;
+        border-radius: 10px !important;
+      }
+
+      .form-label {
+        font-size: 0.86rem !important;
+        margin-bottom: 6px !important;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .bottom-nav-bar { display: none !important; }
+    }
+
+
+    /* ========================================== */
+    /* CETAK DOKUMEN KERJA / PDF STYLING */
+    /* ========================================== */
+    #printableReportContainer {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      /* Sembunyikan elemen web aplikasi biasa saat mencetak PDF */
+      #mainApp, .navbar-custom, .bottom-nav-bar, .modal, .loading-overlay, #loginView, .desktop-pills, .btn {
+        display: none !important;
+      }
+      #printableReportContainer {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 10mm 12mm !important;
+        background: #FFFFFF !important;
+      }
+      .page-break {
+        page-break-after: always !important;
+      }
+      @page {
+        margin: 10mm;
+        size: auto;
+      }
+    }
+
+</style>
+</head>
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3 fw-semibold text-secondary" id="loadingText">Menghubungkan ke Google Sheets...</p>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginView" class="container py-5 d-flex align-items-center justify-content-center" style="min-height: 90vh;">
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card card-custom p-4 text-center">
+        <div class="mb-3">
+          <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
+            <i class="bi bi-tools fs-1"></i>
+          </div>
+          <h4 class="fw-bold text-dark">Aplikasi Kendali Sarana & Prasarana</h4>
+          <p class="text-muted small">Sistem Kendali, Pemantauan & Penanganan Masalah Lapangan</p>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="mb-3 text-start">
+            <label class="form-label small fw-semibold text-secondary">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+              <input type="text" id="loginUsername" class="form-control" placeholder="Contoh: admin / budi" required>
+            </div>
+          </div>
+          <div class="mb-4 text-start">
+            <label class="form-label small fw-semibold text-secondary">Password / PIN</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+              <input type="password" id="loginPassword" class="form-control" placeholder="Default: 123456" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary-custom w-100 py-2">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Masuk Aplikasi
+          </button>
+        </form>
+
+        <div class="mt-4 pt-3 border-top text-muted small">
+          <i class="bi bi-shield-check text-success me-1"></i> Terhubung langsung ke Google Sheets & Drive
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP SHELL -->
+  <div id="mainApp" class="d-none">
+    
+    <!-- TOP NAVBAR (NAVIGASI & LOGOUT JELAS UNTUK ADMIN MAUPUN USER DI HP) -->
+    <nav class="navbar navbar-dark navbar-custom sticky-top py-2 px-3">
+      <div class="container-fluid px-0">
+        <!-- Logo & Nama User yang Sedang Login -->
+        <div class="d-flex align-items-center gap-2">
+          <div class="p-1 px-2 rounded bg-primary text-white fw-bold small">
+            <i class="bi bi-shield-check me-1"></i> <span id="navAppBrand">Sarpras</span>
+          </div>
+          <div>
+            <div class="text-white fw-bold small lh-1" id="navUserName">Memuat...</div>
+            <div class="text-warning small lh-1 mt-1" style="font-size: 0.72rem; font-weight: 600;" id="navUserRole">-</div>
+          </div>
+        </div>
+        
+        <!-- Tombol Logout Jelas (Merah dengan Teks KELUAR) -->
+        <button class="btn btn-logout-header d-flex align-items-center" onclick="handleLogout()" title="Keluar dari Akun">
+          <i class="bi bi-box-arrow-right me-1 fs-6"></i>
+          <span>KELUAR</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container-fluid py-4 px-3 px-md-4">
+      
+      <!-- NAV TABS -->
+      <ul class="nav nav-pills desktop-pills mb-4 bg-white p-2 rounded-3 shadow-sm" id="mainTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="tab-dashboard" data-bs-toggle="pill" href="#view-dashboard" onclick="loadDashboard()">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="tab-input" data-bs-toggle="pill" href="#view-input">
+            <i class="bi bi-plus-circle me-1"></i> Input Checklist
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="tab-history" data-bs-toggle="pill" href="#view-history" onclick="loadHistory()">
+            <i class="bi bi-clock-history me-1"></i> Riwayat & Status
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link admin-only-tab" id="tab-master" data-bs-toggle="pill" href="#view-master">
+            <i class="bi bi-journal-bookmark me-1"></i> Buku Kendali
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link admin-only-tab" id="tab-export" data-bs-toggle="pill" href="#view-export">
+            <i class="bi bi-printer me-1"></i> Cetak Formulir
+          </a>
+        </li>
+      </ul>
+
+      <!-- TAB CONTENTS -->
+      <div class="tab-content" id="mainTabContent">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: DASHBOARD -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade show active" id="view-dashboard">
+          
+          <!-- SUMMARY CARDS (URUTAN: TOTAL -> PERLU TINDAK LANJUT -> ON PROGRESS -> SELESAI) -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+              <div class="card card-custom stat-card stat-total p-3">
+                <div class="text-dark small fw-bold" style="letter-spacing:0.5px;">TOTAL CHECKLIST</div>
+                <div class="fs-2 fw-bold text-dark mt-1" id="dashTotal">0</div>
+                <div class="text-muted small mt-1"><i class="bi bi-clipboard-data"></i> Seluruh data</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="card card-custom stat-card stat-tindak p-3">
+                <div class="text-danger small fw-bold" style="letter-spacing:0.5px;">PERLU TINDAK LANJUT</div>
+                <div class="fs-2 fw-bold text-danger mt-1" id="dashTindak">0</div>
+                <div class="text-muted small mt-1"><i class="bi bi-exclamation-triangle"></i> Butuh vendor/MK</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="card card-custom stat-card stat-progress p-3">
+                <div class="small fw-bold" style="color:#B45309; letter-spacing:0.5px;">ON PROGRESS</div>
+                <div class="fs-2 fw-bold mt-1" style="color:#B45309;" id="dashProgress">0</div>
+                <div class="text-muted small mt-1"><i class="bi bi-hourglass-split"></i> Tertunda teknis</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="card card-custom stat-card stat-selesai p-3">
+                <div class="text-success small fw-bold" style="letter-spacing:0.5px;">SELESAI (TUNTAS)</div>
+                <div class="fs-2 fw-bold text-success mt-1" id="dashSelesai">0</div>
+                <div class="text-muted small mt-1"><i class="bi bi-check-circle"></i> Beres di lokasi</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KATEGORI PROGRESS BAR -->
+          <div class="row g-4 mb-4">
+            <div class="col-12 col-lg-5">
+              <div class="card card-custom p-4 h-100">
+                <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2 text-primary"></i>Distribusi Kategori Pekerjaan</h6>
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span><i class="bi bi-tools text-primary me-1"></i> Pemeliharaan Sarana</span>
+                    <span class="fw-bold" id="dashSaranaCount">0</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div id="barSarana" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span><i class="bi bi-building text-info me-1"></i> Pemeliharaan Prasarana</span>
+                    <span class="fw-bold" id="dashPrasaranaCount">0</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div id="barPrasarana" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span><i class="bi bi-cone-striped text-warning me-1"></i> Pemantauan Gangguan Proyek</span>
+                    <span class="fw-bold" id="dashProyekCount">0</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div id="barProyek" class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                  </div>
+                </div>
+                <!-- REKAP PER PETUGAS LAPANGAN -->
+                <div class="mt-4 pt-3 border-top">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-secondary"><i class="bi bi-people-fill me-1 text-primary"></i> Rekap Input per Petugas</span>
+                    <span class="badge bg-light text-muted fw-normal" id="petugasFilterBadge">Semua</span>
+                  </div>
+                  <div id="perPetugasContainer" class="small">
+                    <!-- Populated dynamically -->
+                  </div>
+                </div>
+
+                <div class="mt-3 p-2 bg-light rounded-3 small">
+                  <div class="fw-bold text-dark mb-1" style="font-size: 0.78rem;"><i class="bi bi-info-circle me-1"></i> Panduan:</div>
+                  <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.75rem;">
+                    <li>Setiap input langsung memperbarui jumlah kategori & nama petugas.</li>
+                    <li>Petugas hanya melihat datanya sendiri; Admin memantau seluruh petugas.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- RECENT ITEMS NEEDING ATTENTION -->
+            <div class="col-12 col-lg-7">
+              <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-bell-fill me-2"></i>Perhatian Khusus (Perlu Tindak Lanjut)</h6>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="loadDashboard()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle small mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th>Objek & Lokasi</th>
+                        <th>Temuan Masalah</th>
+                        <th>Petugas</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashAlertTable">
+                      <tr>
+                        <td colspan="4" class="text-center text-muted py-3">Tidak ada pekerjaan yang tertunda/perlu tindak lanjut.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: FORM INPUT CHECKLIST -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="view-input">
+          <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+              <div class="card card-custom p-4">
+                
+                <div class="d-flex align-items-center border-bottom pb-3 mb-4">
+                  <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-circle me-3">
+                    <i class="bi bi-file-earmark-check fs-4"></i>
+                  </div>
+                  <div>
+                    <h5 class="fw-bold mb-0">Formulir Checklist Pemantauan & Pemeliharaan</h5>
+                    <small class="text-muted">Simpan data langsung ke database Google Sheets & dokumentasi foto ke Google Drive</small>
+                  </div>
+                </div>
+
+                <form id="checklistForm" onsubmit="handleChecklistSubmit(event)">
+                  
+                  <!-- KATEGORI TOGGLE (DESAIN TILE MODERN MOBILE) -->
+                  <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary mb-2">
+                      <i class="bi bi-layers-fill text-primary me-1"></i> Kategori Pemeriksaan
+                    </label>
+                    <div class="category-card-group">
+                      <div>
+                        <input type="radio" class="btn-check" name="kategoriRadio" id="katSarana" value="Sarana" checked onchange="changeKategoriMode('Sarana')">
+                        <label class="category-tile tile-sarana w-100" for="katSarana">
+                          <i class="bi bi-tools text-primary"></i>
+                          <span class="tile-title">Sarana</span>
+                          <span class="tile-desc">AC, Mesin, Panel</span>
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" class="btn-check" name="kategoriRadio" id="katPrasarana" value="Prasarana" onchange="changeKategoriMode('Prasarana')">
+                        <label class="category-tile tile-prasarana w-100" for="katPrasarana">
+                          <i class="bi bi-building text-teal" style="color: #0D9488;"></i>
+                          <span class="tile-title">Prasarana</span>
+                          <span class="tile-desc">Gedung, Saluran</span>
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" class="btn-check" name="kategoriRadio" id="katProyek" value="Pemantauan Proyek" onchange="changeKategoriMode('Pemantauan Proyek')">
+                        <label class="category-tile tile-proyek w-100" for="katProyek">
+                          <i class="bi bi-cone-striped text-warning" style="color: #EA580C;"></i>
+                          <span class="tile-title">Proyek</span>
+                          <span class="tile-desc">Gangguan Fisik</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold small text-secondary">Tanggal Pemeriksaan</label>
+                      <input type="date" id="inputTanggal" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="form-label fw-semibold small text-secondary">Petugas Pelaksana</label>
+                      <div id="inputPetugasContainer">
+                        <div class="input-group">
+                          <select id="inputPetugasSelect" class="form-select" onchange="handlePetugasChange(this)">
+                            <option value="">-- Pilih Petugas Terdaftar --</option>
+                          </select>
+                          <input type="text" id="inputPetugasManual" class="form-control d-none" placeholder="Ketik nama petugas...">
+                          <button type="button" class="btn btn-outline-secondary" onclick="togglePetugasManual()" title="Ganti mode manual/dropdown">
+                            <i class="bi bi-pencil-square"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OBJEK & LOKASI (BISA DIKETIK MANUAL BEBAS + SARAN AUTOCOMPLETE) -->
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label fw-semibold small text-secondary mb-0">
+                        <i class="bi bi-geo-alt-fill text-primary me-1"></i> Objek & Lokasi (Identitas Alias)
+                      </label>
+                      <span class="badge bg-light text-primary fw-normal" id="hintObjek">Ketik manual bebas di sini</span>
+                    </div>
+                    <div class="mb-2">
+                      <input type="text" id="inputObjekLokasi" class="form-control py-2" list="listAsetDatalist" placeholder="Ketik nama objek & lokasi (misal: AC Ruang Rapat Lt.2 Timur, Pagar Depan...)" required oninput="handleObjekInput(this)">
+                      <datalist id="listAsetDatalist">
+                        <!-- Saran otomatis jika aset pernah diinput sebelumnya -->
+                      </datalist>
+                    </div>
+                    <div class="row g-2 align-items-center">
+                      <div class="col-12 col-md-6">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-light text-muted">Kode / No. Seri</span>
+                          <input type="text" id="inputKodeAset" class="form-control" placeholder="Contoh: AC-RPT-01 / B 1234 CD (opsional)">
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-6">
+                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Ketik bebas, data otomatis terekam ke sistem</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- TEMUAN MASALAH (MODERN CHIP SLIDER) -->
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label fw-semibold small text-secondary mb-0">
+                        <i class="bi bi-search text-danger me-1"></i> Temuan Masalah di Lokasi
+                      </label>
+                      <small class="text-muted" style="font-size: 0.72rem;">Geser pilihan cepat 👉</small>
+                    </div>
+                    <div class="chip-container mb-2">
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Normal')">✅ Normal</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Tidak dingin, filter kotor')">❄️ Filter kotor</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Bocor / rembes air')">💧 Bocor / rembes</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Voltmeter tidak stabil')">⚡ Voltase goyang</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Debu tebal masuk ke koridor')">💨 Debu proyek</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Suara bising memotong besi')">🔊 Suara bising</span>
+                      <span class="chip-item" onclick="addChip('inputTemuan', 'Material proyek menghalangi akses')">🚧 Akses terhalang</span>
+                    </div>
+                    <textarea id="inputTemuan" class="form-control form-control-modern" rows="2" placeholder="Ketik ringkas kondisi fisik atau wujud gangguan..." required></textarea>
+                  </div>
+
+                  <!-- TINDAKAN TEKNIS (MODERN CHIP SLIDER) -->
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label fw-semibold small text-secondary mb-0">
+                        <i class="bi bi-wrench-adjustable text-success me-1"></i> Tindakan Teknis / Instruksi
+                      </label>
+                      <small class="text-muted" style="font-size: 0.72rem;">Geser pilihan cepat 👉</small>
+                    </div>
+                    <div class="chip-container mb-2">
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Pembersihan ringan')">🧹 Pembersihan</span>
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Cuci filter indoor')">🚿 Cuci filter</span>
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Kalibrasi panel')">⚙️ Kalibrasi</span>
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Lapor Vendor Utama')">📞 Lapor Vendor</span>
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Menegur mandor agar segera menyiram debu')">🗣️ Tegur mandor siram</span>
+                      <span class="chip-item" onclick="addChip('inputTindakan', 'Meminta pekerja menghentikan pemotongan sementara')">🛑 Hentikan bising</span>
+                    </div>
+                    <textarea id="inputTindakan" class="form-control form-control-modern" rows="2" placeholder="Pekerjaan teknis di lokasi atau koordinasi langsung..." required></textarea>
+                  </div>
+
+                  <!-- STATUS PENGERJAAN (TILES MODERN: PERLU TINDAK LANJUT -> ON PROGRESS -> SELESAI) -->
+                  <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary mb-2">
+                      <i class="bi bi-flag-fill text-danger me-1"></i> Status Kendali Pengerjaan
+                    </label>
+                    <div class="status-card-group">
+                      <div>
+                        <input type="radio" class="btn-check" name="statusRadio" id="statTindak" value="Perlu Tindak Lanjut" checked>
+                        <label class="status-tile tile-tindak w-100" for="statTindak">
+                          <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                          <span class="status-title">Perlu Tindak Lanjut</span>
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" class="btn-check" name="statusRadio" id="statProgress" value="On Progress">
+                        <label class="status-tile tile-progress w-100" for="statProgress">
+                          <i class="bi bi-clock-history text-warning"></i>
+                          <span class="status-title">On Progress</span>
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" class="btn-check" name="statusRadio" id="statSelesai" value="Selesai">
+                        <label class="status-tile tile-selesai w-100" for="statSelesai">
+                          <i class="bi bi-check-circle-fill text-success"></i>
+                          <span class="status-title">Selesai</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- DOKUMENTASI FOTO (KAMERA WEBCAM/HP & GALERI) -->
+                  <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary mb-2">
+                      <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Foto Lapangan (Google Drive)
+                    </label>
+                    <div class="row g-2">
+                      <!-- FOTO SEBELUM -->
+                      <div class="col-6">
+                        <div class="photo-camera-card" onclick="document.getElementById('fileFotoSebelumGal').click()" title="Ketuk untuk pilih foto dari galeri HP / folder">
+                          <img id="imgPreviewSebelum" class="d-none" alt="Foto Sebelum">
+                          <div id="placeholderSebelum" class="text-center">
+                            <div class="camera-circle-icon mx-auto">
+                              <i class="bi bi-camera"></i>
+                            </div>
+                            <span class="fw-bold small d-block text-dark">Foto Sebelum</span>
+                            <span class="text-muted" style="font-size: 0.68rem;">Pilih / jepret</span>
+                          </div>
+                        </div>
+
+                        <!-- OPSI TOMBOL: KAMERA WEBCAM/HP ATAU GALERI -->
+                        <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
+                          <button type="button" class="btn btn-outline-primary py-1 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileFotoSebelumCam', 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')" title="Buka Kamera">
+                            <i class="bi bi-camera-fill me-1"></i> Kamera
+                          </button>
+                          <button type="button" class="btn btn-outline-secondary py-1 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileFotoSebelumGal').click()" title="Pilih dari Galeri HP / Folder">
+                            <i class="bi bi-images me-1"></i> Galeri
+                          </button>
+                        </div>
+
+                        <!-- INPUT FILE TERSEMBUNYI -->
+                        <input type="file" id="fileFotoSebelumCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
+                        <input type="file" id="fileFotoSebelumGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
+
+                        <button type="button" id="btnResetSebelum" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none" style="font-size: 0.72rem;" onclick="clearPhotoGroup(['fileFotoSebelumCam', 'fileFotoSebelumGal'], 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
+                          <i class="bi bi-trash"></i> Hapus Foto
+                        </button>
+                      </div>
+
+                      <!-- FOTO SESUDAH -->
+                      <div class="col-6">
+                        <div class="photo-camera-card" onclick="document.getElementById('fileFotoSesudahGal').click()" title="Ketuk untuk pilih foto dari galeri HP / folder">
+                          <img id="imgPreviewSesudah" class="d-none" alt="Foto Sesudah">
+                          <div id="placeholderSesudah" class="text-center">
+                            <div class="camera-circle-icon mx-auto">
+                              <i class="bi bi-camera-fill text-success"></i>
+                            </div>
+                            <span class="fw-bold small d-block text-dark">Foto Sesudah</span>
+                            <span class="text-muted" style="font-size: 0.68rem;">Pilih / jepret</span>
+                          </div>
+                        </div>
+
+                        <!-- OPSI TOMBOL: KAMERA WEBCAM/HP ATAU GALERI -->
+                        <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
+                          <button type="button" class="btn btn-outline-success py-1 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileFotoSesudahCam', 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')" title="Buka Kamera">
+                            <i class="bi bi-camera-fill me-1"></i> Kamera
+                          </button>
+                          <button type="button" class="btn btn-outline-secondary py-1 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileFotoSesudahGal').click()" title="Pilih dari Galeri HP / Folder">
+                            <i class="bi bi-images me-1"></i> Galeri
+                          </button>
+                        </div>
+
+                        <!-- INPUT FILE TERSEMBUNYI -->
+                        <input type="file" id="fileFotoSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
+                        <input type="file" id="fileFotoSesudahGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
+
+                        <button type="button" id="btnResetSesudah" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none" style="font-size: 0.72rem;" onclick="clearPhotoGroup(['fileFotoSesudahCam', 'fileFotoSesudahGal'], 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
+                          <i class="bi bi-trash"></i> Hapus Foto
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CATATAN TAMBAHAN -->
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold small text-secondary">Catatan Tambahan / Koordinasi Vendor / Proyek</label>
+                    <input type="text" id="inputCatatan" class="form-control" placeholder="Opsional: Keterangan tambahan...">
+                  </div>
+
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-submit-action py-3">
+                      <i class="bi bi-cloud-arrow-up-fill me-2 fs-5"></i> Simpan Laporan Kendali
+                    </button>
+                    <button type="reset" class="btn btn-link text-muted w-100 mt-2 text-decoration-none small" onclick="resetChecklistForm()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i> Bersihkan Isian Form
+                    </button>
+                  </div>
+
+                </form>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: RIWAYAT & PENGAWASAN -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="view-history">
+          <div class="card card-custom p-4">
+            
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+              <div>
+                <h5 class="fw-bold mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Riwayat Pemeriksaan & Status Pengerjaan</h5>
+                <small class="text-muted">Data tersimpan di sheet DATA_CHECKLIST secara real-time</small>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-dark fw-semibold" onclick="handlePrintFilteredHistory()" title="Cetak Rekap Tabel PDF Sesuai Filter">
+                  <i class="bi bi-printer-fill me-1 text-primary"></i> Cetak Rekap (PDF)
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadHistory()">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Muat Ulang
+                </button>
+              </div>
+            </div>
+
+            <!-- FILTER BAR -->
+            <div class="row g-2 p-3 bg-light rounded-3 mb-3">
+              <div class="col-12 col-md-3">
+                <label class="small text-secondary fw-semibold">Pencarian</label>
+                <input type="text" id="filterKeyword" class="form-control form-control-sm" placeholder="Ketik aset, lokasi, masalah..." onkeyup="filterHistoryLocal()">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="small text-secondary fw-semibold">Kategori</label>
+                <select id="filterKategori" class="form-select form-select-sm" onchange="filterHistoryLocal()">
+                  <option value="semua">Semua Kategori</option>
+                  <option value="sarana">Sarana</option>
+                  <option value="prasarana">Prasarana</option>
+                  <option value="proyek">Proyek</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="small text-secondary fw-semibold">Status</label>
+                <select id="filterStatus" class="form-select form-select-sm" onchange="filterHistoryLocal()">
+                  <option value="semua">Semua Status</option>
+                  <option value="perlu tindak lanjut">Perlu Tindak Lanjut</option>
+                  <option value="on progress">On Progress</option>
+                  <option value="selesai">Selesai</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="small text-secondary fw-semibold">Dari Tanggal</label>
+                <input type="date" id="filterStartDate" class="form-control form-control-sm" onchange="filterHistoryLocal()">
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="small text-secondary fw-semibold">Sampai Tanggal</label>
+                <input type="date" id="filterEndDate" class="form-control form-control-sm" onchange="filterHistoryLocal()">
+              </div>
+              <div class="col-12 col-md-1 d-flex align-items-end">
+                <button class="btn btn-sm btn-secondary w-100" onclick="resetFilterHistory()">Reset</button>
+              </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                  <tr class="small text-secondary">
+                    <th>Tanggal</th>
+                    <th>Kategori</th>
+                    <th>Objek & Lokasi</th>
+                    <th>Temuan Masalah</th>
+                    <th>Tindakan Teknis</th>
+                    <th>Status</th>
+                    <th>Foto</th>
+                    <th>Petugas</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">Memuat riwayat...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: MASTER ASET -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="view-master">
+          <div class="card card-custom p-4">
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="fw-bold mb-0"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Buku Kendali Sarana & Prasarana</h5>
+                <small class="text-muted">Daftar objek pantauan, status kendali terakhir, dan riwayat kondisi fasilitas</small>
+              </div>
+              <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#modalTambahAset">
+                <i class="bi bi-plus-lg me-1"></i> Tambah Objek Kendali
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                  <tr class="small text-secondary">
+                    <th>Kode / ID</th>
+                    <th>Objek & Lokasi Pantauan</th>
+                    <th>Kategori</th>
+                    <th>Lokasi Spesifik</th>
+                    <th>Status Kendali Terakhir</th>
+                    <th>Jadwal Pantau</th>
+                  </tr>
+                </thead>
+                <tbody id="masterAsetTableBody">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: CETAK FORMULIR -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="view-export">
+          <div class="row justify-content-center">
+            <div class="col-12 col-md-8">
+              <div class="card card-custom p-4">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="p-2 bg-success bg-opacity-10 text-success rounded-circle me-3">
+                    <i class="bi bi-file-earmark-spreadsheet fs-3"></i>
+                  </div>
+                  <div>
+                    <h5 class="fw-bold mb-0">Cetak Formulir Resmi (Sesuai Template Excel)</h5>
+                    <small class="text-muted">Generate formulir checklist pemeliharaan sarana/prasarana langsung ke tab baru Google Sheets</small>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-4">
+                  <p class="small text-secondary mb-0">
+                    Fitur ini akan menyusun data checklist ke dalam format tabel resmi persis seperti template:
+                    <b>"FORMULIR CHECKLIST PEMELIHARAAN SARANA / PRASARANA"</b> lengkap dengan centang status <code>[v] Selesai</code> dan centang foto <code>[v] Sblm [v] Ssdh</code> serta tanggal & tanda tangan petugas.
+                  </p>
+                </div>
+
+                <form onsubmit="handleExportTemplate(event)">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold small">Pilih Jenis Formulir</label>
+                    <select id="exportKategori" class="form-select" required>
+                      <option value="Sarana">Formulir Checklist Pemeliharaan Sarana</option>
+                      <option value="Prasarana">Formulir Checklist Pemeliharaan Prasarana</option>
+                    </select>
+                  </div>
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold small">Filter Tanggal (Opsional)</label>
+                    <input type="date" id="exportTanggal" class="form-control">
+                    <small class="text-muted">Kosongkan jika ingin mencetak seluruh data terbaru.</small>
+                  </div>
+                  <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                    <i class="bi bi-printer me-2"></i> Buat Formulir Cetak di Google Sheets
+                  </button>
+                </form>
+
+                <div id="exportResultContainer" class="mt-4 d-none">
+                  <div class="alert alert-success d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                    <div>
+                      <div class="fw-bold" id="exportSuccessMsg">Formulir Berhasil Dibuat!</div>
+                      <a id="exportSheetLink" href="#" target="_blank" class="btn btn-sm btn-outline-success mt-2">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka & Cetak di Google Sheets
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  
+    <!-- ========================================================
+         BOTTOM NAVIGATION BAR KHUSUS SMARTPHONE (SEPERTI APLIKASI HP)
+         ======================================================== -->
+    <div class="bottom-nav-bar" id="mobileBottomNav">
+      <div class="b-nav-tab" id="mTabInput" onclick="switchTabMobile('view-input', this)">
+        <i class="bi bi-camera-fill"></i>
+        <span>Input Cepat</span>
+      </div>
+      <div class="b-nav-tab" id="mTabHistory" onclick="switchTabMobile('view-history', this)">
+        <i class="bi bi-clock-history"></i>
+        <span>Riwayat</span>
+      </div>
+      <div class="b-nav-tab" id="mTabDashboard" onclick="switchTabMobile('view-dashboard', this)">
+        <i class="bi bi-speedometer2"></i>
+        <span>Ringkasan</span>
+      </div>
+      <div class="b-nav-tab admin-only-tab" id="mTabMaster" onclick="switchTabMobile('view-master', this)">
+        <i class="bi bi-box-seam"></i>
+        <span>Buku Kendali</span>
+      </div>
+    </div>
+
+  <!-- MODAL LIVE WEBCAM (LAPTOP & PC WEBCAM AKTIF) -->
+  <div class="modal fade" id="modalLiveWebcam" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+        <div class="modal-header border-secondary py-2 px-3">
+          <h6 class="modal-title fw-bold" id="webcamModalTitle">
+            <i class="bi bi-camera-video-fill text-danger me-2"></i>Kamera Laptop Aktif
+          </h6>
+          <button type="button" class="btn-close btn-close-white" onclick="closeLaptopWebcam()"></button>
+        </div>
+        <div class="modal-body p-0 text-center position-relative" style="background:#000; min-height: 260px; display: flex; align-items: center; justify-content: center;">
+          <video id="webcamVideo" autoplay playsinline muted style="width: 100%; max-height: 60vh; object-fit: cover;"></video>
+          <canvas id="webcamCanvas" class="d-none"></canvas>
+          <div id="webcamLoading" class="position-absolute text-white">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="small mt-2 mb-0">Menghubungkan ke kamera laptop...</p>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary py-2 px-3 d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-sm btn-outline-light" onclick="closeLaptopWebcam()">Batal</button>
+          <button type="button" class="btn btn-danger px-4 py-2 fw-bold rounded-pill shadow d-flex align-items-center gap-2" onclick="captureLaptopPhoto()">
+            <i class="bi bi-camera-fill fs-5"></i>
+            <span>Jepret Foto</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LIGHTBOX FOTO -->
+  <div class="modal fade" id="modalPhotoLightbox" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+        <div class="modal-header border-secondary py-2 px-3">
+          <h6 class="modal-title fw-bold" id="lightboxTitle"><i class="bi bi-image me-2 text-primary"></i>Dokumentasi Foto</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-2" style="background:#0F172A; min-height: 250px; display: flex; align-items: center; justify-content: center;">
+          <img id="lightboxImg" src="" class="img-fluid rounded" style="max-height: 72vh; max-width: 100%; object-fit: contain;" referrerpolicy="no-referrer" alt="Foto">
+        </div>
+        <div class="modal-footer border-secondary py-2 px-3 d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-sm btn-outline-light px-3" data-bs-dismiss="modal">Tutup</button>
+          <a id="lightboxDriveBtn" href="#" target="_blank" class="btn btn-sm btn-primary px-3 fw-semibold">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Buka di Google Drive
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETAIL & UPDATE STATUS -->
+  <div class="modal fade" id="modalDetail" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalDetailTitle">Detail Checklist</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="modalDetailBody">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH ASET -->
+  <div class="modal fade" id="modalTambahAset" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Tambah Objek Kendali Sarpras</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form onsubmit="handleTambahAset(event)">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Kategori</label>
+              <select id="newAsetKategori" class="form-select" required>
+                <option value="Sarana">Sarana (Alat/Mesin/Kendaraan)</option>
+                <option value="Prasarana">Prasarana (Gedung/Ruangan/Saluran)</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Kode Aset / Identitas</label>
+              <input type="text" id="newAsetKode" class="form-control" placeholder="Contoh: AC-RPT-03, GEN-02" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Nama Objek</label>
+              <input type="text" id="newAsetNama" class="form-control" placeholder="Contoh: AC Ruang Direksi" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Lokasi Spesifik</label>
+              <input type="text" id="newAsetLokasi" class="form-control" placeholder="Contoh: Gedung A Lt. 3" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Jadwal Pemeliharaan Rutin</label>
+              <select id="newAsetJadwal" class="form-select">
+                <option value="1 Minggu">1 Minggu Sekali</option>
+                <option value="2 Minggu">2 Minggu Sekali</option>
+                <option value="1 Bulan" selected>1 Bulan Sekali</option>
+                <option value="3 Bulan">3 Bulan Sekali</option>
+                <option value="6 Bulan">6 Bulan Sekali</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary-custom">Simpan Aset</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // State Aplikasi
+    let currentUser = null;
+    let masterAsets = [];
+    let masterUsers = [];
+    let currentHistoryData = [];
+    let base64FotoSebelum = "";
+    let base64FotoSesudah = "";
+    let base64UpdateFotoSesudah = "";
+
+    // Set tanggal default hari ini
+    document.addEventListener("DOMContentLoaded", function() {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("inputTanggal").value = today;
+      document.getElementById("filterStartDate").value = "";
+      document.getElementById("filterEndDate").value = today;
+      
+      // Auto login jika session tersimpan
+      const savedUser = localStorage.getItem("sarpras_user");
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          initAppWithUser();
+        } catch(e) {
+          localStorage.removeItem("sarpras_user");
+        }
+      }
+    });
+
+    function showLoading(text) {
+      document.getElementById("loadingText").innerText = text || "Memproses...";
+      document.getElementById("loadingOverlay").classList.remove("d-none");
+    }
+
+    function hideLoading() {
+      document.getElementById("loadingOverlay").classList.add("d-none");
+    }
+
+    // ==========================================
+    // BACKEND ADAPTER (SUPPORTS GITHUB PAGES & GOOGLE APPS SCRIPT)
+    // ==========================================
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzD2J6XyAFMPGcj10T3F3wElhwrA80ZfYdI1sxdjbtLIWyn5eG_zWRPFKG6Xn7kWrXj/exec";
+
+    function runBackend(action, data, onSuccess, onFailure) {
+      const isRunningInGAS = typeof google !== "undefined" && google.script && google.script.run && window.location.hostname.indexOf("google") !== -1;
+      
+      if (isRunningInGAS) {
+        // Mode 1: Didalam Google Apps Script
+        const runner = google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onFailure || function(err) {
+            hideLoading();
+            Swal.fire("Error", err.toString(), "error");
+          });
+        
+        if (action === "loginUser") runner.loginUser(data.username, data.password);
+        else if (action === "getInitialData") runner.getInitialData(data.requestingUser);
+        else if (action === "getDashboardStatsData") runner.getDashboardStatsData(data.requestingUser);
+        else if (action === "getChecklistHistory") runner.getChecklistHistory(data.filter, data.requestingUser);
+        else if (action === "submitChecklist") runner.submitChecklist(data.payload);
+        else if (action === "updateChecklistStatus") runner.updateChecklistStatus(data.payload);
+        else if (action === "saveMasterAset") runner.saveMasterAset(data.payload);
+        else if (action === "exportToPrintableTemplate") runner.exportToPrintableTemplate(data.kategori, data.tanggal);
+      } else {
+        // Mode 2: GitHub Pages / Server Eksternal (CORS Simple Request via POST)
+        const payload = Object.assign({ action: action }, data || {});
+        fetch(GAS_API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        })
+        .then(function(res) {
+          if (!res.ok) throw new Error("HTTP Status " + res.status);
+          return res.json();
+        })
+        .then(function(result) {
+          onSuccess(result);
+        })
+        .catch(function(err) {
+          if (onFailure) {
+            onFailure(err);
+          } else {
+            hideLoading();
+            Swal.fire({
+              icon: "error",
+              title: "Koneksi Database",
+              text: "Gagal menghubungkan ke server Google Sheets: " + err.message
+            });
+          }
+        });
+      }
+    }
+
+
+    // ==========================================
+    // CETAK DOKUMEN LAPORAN & BERITA ACARA PDF
+    // ==========================================
+    let currentDetailItemForPrint = null;
+
+    function handlePrintCurrentDetail() {
+      if (!currentDetailItemForPrint) return;
+      printSingleWorkOrder(currentDetailItemForPrint);
+    }
+
+    function printSingleWorkOrder(item) {
+      if (!item) return;
+      showLoading("Menyiapkan dokumen PDF & foto...");
+
+      const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
+      const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+
+      const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : "");
+      const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : "");
+
+      const sblmImgTag = sblmUrl 
+        ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="max-height: 220px; max-width: 100%; object-fit: contain;" alt="Foto Sebelum">`
+        : `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Tidak ada foto fisik sebelum pengerjaan)</div>`;
+
+      const ssdhImgTag = ssdhUrl 
+        ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="max-height: 220px; max-width: 100%; object-fit: contain;" alt="Foto Sesudah">`
+        : `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Belum ada foto fisik perbaikan sesudah)</div>`;
+
+      let statusColor = "#16A34A";
+      let statusBg = "#DCFCE7";
+      const stLow = (item.status || "").toLowerCase();
+      if (stLow.indexOf("tindak") !== -1) {
+        statusColor = "#DC2626";
+        statusBg = "#FEE2E2";
+      } else if (stLow.indexOf("progress") !== -1) {
+        statusColor = "#D97706";
+        statusBg = "#FEF3C7";
+      }
+
+      const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      const printHtml = `
+        <div style="font-family: Arial, sans-serif; color: #0F172A; max-width: 800px; margin: 0 auto; line-height: 1.4;">
+          
+          <!-- KOP SURAT LAPORAN RESMI -->
+          <div style="border-bottom: 2.5px solid #0F172A; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h2 style="margin: 0; font-size: 15pt; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">
+                LEMBAR KERJA PEMELIHARAAN & PENGAWASAN SARPRAS
+              </h2>
+              <div style="font-size: 9pt; color: #475569; margin-top: 3px;">
+                Bukti Penanganan Masalah & Pemantauan Fisik Lapangan
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 10.5pt; font-weight: 800; color: #1E3A8A; font-family: monospace;">${escapeHtml(item.id)}</div>
+              <div style="font-size: 8pt; color: #64748B;">Cetak: ${todayStr}</div>
+            </div>
+          </div>
+
+          <!-- TABEL INFORMASI UMUM -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9pt;">
+            <tr>
+              <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal Pemeriksaan</td>
+              <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 600;">${escapeHtml(item.tanggal)}</td>
+              <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Petugas Pelaksana</td>
+              <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 700; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Kategori Pekerjaan</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">${escapeHtml(item.kategori)}</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Status Pengerjaan</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 8.5pt; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusColor};">
+                  ${escapeHtml(item.status)}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Objek & Lokasi</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 700;">${escapeHtml(item.objekLokasi)}</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Kode / No. Seri Aset</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; font-family: monospace;">${escapeHtml(item.kodeAset || '-')}</td>
+            </tr>
+          </table>
+
+          <!-- 1. TEMUAN MASALAH -->
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 9.5pt; font-weight: 800; color: #0F172A; margin-bottom: 4px; border-left: 4px solid #DC2626; padding-left: 6px;">
+              1. TEMUAN MASALAH / GANGGUAN DI LOKASI:
+            </div>
+            <div style="border: 1px solid #CBD5E1; background: #FFF5F5; padding: 8px 12px; border-radius: 6px; font-size: 9pt; color: #0F172A; min-height: 40px;">
+              ${escapeHtml(item.temuan || '-')}
+            </div>
+          </div>
+
+          <!-- 2. TINDAKAN TEKNIS -->
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 9.5pt; font-weight: 800; color: #0F172A; margin-bottom: 4px; border-left: 4px solid #16A34A; padding-left: 6px;">
+              2. TINDAKAN TEKNIS / PENANGANAN:
+            </div>
+            <div style="border: 1px solid #CBD5E1; background: #F0FDF4; padding: 8px 12px; border-radius: 6px; font-size: 9pt; color: #0F172A; min-height: 40px;">
+              ${escapeHtml(item.tindakan || '-')}
+            </div>
+          </div>
+
+          ${item.catatan ? `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 9pt; font-weight: 700; color: #475569; margin-bottom: 3px;">
+              Catatan Koordinasi Vendor / Proyek:
+            </div>
+            <div style="border: 1px solid #E2E8F0; background: #F8FAFC; padding: 6px 10px; border-radius: 6px; font-size: 8.5pt; color: #334155;">
+              ${escapeHtml(item.catatan)}
+            </div>
+          </div>
+          ` : ''}
+
+          <!-- 3. DOKUMENTASI FOTO SEBELUM & SESUDAH -->
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 9.5pt; font-weight: 800; color: #0F172A; margin-bottom: 6px; border-left: 4px solid #2563EB; padding-left: 6px;">
+              3. DOKUMENTASI FOTO HASIL PEKERJAAN:
+            </div>
+            <table style="width: 100%; border-collapse: separate; border-spacing: 10px 0;">
+              <tr>
+                <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                  <div style="font-size: 8.5pt; font-weight: 700; color: #991B1B; margin-bottom: 6px; background: #FEE2E2; padding: 4px; border-radius: 4px; border: 1px solid #FECACA;">
+                    [ FOTO SEBELUM PENANGANAN ]
+                  </div>
+                  <div style="height: 220px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                    ${sblmImgTag}
+                  </div>
+                </td>
+                <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                  <div style="font-size: 8.5pt; font-weight: 700; color: #14532D; margin-bottom: 6px; background: #DCFCE7; padding: 4px; border-radius: 4px; border: 1px solid #BBF7D0;">
+                    [ FOTO SESUDAH (PERBAIKAN TUNTAS) ]
+                  </div>
+                  <div style="height: 220px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                    ${ssdhImgTag}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- LEMBAR TANDA TANGAN -->
+          <div style="page-break-inside: avoid; margin-top: 25px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+              <tr>
+                <td style="width: 50%; padding-bottom: 65px;">
+                  Petugas Pelaksana Lapangan,
+                  <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Pelaksana Pekerjaan)</div>
+                </td>
+                <td style="width: 50%; padding-bottom: 65px;">
+                  Mengetahui / Memeriksa,
+                  <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Pengawas / Administrator Sarpras)</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">${escapeHtml(item.petugas || 'Petugas Lapangan')}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">Pengawas Sarpras</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+        </div>
+      `;
+
+      const container = document.getElementById("printableReportContainer");
+      container.innerHTML = printHtml;
+
+      // Tunggu foto ter-load sebelum buka dialog print
+      const imgs = container.querySelectorAll("img");
+      let loaded = 0;
+      const total = imgs.length;
+
+      function triggerPrintDialog() {
+        hideLoading();
+        window.print();
+      }
+
+      if (total === 0) {
+        triggerPrintDialog();
+      } else {
+        imgs.forEach(function(img) {
+          if (img.complete) {
+            loaded++;
+            if (loaded >= total) triggerPrintDialog();
+          } else {
+            img.onload = img.onerror = function() {
+              loaded++;
+              if (loaded >= total) triggerPrintDialog();
+            };
+          }
+        });
+      }
+    }
+
+    function handlePrintFilteredHistory() {
+      if (!currentHistoryData || currentHistoryData.length === 0) {
+        Swal.fire("Info", "Tidak ada data riwayat yang dapat dicetak.", "info");
+        return;
+      }
+
+      showLoading("Menyiapkan lembar rekap formulir...");
+      const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      let rowsHtml = "";
+      currentHistoryData.forEach((item, idx) => {
+        const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
+        const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+
+        const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : "";
+        const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : "";
+
+        const fotoHtml = `
+          <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+            ${sblmUrl ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #2563EB;">` : '<span style="font-size: 7.5pt; color: #94A3B8;">-</span>'}
+            ${ssdhUrl ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #16A34A;">` : ''}
+          </div>
+        `;
+
+        rowsHtml += `
+          <tr>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${idx + 1}</td>
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">
+              <b>${escapeHtml(item.objekLokasi)}</b>
+              ${item.kodeAset ? `<br><small style="color: #64748B; font-family: monospace;">Kode: ${escapeHtml(item.kodeAset)}</small>` : ''}
+            </td>
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">${escapeHtml(item.temuan)}</td>
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">${escapeHtml(item.tindakan)}</td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 8pt;">
+              ${escapeHtml(item.status)}
+            </td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${fotoHtml}</td>
+            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt;">${escapeHtml(item.petugas || '-')}</td>
+          </tr>
+        `;
+      });
+
+      const printHtml = `
+        <div style="font-family: Arial, sans-serif; color: #0F172A; width: 100%; margin: 0 auto; line-height: 1.3;">
+          <div style="border-bottom: 2px solid #0F172A; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h2 style="margin: 0; font-size: 14pt; font-weight: 800; color: #0F172A; text-transform: uppercase;">
+                REKAPITULASI PEMANTAUAN & PEMELIHARAAN SARPRAS
+              </h2>
+              <div style="font-size: 8.5pt; color: #475569;">
+                Laporan Hasil Pemeriksaan Rutin Lapangan
+              </div>
+            </div>
+            <div style="text-align: right; font-size: 8.5pt; color: #64748B;">
+              Tanggal Rekap: <b>${todayStr}</b> | Total: <b>${currentHistoryData.length} Kegiatan</b>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 20px;">
+            <thead>
+              <tr style="background: #0F172A; color: #FFFFFF; font-weight: 700;">
+                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 4%;">No</th>
+                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Objek & Lokasi</th>
+                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Temuan Masalah</th>
+                <th style="padding: 6px 6px; border: 1px solid #0F172A; width: 22%;">Tindakan Teknis</th>
+                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 12%; text-align: center;">Status</th>
+                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 10%; text-align: center;">Foto</th>
+                <th style="padding: 6px 4px; border: 1px solid #0F172A; width: 8%; text-align: center;">Petugas</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div style="page-break-inside: avoid; margin-top: 25px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+              <tr>
+                <td style="width: 50%; padding-bottom: 50px;">
+                  Petugas Pelaksana,
+                </td>
+                <td style="width: 50%; padding-bottom: 50px;">
+                  Mengetahui / Pengawas Sarpras,
+                </td>
+              </tr>
+              <tr>
+                <td>( .................................................. )</td>
+                <td>( .................................................. )</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      `;
+
+      const container = document.getElementById("printableReportContainer");
+      container.innerHTML = printHtml;
+
+      const imgs = container.querySelectorAll("img");
+      let loaded = 0;
+      const total = imgs.length;
+
+      function triggerPrintDialog() {
+        hideLoading();
+        window.print();
+      }
+
+      if (total === 0) {
+        triggerPrintDialog();
+      } else {
+        imgs.forEach(function(img) {
+          if (img.complete) {
+            loaded++;
+            if (loaded >= total) triggerPrintDialog();
+          } else {
+            img.onload = img.onerror = function() {
+              loaded++;
+              if (loaded >= total) triggerPrintDialog();
+            };
+          }
+        });
+      }
+    }
+
+    // ==========================================
+    // AUTHENTICATION
+    // ==========================================
+    function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById("loginUsername").value;
+      const p = document.getElementById("loginPassword").value;
+
+      showLoading("Memeriksa akun...");
+      runBackend("loginUser", { username: u, password: p }, function(res) {
+        hideLoading();
+        if (res.status === "success") {
+          currentUser = res.user;
+          localStorage.setItem("sarpras_user", JSON.stringify(currentUser));
+          initAppWithUser();
+          Swal.fire({
+            icon: "success",
+            title: "Selamat Datang!",
+            text: "Login berhasil sebagai " + currentUser.nama,
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire("Login Gagal", res.message, "error");
+        }
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
+    }
+
+    function initAppWithUser() {
+      document.getElementById("loginView").classList.add("d-none");
+      document.getElementById("mainApp").classList.remove("d-none");
+      document.getElementById("navUserName").innerText = currentUser.nama;
+      document.getElementById("navUserRole").innerText = currentUser.role;
+
+      // Tampilan berdasarkan Role Petugas vs Admin
+      const isPetugas = (currentUser.role || "").toLowerCase().indexOf("petugas") !== -1;
+      if (isPetugas) {
+        // Petugas Lapangan di HP langsung otomatis diarahkan ke Form Input Kamera
+        switchTabMobile("view-input", document.getElementById("mTabInput"));
+      } else {
+        // Admin / Pengawas diarahkan ke Dashboard Ringkasan
+        switchTabMobile("view-dashboard", document.getElementById("mTabDashboard"));
+      }
+
+      // Jika Petugas Lapangan, kunci kolom nama petugas ke nama sendiri (terisolasi)
+      if (isPetugas) {
+        document.getElementById("inputPetugasContainer").innerHTML = `
+          <div class="input-group">
+            <span class="input-group-text bg-success bg-opacity-10 text-success"><i class="bi bi-person-check-fill"></i></span>
+            <input type="text" id="inputPetugasDirect" class="form-control bg-light fw-bold" value="${currentUser.nama}" readonly>
+          </div>
+          <small class="text-muted" style="font-size: 0.72rem;">*Terkunci otomatis ke akun Anda</small>
+        `;
+        // Sembunyikan menu Master Aset dan Cetak di HP jika bukan Admin
+        document.querySelectorAll(".admin-only-tab").forEach(el => el.classList.add("d-none"));
+      } else {
+        // Admin bisa melihat menu Master & Cetak
+        document.querySelectorAll(".admin-only-tab").forEach(el => el.classList.remove("d-none"));
+      }
+
+      // Ambil initial data
+      showLoading("Memuat data aplikasi...");
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === "success") {
+            masterAsets = res.asets || [];
+            masterUsers = res.users || [];
+            populateAsetDropdown();
+            if (!isPetugas) populateUserDropdown();
+            renderMasterAsetTable();
+            renderDashboardStats(res.stats);
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          console.error(err);
+        })
+        .getInitialData(currentUser);
+    }
+
+    
+    // Beralih Tab Khusus Smartphone
+    function switchTabMobile(viewId, element) {
+      // Sembunyikan semua tab-pane
+      document.querySelectorAll(".tab-pane").forEach(el => {
+        el.classList.remove("show", "active");
+      });
+      // Tampilkan tab yang dipilih
+      const targetPane = document.getElementById(viewId);
+      if (targetPane) {
+        targetPane.classList.add("show", "active");
+      }
+      
+      // Update status tombol bottom nav
+      document.querySelectorAll(".b-nav-tab").forEach(el => el.classList.remove("active"));
+      if (element) {
+        element.classList.add("active");
+      }
+
+      // Sinkronkan tab desktop jika dibuka di layar besar
+      document.querySelectorAll(".desktop-pills .nav-link").forEach(el => el.classList.remove("active"));
+      const deskLink = document.querySelector(`.desktop-pills [href="#${viewId}"]`);
+      if (deskLink) deskLink.classList.add("active");
+
+      // Auto trigger loader
+      if (viewId === "view-history") loadHistory();
+      if (viewId === "view-dashboard") loadDashboard();
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function handleLogout() {
+      Swal.fire({
+        title: "Konfirmasi Keluar",
+        text: "Apakah Anda yakin ingin keluar?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Ya, Keluar",
+        cancelButtonText: "Batal"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          currentUser = null;
+          localStorage.removeItem("sarpras_user");
+          document.getElementById("mainApp").classList.add("d-none");
+          document.getElementById("loginView").classList.remove("d-none");
+        }
+      });
+    }
+
+    // ==========================================
+    // POPULATE DROPDOWNS
+    // ==========================================
+    function populateAsetDropdown() {
+      const datalist = document.getElementById("listAsetDatalist");
+      if (!datalist) return;
+      datalist.innerHTML = "";
+      
+      const currentKategori = document.querySelector('input[name="kategoriRadio"]:checked').value;
+      masterAsets.forEach(item => {
+        if (currentKategori === "Pemantauan Proyek" || !item.kategori || item.kategori.toLowerCase() === currentKategori.toLowerCase()) {
+          const opt = document.createElement("option");
+          opt.value = item.nama;
+          if (item.kode) opt.label = `[${item.kode}]`;
+          datalist.appendChild(opt);
+        }
+      });
+    }
+
+    function handleObjekInput(elem) {
+      const val = elem.value.trim().toLowerCase();
+      if (!val) return;
+      const match = masterAsets.find(a => a.nama && a.nama.toLowerCase() === val);
+      if (match && match.kode) {
+        const kodeInput = document.getElementById("inputKodeAset");
+        if (!kodeInput.value) {
+          kodeInput.value = match.kode;
+        }
+      }
+    }
+
+    function populateUserDropdown() {
+      const select = document.getElementById("inputPetugasSelect");
+      select.innerHTML = '<option value="">-- Pilih Petugas Terdaftar --</option>';
+      masterUsers.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.nama;
+        opt.text = `${u.nama} (${u.role})`;
+        if (currentUser && u.nama === currentUser.nama) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    }
+
+    function handlePetugasChange(elem) {
+      // Auto selected
+    }
+
+    function togglePetugasManual() {
+      const sel = document.getElementById("inputPetugasSelect");
+      const man = document.getElementById("inputPetugasManual");
+      if (man.classList.contains("d-none")) {
+        man.classList.remove("d-none");
+        sel.classList.add("d-none");
+        man.focus();
+      } else {
+        man.classList.add("d-none");
+        sel.classList.remove("d-none");
+      }
+    }
+
+    function changeKategoriMode(kat) {
+      populateAsetDropdown();
+      const hint = document.getElementById("hintObjek");
+      if (kat === "Pemantauan Proyek") {
+        hint.innerText = "Area/batas proyek yang bersinggungan langsung dengan kantor";
+        document.getElementById("inputObjekLokasi").placeholder = "Contoh: Pagar pembatas proyek area parkir Depan Gedung A";
+      } else {
+        hint.innerText = "Pilih dari Master atau ketik langsung";
+        document.getElementById("inputObjekLokasi").placeholder = "Nama spesifik sarana/prasarana beserta lokasinya";
+      }
+    }
+
+    function addChip(targetId, text) {
+      const input = document.getElementById(targetId);
+      if (!input.value.trim()) {
+        input.value = text;
+      } else {
+        input.value = input.value + ", " + text;
+      }
+    }
+
+    // ==========================================
+    // KAMERA LAPTOP (WEBCAM) & SMARTPHONE (HP)
+    // ==========================================
+    let webcamStream = null;
+    let currentWebcamTarget = { imgId: '', placeholderId: '', resetBtnId: '', fallbackInputId: '' };
+
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    function triggerCamera(fileInputId, imgId, placeholderId, resetBtnId) {
+      if (isMobileDevice()) {
+        // Pada HP: panggil kamera bawaan HP
+        const el = document.getElementById(fileInputId);
+        if (el) el.click();
+      } else {
+        // Pada Laptop / PC: Buka Webcam Laptop langsung via WebRTC!
+        openLaptopWebcamModal(imgId, placeholderId, resetBtnId, fileInputId);
+      }
+    }
+
+    function openLaptopWebcamModal(imgId, placeholderId, resetBtnId, fallbackInputId) {
+      currentWebcamTarget = { imgId: imgId, placeholderId: placeholderId, resetBtnId: resetBtnId, fallbackInputId: fallbackInputId };
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById(fallbackInputId).click();
+        return;
+      }
+
+      const modalEl = document.getElementById("modalLiveWebcam");
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
+
+      document.getElementById("webcamLoading").classList.remove("d-none");
+      const video = document.getElementById("webcamVideo");
+
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user" 
+        }, 
+        audio: false 
+      })
+      .then(function(stream) {
+        webcamStream = stream;
+        video.srcObject = stream;
+        video.onloadedmetadata = function() {
+          video.play();
+          document.getElementById("webcamLoading").classList.add("d-none");
+        };
+      })
+      .catch(function(err) {
+        document.getElementById("webcamLoading").classList.add("d-none");
+        console.warn("Webcam error:", err);
+        closeLaptopWebcam();
+        Swal.fire({
+          icon: 'info',
+          title: 'Akses Kamera Laptop',
+          text: 'Tidak dapat membuka kamera laptop (' + err.message + '). Silakan pilih file foto dari folder.',
+          confirmButtonText: 'Pilih dari Folder'
+        }).then(function() {
+          document.getElementById(fallbackInputId).click();
+        });
+      });
+    }
+
+    function captureLaptopPhoto() {
+      const video = document.getElementById("webcamVideo");
+      const canvas = document.getElementById("webcamCanvas");
+      if (!video || !webcamStream) return;
+
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, w, h);
+      const rawBase64 = canvas.toDataURL("image/jpeg", 0.88);
+
+      compressImage(rawBase64, 1024, 0.8, function(compressedBase64) {
+        const target = currentWebcamTarget;
+        if (target.imgId) {
+          const img = document.getElementById(target.imgId);
+          if (img) {
+            img.src = compressedBase64;
+            img.classList.remove("d-none");
+          }
+          if (target.placeholderId) document.getElementById(target.placeholderId).classList.add("d-none");
+          if (target.resetBtnId) document.getElementById(target.resetBtnId).classList.remove("d-none");
+
+          if (target.imgId === "imgPreviewSebelum") base64FotoSebelum = compressedBase64;
+          else if (target.imgId === "imgPreviewSesudah") base64FotoSesudah = compressedBase64;
+          else if (target.imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = compressedBase64;
+        }
+        closeLaptopWebcam();
+        Swal.fire({
+          icon: 'success',
+          title: 'Foto Berhasil Diambil!',
+          timer: 1200,
+          showConfirmButton: false
+        });
+      });
+    }
+
+    function closeLaptopWebcam() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(function(track) { track.stop(); });
+        webcamStream = null;
+      }
+      const video = document.getElementById("webcamVideo");
+      if (video) video.srcObject = null;
+      const modalEl = document.getElementById("modalLiveWebcam");
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      }
+    }
+
+    // ==========================================
+    // IMAGE HANDLING (COMPRESSION & PREVIEW)
+    // ==========================================
+    function previewImage(fileInput, imgId, placeholderId, resetBtnId) {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // Kompresi gambar client-side sebelum upload
+        compressImage(e.target.result, 1024, 0.8, function(compressedBase64) {
+          const img = document.getElementById(imgId);
+          img.src = compressedBase64;
+          img.classList.remove("d-none");
+          document.getElementById(placeholderId).classList.add("d-none");
+          document.getElementById(resetBtnId).classList.remove("d-none");
+
+          if (imgId === "imgPreviewSebelum") base64FotoSebelum = compressedBase64;
+          else if (imgId === "imgPreviewSesudah") base64FotoSesudah = compressedBase64;
+          else if (imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = compressedBase64;
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearPhotoGroup(inputIds, imgId, placeholderId, resetBtnId) {
+      if (Array.isArray(inputIds)) {
+        inputIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+      } else {
+        const el = document.getElementById(inputIds);
+        if (el) el.value = "";
+      }
+      const img = document.getElementById(imgId);
+      if (img) {
+        img.src = "";
+        img.classList.add("d-none");
+      }
+      const ph = document.getElementById(placeholderId);
+      if (ph) ph.classList.remove("d-none");
+      const btn = document.getElementById(resetBtnId);
+      if (btn) btn.classList.add("d-none");
+
+      if (imgId === "imgPreviewSebelum") base64FotoSebelum = "";
+      else if (imgId === "imgPreviewSesudah") base64FotoSesudah = "";
+      else if (imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = "";
+    }
+
+    function clearPhoto(fileInputId, imgId, placeholderId, resetBtnId) {
+      clearPhotoGroup([fileInputId], imgId, placeholderId, resetBtnId);
+    }
+
+    function compressImage(base64Str, maxWidth, quality, callback) {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = function() {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL("image/jpeg", quality));
+      };
+    }
+
+    // ==========================================
+    // SUBMIT CHECKLIST
+    // ==========================================
+    function handleChecklistSubmit(e) {
+      e.preventDefault();
+
+      let petugas = "";
+      const lockedPetugas = document.getElementById("inputPetugasDirect");
+      if (lockedPetugas) {
+        petugas = lockedPetugas.value;
+      } else {
+        const sel = document.getElementById("inputPetugasSelect");
+        petugas = sel ? sel.value : "";
+        const man = document.getElementById("inputPetugasManual");
+        if (man && !man.classList.contains("d-none") && man.value.trim()) {
+          petugas = man.value.trim();
+        }
+      }
+      if (!petugas && currentUser) petugas = currentUser.nama;
+
+      const payload = {
+        tanggal: document.getElementById("inputTanggal").value,
+        petugas: petugas,
+        kategori: document.querySelector('input[name="kategoriRadio"]:checked').value,
+        objekLokasi: document.getElementById("inputObjekLokasi").value,
+        kodeAset: document.getElementById("inputKodeAset").value,
+        temuan: document.getElementById("inputTemuan").value,
+        tindakan: document.getElementById("inputTindakan").value,
+        status: document.querySelector('input[name="statusRadio"]:checked').value,
+        catatan: document.getElementById("inputCatatan").value,
+        fotoSebelumBase64: base64FotoSebelum,
+        fotoSesudahBase64: base64FotoSesudah
+      };
+
+      showLoading("Menyimpan ke Google Sheets & Upload Foto...");
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res.status === "success") {
+            Swal.fire({
+              icon: "success",
+              title: "Berhasil!",
+              text: res.message,
+              confirmButtonColor: "#1F4E79"
+            }).then(() => {
+              resetChecklistForm();
+              // Pindah ke tab riwayat
+              const tabHistory = new bootstrap.Tab(document.getElementById('tab-history'));
+              tabHistory.show();
+              loadHistory();
+            });
+          } else {
+            Swal.fire("Gagal", res.message, "error");
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          Swal.fire("Error", err.toString(), "error");
+        })
+        .submitChecklist(payload);
+    }
+
+    function resetChecklistForm() {
+      clearPhotoGroup(['fileFotoSebelumCam', 'fileFotoSebelumGal', 'fileFotoSebelum'], 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum');
+      clearPhotoGroup(['fileFotoSesudahCam', 'fileFotoSesudahGal', 'fileFotoSesudah'], 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah');
+      populateUserDropdown();
+    }
+
+    // ==========================================
+    // DASHBOARD & STATS
+    // ==========================================
+    function loadDashboard() {
+      runBackend("getDashboardStatsData", { requestingUser: currentUser }, function(stats) {
+        renderDashboardStats(stats);
+      });
+
+      // Ambil alert items (Perlu Tindak Lanjut)
+      runBackend("getChecklistHistory", { filter: { status: "perlu tindak lanjut" }, requestingUser: currentUser }, function(list) {
+        renderAlertTable(list);
+      });
+    }
+
+    function renderDashboardStats(stats) {
+      if (!stats) return;
+      document.getElementById("dashTotal").innerText = stats.total || 0;
+      document.getElementById("dashSelesai").innerText = stats.selesai || 0;
+      document.getElementById("dashProgress").innerText = stats.onProgress || 0;
+      document.getElementById("dashTindak").innerText = stats.perluTindakLanjut || 0;
+
+      document.getElementById("dashSaranaCount").innerText = stats.sarana || 0;
+      document.getElementById("dashPrasaranaCount").innerText = stats.prasarana || 0;
+      document.getElementById("dashProyekCount").innerText = stats.proyek || 0;
+
+      const total = stats.total || 1;
+      document.getElementById("barSarana").style.width = Math.round(((stats.sarana || 0) / total) * 100) + "%";
+      document.getElementById("barPrasarana").style.width = Math.round(((stats.prasarana || 0) / total) * 100) + "%";
+      document.getElementById("barProyek").style.width = Math.round(((stats.proyek || 0) / total) * 100) + "%";
+
+      // Render rekap per petugas
+      renderPetugasBreakdown(stats.perPetugas);
+    }
+
+    function renderPetugasBreakdown(petugasMap) {
+      const container = document.getElementById("perPetugasContainer");
+      if (!container) return;
+      if (!petugasMap || Object.keys(petugasMap).length === 0) {
+        container.innerHTML = '<span class="text-muted fst-italic">Belum ada input dari petugas.</span>';
+        return;
+      }
+
+      let html = '<div class="list-group list-group-flush">';
+      for (const [nama, data] of Object.entries(petugasMap)) {
+        html += `
+          <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-semibold text-dark"><i class="bi bi-person-badge text-secondary me-1"></i>${escapeHtml(nama)}</span>
+              <div class="text-muted" style="font-size: 0.72rem;">
+                Sarana: <b>${data.sarana || 0}</b> | Prasarana: <b>${data.prasarana || 0}</b> | Proyek: <b>${data.proyek || 0}</b>
+              </div>
+            </div>
+            <span class="badge bg-primary rounded-pill">${data.total || 0} input</span>
+          </div>
+        `;
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function renderAlertTable(list) {
+      const tbody = document.getElementById("dashAlertTable");
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-check2-all text-success me-1"></i> Semua pekerjaan sarpras dalam kondisi aman & tuntas.</td></tr>';
+        return;
+      }
+
+      let html = "";
+      list.slice(0, 5).forEach(item => {
+        html += `
+          <tr>
+            <td>
+              <div class="fw-semibold text-dark">${escapeHtml(item.objekLokasi)}</div>
+              <small class="text-muted">${escapeHtml(item.kodeAset || '-')}</small>
+            </td>
+            <td><span class="text-danger">${escapeHtml(item.temuan)}</span></td>
+            <td>${escapeHtml(item.petugas || '-')}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="showDetailModal('${item.id}')">
+                <i class="bi bi-eye"></i> Tangani
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ==========================================
+    // RIWAYAT & FILTER
+    // ==========================================
+    function loadHistory() {
+      showLoading("Memuat riwayat dari Google Sheets...");
+      google.script.run
+        .withSuccessHandler(function(data) {
+          hideLoading();
+          currentHistoryData = data || [];
+          filterHistoryLocal();
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          Swal.fire("Error", err.toString(), "error");
+        })
+        .getChecklistHistory({}, currentUser);
+    }
+
+    function filterHistoryLocal() {
+      const kw = document.getElementById("filterKeyword").value.toLowerCase().trim();
+      const kat = document.getElementById("filterKategori").value.toLowerCase();
+      const stat = document.getElementById("filterStatus").value.toLowerCase();
+      const startDate = document.getElementById("filterStartDate").value;
+      const endDate = document.getElementById("filterEndDate").value;
+
+      const filtered = currentHistoryData.filter(item => {
+        if (kat !== "semua") {
+          const kLow = (item.kategori || "").toLowerCase().trim();
+          if (kat === "prasarana" && kLow.indexOf("prasarana") === -1) return false;
+          if (kat === "sarana" && (kLow.indexOf("prasarana") !== -1 || kLow.indexOf("sarana") === -1)) return false;
+          if (kat === "proyek" && kLow.indexOf("proyek") === -1) return false;
+        }
+        if (stat !== "semua") {
+          if (stat === "selesai" && item.status.toLowerCase().indexOf("selesai") === -1) return false;
+          if (stat === "on progress" && item.status.toLowerCase().indexOf("progress") === -1) return false;
+          if (stat === "perlu tindak lanjut" && item.status.toLowerCase().indexOf("tindak") === -1) return false;
+        }
+        if (kw) {
+          const combined = (item.objekLokasi + " " + item.kodeAset + " " + item.temuan + " " + item.tindakan + " " + item.petugas).toLowerCase();
+          if (combined.indexOf(kw) === -1) return false;
+        }
+        if (startDate && item.tanggal < startDate) return false;
+        if (endDate && item.tanggal > endDate) return false;
+        return true;
+      });
+
+      renderHistoryTable(filtered);
+    }
+
+    function resetFilterHistory() {
+      document.getElementById("filterKeyword").value = "";
+      document.getElementById("filterKategori").value = "semua";
+      document.getElementById("filterStatus").value = "semua";
+      document.getElementById("filterStartDate").value = "";
+      document.getElementById("filterEndDate").value = "";
+      filterHistoryLocal();
+    }
+
+    function renderHistoryTable(data) {
+      const tbody = document.getElementById("historyTableBody");
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data checklist yang sesuai.</td></tr>';
+        return;
+      }
+
+      let html = "";
+      data.forEach(item => {
+        let badgeClass = "badge-selesai";
+        const st = item.status.toLowerCase();
+        if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
+        else if (st.indexOf("tindak") !== -1) badgeClass = "badge-tindak";
+
+        const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
+        const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
+        const sblmFull = item.fotoSebelumFull || (sblmId ? ("https://drive.google.com/file/d/" + sblmId + "/view?usp=sharing") : "");
+
+        const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+        const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : (item.fotoSesudah && item.fotoSesudah.indexOf("http") === 0 ? item.fotoSesudah : ""));
+        const ssdhFull = item.fotoSesudahFull || (ssdhId ? ("https://drive.google.com/file/d/" + ssdhId + "/view?usp=sharing") : "");
+
+        const docBadge = `
+          <div class="d-flex gap-1 align-items-center">
+            ${sblmUrl ? `<div style="cursor:pointer;" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')" title="Klik untuk memperbesar Foto Sebelum"><img src="${sblmUrl}" referrerpolicy="no-referrer" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${sblmId}')"></div>` : '<span class="badge bg-light text-muted border">No</span>'}
+            ${ssdhUrl ? `<div style="cursor:pointer;" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')" title="Klik untuk memperbesar Foto Sesudah"><img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1.5px solid #16A34A;" onerror="handleImageFallback(this, '${ssdhId}')"></div>` : ''}
+          </div>
+        `;
+
+        html += `
+          <tr>
+            <td class="small fw-semibold text-secondary">${escapeHtml(item.tanggal)}</td>
+            <td><span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td>
+            <td>
+              <div class="fw-semibold text-dark">${escapeHtml(item.objekLokasi)}</div>
+              ${item.kodeAset ? `<small class="text-muted">Kode: ${escapeHtml(item.kodeAset)}</small>` : ''}
+            </td>
+            <td class="small">${escapeHtml(item.temuan)}</td>
+            <td class="small">${escapeHtml(item.tindakan)}</td>
+            <td><span class="badge ${badgeClass} px-2 py-1">${escapeHtml(item.status)}</span></td>
+            <td>${docBadge}</td>
+            <td class="small">${escapeHtml(item.petugas || '-')}</td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary" onclick="showDetailModal('${item.id}')" title="Lihat Detail & Perbarui">
+                <i class="bi bi-eye"></i> Detail
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ==========================================
+    // DETAIL MODAL & UPDATE STATUS
+    // ==========================================
+    
+    // ==========================================
+    // HELPER GOOGLE DRIVE IMAGE URL RESOLVER
+    // ==========================================
+    function extractGoogleDriveFileId(str) {
+      if (!str) return null;
+      if (typeof str !== "string") str = String(str);
+      if (str.startsWith("data:image")) return null;
+      if (str === "#VALUE!" || str === "#ERROR!" || str === "#REF!" || str === "#N/A") return null;
+      const m = str.match(/id=([a-zA-Z0-9_-]{25,})/) || 
+                str.match(/\/d\/([a-zA-Z0-9_-]{25,})/) || 
+                str.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]{25,})/) ||
+                str.match(/([a-zA-Z0-9_-]{28,35})/);
+      return m ? m[1] : null;
+    }
+
+    function getImgDisplayUrl(str) {
+      if (!str) return "";
+      if (str.startsWith("data:image")) return str;
+      const fileId = extractGoogleDriveFileId(str);
+      if (fileId) {
+        return "https://lh3.googleusercontent.com/d/" + fileId;
+      }
+      if (str.indexOf("http") === 0) return str;
+      return "";
+    }
+
+    function getImgFullViewUrl(str) {
+      if (!str) return "#";
+      const fileId = extractGoogleDriveFileId(str);
+      if (fileId) {
+        return "https://drive.google.com/file/d/" + fileId + "/view?usp=sharing";
+      }
+      if (str.indexOf("http") === 0) return str;
+      return "#";
+    }
+
+    function handleImageFallback(imgEl, fileId) {
+      if (!fileId || fileId === "null" || fileId === "undefined") return;
+      if (imgEl.dataset.fallbackLevel === "1") {
+        imgEl.dataset.fallbackLevel = "2";
+        imgEl.src = "https://drive.google.com/uc?export=view&id=" + fileId;
+      } else if (!imgEl.dataset.fallbackLevel) {
+        imgEl.dataset.fallbackLevel = "1";
+        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w800";
+      }
+    }
+
+    function openPhotoLightbox(imgUrl, title, driveUrl) {
+      if (!imgUrl) return;
+      document.getElementById("lightboxTitle").innerHTML = `<i class="bi bi-image me-2 text-primary"></i> ${title || "Dokumentasi Foto"}`;
+      const img = document.getElementById("lightboxImg");
+      img.src = imgUrl;
+      const fileId = extractGoogleDriveFileId(imgUrl) || extractGoogleDriveFileId(driveUrl);
+      img.dataset.fallbackLevel = "";
+      img.onerror = function() { handleImageFallback(this, fileId); };
+      
+      const btn = document.getElementById("lightboxDriveBtn");
+      if (driveUrl && driveUrl !== "#") {
+        btn.href = driveUrl;
+        btn.classList.remove("d-none");
+      } else if (fileId) {
+        btn.href = "https://drive.google.com/file/d/" + fileId + "/view?usp=sharing";
+        btn.classList.remove("d-none");
+      } else {
+        btn.classList.add("d-none");
+      }
+      
+      const modalEl = document.getElementById("modalPhotoLightbox");
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    function showDetailModal(id) {
+      const item = currentHistoryData.find(x => x.id === id);
+      if (!item) return;
+      currentDetailItemForPrint = item;
+
+      document.getElementById("modalDetailTitle").innerText = `Detail Checklist: ${item.id}`;
+      
+      let badgeClass = "badge-selesai";
+      const st = item.status.toLowerCase();
+      if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
+      else if (st.indexOf("tindak") !== -1) badgeClass = "badge-tindak";
+
+      const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
+      const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
+      const sblmFull = item.fotoSebelumFull || (sblmId ? ("https://drive.google.com/file/d/" + sblmId + "/view?usp=sharing") : "");
+
+      const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+      const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : (item.fotoSesudah && item.fotoSesudah.indexOf("http") === 0 ? item.fotoSesudah : ""));
+      const ssdhFull = item.fotoSesudahFull || (ssdhId ? ("https://drive.google.com/file/d/" + ssdhId + "/view?usp=sharing") : "");
+
+      const fotoSebelumHtml = sblmUrl 
+        ? `<div class="card p-2 bg-light border shadow-sm text-center">
+             <div style="cursor: pointer;" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')" title="Klik untuk memperbesar">
+               <img src="${sblmUrl}" referrerpolicy="no-referrer" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: contain; background: #fff;" onerror="handleImageFallback(this, '${sblmId}')">
+             </div>
+             <div class="d-flex gap-2 mt-2">
+               <button type="button" class="btn btn-sm btn-outline-primary w-100 fw-semibold" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')">
+                 <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
+               </button>
+               ${sblmFull ? `<a href="${sblmFull}" target="_blank" class="btn btn-sm btn-primary w-100 fw-semibold"><i class="bi bi-box-arrow-up-right me-1"></i> Drive</a>` : ''}
+             </div>
+           </div>`
+        : `<div class="p-4 bg-light text-center text-muted rounded border"><i class="bi bi-camera-slash fs-3"></i><br>Tidak ada foto sebelum</div>`;
+
+      const fotoSesudahHtml = ssdhUrl
+        ? `<div class="card p-2 bg-light border shadow-sm text-center">
+             <div style="cursor: pointer;" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')" title="Klik untuk memperbesar">
+               <img src="${ssdhUrl}" referrerpolicy="no-referrer" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: contain; background: #fff;" onerror="handleImageFallback(this, '${ssdhId}')">
+             </div>
+             <div class="d-flex gap-2 mt-2">
+               <button type="button" class="btn btn-sm btn-outline-success w-100 fw-semibold" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')">
+                 <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
+               </button>
+               ${ssdhFull ? `<a href="${ssdhFull}" target="_blank" class="btn btn-sm btn-success w-100 fw-semibold"><i class="bi bi-box-arrow-up-right me-1"></i> Drive</a>` : ''}
+             </div>
+           </div>`
+        : `<div class="p-4 bg-light text-center text-muted rounded border"><i class="bi bi-camera-slash fs-3"></i><br>Tidak ada foto sesudah</div>`;
+
+      let updateSection = "";
+      if (st.indexOf("selesai") === -1) {
+        updateSection = `
+          <div class="mt-4 p-3 bg-light rounded-3 border">
+            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-pencil-square me-1"></i> Perbarui Status Pekerjaan</h6>
+            <form onsubmit="handleUpdateStatus(event, '${item.id}')">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Ubah Status Menjadi</label>
+                <select id="updateStatusSelect" class="form-select form-select-sm">
+                  <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
+                  <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
+                  <option value="Selesai" selected>Selesai (Tuntas)</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Tindakan Penyelesaian / Tambahan</label>
+                <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Filter sudah dicuci bersih, AC dingin normal">
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Lampirkan Foto Sesudah (Setelah Perbaikan)</label>
+              <div class="btn-group btn-group-sm w-100 mb-2 photo-btn-group" role="group">
+                <button type="button" class="btn btn-outline-success py-2 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileUpdateSesudahCam', 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')" title="Buka Kamera">
+                  <i class="bi bi-camera-fill me-1"></i> Jepret Kamera
+                </button>
+                <button type="button" class="btn btn-outline-primary py-2 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileUpdateSesudahGal').click()" title="Pilih dari Galeri HP / Folder">
+                  <i class="bi bi-images me-1"></i> Galeri HP
+                </button>
+              </div>
+              <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">
+              <input type="file" id="fileUpdateSesudahGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">
+              <div class="mt-2 text-center">
+                <img id="imgUpdateSesudah" class="img-fluid rounded border d-none" style="max-height: 160px; object-fit: contain;">
+                <span id="placeholderUpdateSesudah"></span>
+                <button type="button" id="btnResetUpdateSesudah" class="btn btn-sm btn-outline-danger mt-1 d-none" onclick="clearPhotoGroup(['fileUpdateSesudahCam', 'fileUpdateSesudahGal'], 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">Hapus Foto</button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold">
+                <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
+              </button>
+            </form>
+          </div>
+        `;
+      }
+
+      document.getElementById("modalDetailBody").innerHTML = `
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <table class="table table-sm table-borderless">
+              <tr><td class="text-secondary" style="width: 35%;">Tanggal</td><td>: <b>${escapeHtml(item.tanggal)}</b></td></tr>
+              <tr><td class="text-secondary">Kategori</td><td>: <span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td></tr>
+              <tr><td class="text-secondary">Objek & Lokasi</td><td>: <b>${escapeHtml(item.objekLokasi)}</b></td></tr>
+              <tr><td class="text-secondary">Kode Aset</td><td>: ${escapeHtml(item.kodeAset || '-')}</td></tr>
+              <tr><td class="text-secondary">Petugas</td><td>: ${escapeHtml(item.petugas || '-')}</td></tr>
+              <tr><td class="text-secondary">Status</td><td>: <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td></tr>
+            </table>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="mb-2">
+              <label class="small text-secondary fw-semibold">Temuan Masalah:</label>
+              <div class="p-2 bg-light rounded text-danger small">${escapeHtml(item.temuan)}</div>
+            </div>
+            <div class="mb-2">
+              <label class="small text-secondary fw-semibold">Tindakan Teknis:</label>
+              <div class="p-2 bg-light rounded small">${escapeHtml(item.tindakan)}</div>
+            </div>
+            ${item.catatan ? `
+            <div>
+              <label class="small text-secondary fw-semibold">Catatan:</label>
+              <div class="p-2 bg-light rounded small text-muted">${escapeHtml(item.catatan)}</div>
+            </div>` : ''}
+          </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+          <div class="col-6">
+            <label class="small fw-bold text-secondary mb-1">[v] Foto Sebelum:</label>
+            ${fotoSebelumHtml}
+          </div>
+          <div class="col-6">
+            <label class="small fw-bold text-secondary mb-1">[v] Foto Sesudah:</label>
+            ${fotoSesudahHtml}
+          </div>
+        </div>
+
+        ${updateSection}
+      `;
+
+      const modal = new bootstrap.Modal(document.getElementById("modalDetail"));
+      modal.show();
+    }
+
+    function handleUpdateStatus(e, id) {
+      e.preventDefault();
+      const newStatus = document.getElementById("updateStatusSelect").value;
+      const tindakan = document.getElementById("updateTindakanInput").value;
+
+      showLoading("Menyimpan perubahan ke Google Sheets...");
+      runBackend("updateChecklistStatus", {
+        payload: {
+          id: id,
+          status: newStatus,
+          tindakan: tindakan,
+          fotoSesudahBase64: base64UpdateFotoSesudah
+        }
+      }, function(res) {
+        hideLoading();
+        if (res.status === "success") {
+          bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
+          Swal.fire("Berhasil", res.message, "success");
+          loadHistory();
+          loadDashboard();
+        } else {
+          Swal.fire("Gagal", res.message, "error");
+        }
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
+    }
+
+    // ==========================================
+    // MASTER ASET
+    // ==========================================
+    function renderMasterAsetTable() {
+      const tbody = document.getElementById("masterAsetTableBody");
+      if (!masterAsets || masterAsets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Belum ada objek pantauan di buku kendali. Data otomatis bertambah saat tim mencatat temuan di lapangan.</td></tr>';
+        return;
+      }
+
+      let html = "";
+      masterAsets.forEach(item => {
+        html += `
+          <tr>
+            <td><span class="badge bg-secondary font-monospace">${escapeHtml(item.kode)}</span></td>
+            <td class="fw-semibold text-dark">${escapeHtml(item.nama)}</td>
+            <td><span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td>
+            <td class="small text-secondary">${escapeHtml(item.lokasi)}</td>
+            <td><span class="badge ${item.kondisi === 'Baik' ? 'bg-success' : 'bg-warning text-dark'}">${escapeHtml(item.kondisi || 'Baik')}</span></td>
+            <td class="small">${escapeHtml(item.jadwal || '-')}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function handleTambahAset(e) {
+      e.preventDefault();
+      const payload = {
+        kategori: document.getElementById("newAsetKategori").value,
+        kode: document.getElementById("newAsetKode").value.trim().toUpperCase(),
+        nama: document.getElementById("newAsetNama").value.trim(),
+        lokasi: document.getElementById("newAsetLokasi").value.trim(),
+        jadwal: document.getElementById("newAsetJadwal").value
+      };
+
+      showLoading("Menambahkan aset ke Google Sheets...");
+      runBackend("saveMasterAset", { payload: payload }, function(res) {
+        hideLoading();
+        if (res.status === "success") {
+          masterAsets.push(res.aset);
+          renderMasterAsetTable();
+          populateAsetDropdown();
+          bootstrap.Modal.getInstance(document.getElementById("modalTambahAset")).hide();
+          Swal.fire("Sukses", res.message, "success");
+        } else {
+          Swal.fire("Gagal", res.message, "error");
+        }
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
+    }
+
+    // ==========================================
+    // EXPORT TEMPLATE
+    // ==========================================
+    function handleExportTemplate(e) {
+      e.preventDefault();
+      const kat = document.getElementById("exportKategori").value;
+      const tgl = document.getElementById("exportTanggal").value;
+
+      showLoading("Menyusun formulir cetak di Google Sheets...");
+      runBackend("exportToPrintableTemplate", { kategori: kat, tanggal: tgl }, function(res) {
+        hideLoading();
+        if (res.status === "success") {
+          const container = document.getElementById("exportResultContainer");
+          container.classList.remove("d-none");
+          document.getElementById("exportSuccessMsg").innerText = res.message;
+          document.getElementById("exportSheetLink").href = res.spreadsheetUrl;
+          
+          Swal.fire({
+            icon: "success",
+            title: "Formulir Siap Cetak!",
+            text: res.message,
+            confirmButtonText: "Buka Google Sheets"
+          }).then((r) => {
+            if (r.isConfirmed) {
+              window.open(res.spreadsheetUrl, "_blank");
+            }
+          });
+        } else {
+          Swal.fire("Gagal", res.message, "error");
+        }
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+  <!-- CONTAINER CETAK DOKUMEN PDF (HANYA AKTIF SAAT CETAK / DOWNLOAD PDF) -->
+  <div id="printableReportContainer"></div>
+
+</body>
+</html>
