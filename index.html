@@ -1325,6 +1325,7 @@
     let masterAsets = [];
     let masterUsers = [];
     let currentHistoryData = [];
+    const globalItemsCache = {};
     let base64FotoSebelum = "";
     let base64FotoSesudah = "";
     let base64UpdateFotoSesudah = "";
@@ -1801,23 +1802,20 @@
 
       // Ambil initial data
       showLoading("Memuat data aplikasi...");
-      google.script.run
-        .withSuccessHandler(function(res) {
-          hideLoading();
-          if (res.status === "success") {
-            masterAsets = res.asets || [];
-            masterUsers = res.users || [];
-            populateAsetDropdown();
-            if (!isPetugas) populateUserDropdown();
-            renderMasterAsetTable();
-            renderDashboardStats(res.stats);
-          }
-        })
-        .withFailureHandler(function(err) {
-          hideLoading();
-          console.error(err);
-        })
-        .getInitialData(currentUser);
+      runBackend("getInitialData", { requestingUser: currentUser }, function(res) {
+        hideLoading();
+        if (res && res.status === "success") {
+          masterAsets = res.asets || [];
+          masterUsers = res.users || [];
+          populateAsetDropdown();
+          if (!isPetugas) populateUserDropdown();
+          renderMasterAsetTable();
+          renderDashboardStats(res.stats);
+        }
+      }, function(err) {
+        hideLoading();
+        console.error("Gagal memuat master data:", err);
+      });
     }
 
     
@@ -2034,7 +2032,7 @@
       ctx.drawImage(video, 0, 0, w, h);
       const rawBase64 = canvas.toDataURL("image/jpeg", 0.88);
 
-      compressImage(rawBase64, 1024, 0.8, function(compressedBase64) {
+      compressImage(rawBase64, 960, 0.72, function(compressedBase64) {
         const target = currentWebcamTarget;
         if (target.imgId) {
           const img = document.getElementById(target.imgId);
@@ -2083,7 +2081,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         // Kompresi gambar client-side sebelum upload
-        compressImage(e.target.result, 1024, 0.8, function(compressedBase64) {
+        compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
           const img = document.getElementById(imgId);
           img.src = compressedBase64;
           img.classList.remove("d-none");
@@ -2127,16 +2125,23 @@
       clearPhotoGroup([fileInputId], imgId, placeholderId, resetBtnId);
     }
 
-    function compressImage(base64Str, maxWidth, quality, callback) {
+    function compressImage(base64Str, maxDim, quality, callback) {
       const img = new Image();
-      img.src = base64Str;
       img.onload = function() {
         let width = img.width;
         let height = img.height;
+        const limit = maxDim || 960;
 
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
+        if (width > height) {
+          if (width > limit) {
+            height = Math.round((height * limit) / width);
+            width = limit;
+          }
+        } else {
+          if (height > limit) {
+            width = Math.round((width * limit) / height);
+            height = limit;
+          }
         }
 
         const canvas = document.createElement("canvas");
@@ -2144,8 +2149,12 @@
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL("image/jpeg", quality));
+        callback(canvas.toDataURL("image/jpeg", quality || 0.72));
       };
+      img.onerror = function() {
+        callback(base64Str);
+      };
+      img.src = base64Str;
     }
 
     // ==========================================
@@ -2183,31 +2192,29 @@
       };
 
       showLoading("Menyimpan ke Google Sheets & Upload Foto...");
-      google.script.run
-        .withSuccessHandler(function(res) {
-          hideLoading();
-          if (res.status === "success") {
-            Swal.fire({
-              icon: "success",
-              title: "Berhasil!",
-              text: res.message,
-              confirmButtonColor: "#1F4E79"
-            }).then(() => {
-              resetChecklistForm();
-              // Pindah ke tab riwayat
-              const tabHistory = new bootstrap.Tab(document.getElementById('tab-history'));
-              tabHistory.show();
-              loadHistory();
-            });
-          } else {
-            Swal.fire("Gagal", res.message, "error");
-          }
-        })
-        .withFailureHandler(function(err) {
-          hideLoading();
-          Swal.fire("Error", err.toString(), "error");
-        })
-        .submitChecklist(payload);
+      runBackend("submitChecklist", { payload: payload }, function(res) {
+        hideLoading();
+        if (res && res.status === "success") {
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: res.message,
+            confirmButtonColor: "#1F4E79"
+          }).then(() => {
+            resetChecklistForm();
+            // Pindah ke tab riwayat
+            const tabHistory = new bootstrap.Tab(document.getElementById('tab-history'));
+            tabHistory.show();
+            loadHistory();
+            loadDashboard();
+          });
+        } else {
+          Swal.fire("Gagal", (res && res.message) || "Gagal menyimpan data.", "error");
+        }
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
     }
 
     function resetChecklistForm() {
@@ -2277,6 +2284,9 @@
     }
 
     function renderAlertTable(list) {
+      if (list && Array.isArray(list)) {
+        list.forEach(item => { if (item && item.id) globalItemsCache[item.id] = item; });
+      }
       const tbody = document.getElementById("dashAlertTable");
       if (!list || list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-check2-all text-success me-1"></i> Semua pekerjaan sarpras dalam kondisi aman & tuntas.</td></tr>';
@@ -2309,17 +2319,17 @@
     // ==========================================
     function loadHistory() {
       showLoading("Memuat riwayat dari Google Sheets...");
-      google.script.run
-        .withSuccessHandler(function(data) {
-          hideLoading();
-          currentHistoryData = data || [];
-          filterHistoryLocal();
-        })
-        .withFailureHandler(function(err) {
-          hideLoading();
-          Swal.fire("Error", err.toString(), "error");
-        })
-        .getChecklistHistory({}, currentUser);
+      runBackend("getChecklistHistory", { filter: {}, requestingUser: currentUser }, function(data) {
+        hideLoading();
+        currentHistoryData = data || [];
+        (currentHistoryData || []).forEach(item => {
+          if (item && item.id) globalItemsCache[item.id] = item;
+        });
+        filterHistoryLocal();
+      }, function(err) {
+        hideLoading();
+        Swal.fire("Error", err.toString(), "error");
+      });
     }
 
     function filterHistoryLocal() {
@@ -2492,8 +2502,11 @@
     }
 
     function showDetailModal(id) {
-      const item = currentHistoryData.find(x => x.id === id);
-      if (!item) return;
+      const item = globalItemsCache[id] || (currentHistoryData || []).find(x => x.id === id);
+      if (!item) {
+        console.warn("Item tidak ditemukan:", id);
+        return;
+      }
       currentDetailItemForPrint = item;
 
       document.getElementById("modalDetailTitle").innerText = `Detail Checklist: ${item.id}`;
