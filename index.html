@@ -221,16 +221,51 @@
     }
 
     /* MODERN INPUT & FORM CONTROLS */
-    .form-control-modern, .form-control, .form-select {
+    .form-control-modern, .form-control, .form-select, .modern-dropdown {
       border: 1.5px solid #94A3B8 !important; /* Border tegas, tidak samar */
-      border-radius: 10px;
+      border-radius: 12px !important;
       color: var(--text-dark) !important;
       font-weight: 500;
       background-color: #FFFFFF;
     }
-    .form-control-modern:focus, .form-control:focus, .form-select:focus {
+    .form-control-modern:focus, .form-control:focus, .form-select:focus, .modern-dropdown:focus {
       border-color: #1D4ED8 !important;
-      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15) !important;
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18) !important;
+      outline: none !important;
+    }
+    /* STYLING KHUSUS DROPDOWN (USER-FRIENDLY & THUMB-FRIENDLY DI HP) */
+    .form-select, .modern-dropdown {
+      min-height: 44px !important; /* Standar kenyamanan sentuhan jempol di smartphone */
+      font-weight: 600 !important;
+      font-size: 0.9rem !important;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231D4ED8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 14px center !important;
+      background-size: 15px 12px !important;
+      padding-left: 14px !important;
+      padding-right: 38px !important;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+      transition: all 0.2s ease;
+    }
+    .form-select:hover, .modern-dropdown:hover {
+      border-color: #1D4ED8 !important;
+      background-color: #F8FAFC !important;
+    }
+    .form-select option {
+      font-weight: 600;
+      padding: 10px;
+      color: #0F172A;
+      background: #FFFFFF;
+    }
+    /* CHIPS PINTAS STATUS DI HP */
+    .qf-status {
+      transition: all 0.2s ease;
+      font-size: 0.78rem !important;
+    }
+    .qf-status.active {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      font-weight: 800 !important;
     }
     .form-label {
       color: #0F172A !important; /* Label hitam tegas */
@@ -549,8 +584,14 @@
           <div class="mb-4 text-start">
             <label class="form-label small fw-semibold text-secondary">Password / PIN</label>
             <div class="input-group">
-              <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
-              <input type="password" id="loginPassword" class="form-control" placeholder="Default: 123456" required>
+              <span class="input-group-text bg-light text-muted"><i class="bi bi-key-fill text-primary"></i></span>
+              <input type="password" id="loginPassword" class="form-control" placeholder="Default: 123456" required autocomplete="current-password">
+              <button class="btn btn-outline-secondary px-3 d-flex align-items-center" type="button" id="btnTogglePassword" onclick="togglePasswordVisibility('loginPassword', 'iconTogglePassword')" title="Intip / Sembunyikan Password" style="border-color: #94A3B8;">
+                <i class="bi bi-eye" id="iconTogglePassword" style="font-size: 1.15rem; color: #1E3A8A;"></i>
+              </button>
+            </div>
+            <div class="form-text" style="font-size: 0.72rem; color: #64748B;">
+              <i class="bi bi-info-circle me-1"></i>Klik ikon mata untuk intip password yang diketik.
             </div>
           </div>
           <button type="submit" class="btn btn-primary-custom w-100 py-2">
@@ -1030,47 +1071,69 @@
               </div>
             </div>
 
-            <!-- FILTER BAR -->
+            <!-- FILTER BAR (USER-FRIENDLY & THUMB-FRIENDLY DI HP) -->
             <div class="p-3 bg-light rounded-3 mb-3 border">
+              
+              <!-- PINTAS CEPAT STATUS 1-KETUK DI HP -->
+              <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="small text-secondary fw-bold" style="font-size: 0.76rem;"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Pintas Status (Cepat):</span>
+                </div>
+                <div class="d-flex gap-2 overflow-x-auto pb-1" style="scrollbar-width: none;">
+                  <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active" id="qfStat-semua" onclick="setQuickStatusFilter('semua')">
+                    Semua
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold text-nowrap qf-status" id="qfStat-tindak" onclick="setQuickStatusFilter('perlu tindak lanjut')">
+                    🔴 Perlu Tindak Lanjut
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-bold text-nowrap qf-status text-dark" id="qfStat-progress" onclick="setQuickStatusFilter('on progress')">
+                    🟡 On Progress
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-bold text-nowrap qf-status" id="qfStat-selesai" onclick="setQuickStatusFilter('selesai')">
+                    🟢 Selesai
+                  </button>
+                </div>
+              </div>
+
               <div class="row g-2">
                 <div class="col-12 col-md-3">
-                  <label class="small text-secondary fw-semibold">Pencarian</label>
-                  <input type="text" id="filterKeyword" class="form-control form-control-sm" placeholder="Ketik objek, aset, masalah..." onkeyup="filterHistoryLocal()">
+                  <label class="small text-secondary fw-semibold"><i class="bi bi-search text-primary me-1"></i>Pencarian</label>
+                  <input type="text" id="filterKeyword" class="form-control" placeholder="Ketik objek, aset, masalah..." onkeyup="filterHistoryLocal()">
                 </div>
                 <div class="col-6 col-md-2">
-                  <label class="small text-secondary fw-semibold">Kategori</label>
-                  <select id="filterKategori" class="form-select form-select-sm" onchange="filterHistoryLocal()">
-                    <option value="semua">Semua Kategori</option>
-                    <option value="sarana">Sarana</option>
-                    <option value="prasarana">Prasarana</option>
-                    <option value="proyek">Proyek</option>
+                  <label class="small text-secondary fw-semibold"><i class="bi bi-layers-fill text-primary me-1"></i>Kategori</label>
+                  <select id="filterKategori" class="form-select modern-dropdown" onchange="onDropdownFilterChange()">
+                    <option value="semua">🏢 Semua Kategori</option>
+                    <option value="sarana">🔧 Sarana (Alat/Mesin)</option>
+                    <option value="prasarana">🏛️ Prasarana (Gedung)</option>
+                    <option value="proyek">🚧 Gangguan Proyek</option>
                   </select>
                 </div>
                 <div class="col-6 col-md-2">
-                  <label class="small text-secondary fw-semibold">Status</label>
-                  <select id="filterStatus" class="form-select form-select-sm" onchange="filterHistoryLocal()">
-                    <option value="semua">Semua Status</option>
-                    <option value="perlu tindak lanjut">Perlu Tindak Lanjut</option>
-                    <option value="on progress">On Progress</option>
-                    <option value="selesai">Selesai</option>
+                  <label class="small text-secondary fw-semibold"><i class="bi bi-flag-fill text-danger me-1"></i>Status</label>
+                  <select id="filterStatus" class="form-select modern-dropdown" onchange="onDropdownFilterChange()">
+                    <option value="semua">📋 Semua Status</option>
+                    <option value="perlu tindak lanjut">🔴 Perlu Tindak Lanjut</option>
+                    <option value="on progress">🟡 On Progress</option>
+                    <option value="selesai">🟢 Selesai</option>
                   </select>
                 </div>
                 <div class="col-12 col-md-2 admin-only-tab d-none" id="filterPetugasContainer">
                   <label class="small text-secondary fw-semibold"><i class="bi bi-person-fill text-primary me-1"></i>Petugas</label>
-                  <select id="filterPetugas" class="form-select form-select-sm" onchange="filterHistoryLocal()">
-                    <option value="semua">Semua Petugas</option>
+                  <select id="filterPetugas" class="form-select modern-dropdown" onchange="onDropdownFilterChange()">
+                    <option value="semua">👥 Semua Petugas</option>
                   </select>
                 </div>
                 <div class="col-12 col-md-3">
-                  <label class="small text-secondary fw-semibold">Rentang Tanggal</label>
-                  <div class="input-group input-group-sm">
+                  <label class="small text-secondary fw-semibold"><i class="bi bi-calendar-event text-primary me-1"></i>Rentang Tanggal</label>
+                  <div class="input-group">
                     <input type="date" id="filterStartDate" class="form-control" onchange="filterHistoryLocal()" title="Dari Tanggal">
-                    <span class="input-group-text p-1">-</span>
+                    <span class="input-group-text bg-white px-2 text-muted fw-bold">-</span>
                     <input type="date" id="filterEndDate" class="form-control" onchange="filterHistoryLocal()" title="Sampai Tanggal">
                   </div>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
                 <div class="small text-muted" id="filterCountBadge">
                   Menampilkan <b id="filterCountVal">0</b> dari total <b id="filterTotalVal">0</b> data riwayat
                 </div>
@@ -1836,6 +1899,66 @@
     // ==========================================
     // AUTHENTICATION
     // ==========================================
+    // FASILITAS INTIP PASSWORD
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("bi-eye");
+        icon.classList.add("bi-eye-slash");
+        icon.title = "Sembunyikan password";
+      } else {
+        input.type = "password";
+        icon.classList.remove("bi-eye-slash");
+        icon.classList.add("bi-eye");
+        icon.title = "Intip password";
+      }
+    }
+
+    // PINTAS CEPAT STATUS FILTER DI HP
+    function setQuickStatusFilter(statVal) {
+      const statSelect = document.getElementById("filterStatus");
+      if (statSelect) {
+        statSelect.value = statVal;
+      }
+      updateQuickStatusButtons(statVal);
+      filterHistoryLocal();
+    }
+
+    function onDropdownFilterChange() {
+      const statSelect = document.getElementById("filterStatus");
+      if (statSelect) {
+        updateQuickStatusButtons(statSelect.value);
+      }
+      filterHistoryLocal();
+    }
+
+    function updateQuickStatusButtons(activeVal) {
+      const val = (activeVal || "semua").toLowerCase();
+      document.querySelectorAll(".qf-status").forEach(btn => {
+        btn.classList.remove("active", "btn-dark", "btn-danger", "btn-warning", "btn-success");
+        if (btn.id === "qfStat-semua") { btn.className = "btn btn-sm btn-outline-dark rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
+        if (btn.id === "qfStat-tindak") { btn.className = "btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
+        if (btn.id === "qfStat-progress") { btn.className = "btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-bold text-nowrap qf-status text-dark"; }
+        if (btn.id === "qfStat-selesai") { btn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
+      });
+      if (val === "semua") {
+        const el = document.getElementById("qfStat-semua");
+        if (el) { el.className = "btn btn-sm btn-dark rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
+      } else if (val.indexOf("tindak") !== -1) {
+        const el = document.getElementById("qfStat-tindak");
+        if (el) { el.className = "btn btn-sm btn-danger text-white rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
+      } else if (val.indexOf("progress") !== -1) {
+        const el = document.getElementById("qfStat-progress");
+        if (el) { el.className = "btn btn-sm btn-warning text-dark rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
+      } else if (val.indexOf("selesai") !== -1) {
+        const el = document.getElementById("qfStat-selesai");
+        if (el) { el.className = "btn btn-sm btn-success text-white rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
+      }
+    }
+
     function handleLogin(e) {
       e.preventDefault();
       const u = document.getElementById("loginUsername").value;
@@ -2027,7 +2150,7 @@
       Array.from(setPetugas).sort().forEach(nama => {
         const opt = document.createElement("option");
         opt.value = nama.toLowerCase();
-        opt.text = nama;
+        opt.text = `👤 ${nama}`;
         if (nama.toLowerCase() === currentVal) opt.selected = true;
         select.appendChild(opt);
       });
@@ -2522,6 +2645,7 @@
       if (document.getElementById("filterPetugas")) document.getElementById("filterPetugas").value = "semua";
       if (document.getElementById("filterStartDate")) document.getElementById("filterStartDate").value = "";
       if (document.getElementById("filterEndDate")) document.getElementById("filterEndDate").value = "";
+      updateQuickStatusButtons("semua");
       filterHistoryLocal();
     }
 
@@ -2713,10 +2837,10 @@
             <form onsubmit="handleUpdateStatus(event, '${item.id}')">
               <div class="mb-3">
                 <label class="form-label small fw-semibold">Ubah Status Menjadi</label>
-                <select id="updateStatusSelect" class="form-select form-select-sm">
-                  <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
-                  <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
-                  <option value="Selesai" selected>Selesai (Tuntas)</option>
+                <select id="updateStatusSelect" class="form-select modern-dropdown">
+                  <option value="Perlu Tindak Lanjut">🔴 Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
+                  <option value="On Progress">🟡 On Progress (Sedang Dikerjakan)</option>
+                  <option value="Selesai" selected>🟢 Selesai (Tuntas Beres)</option>
                 </select>
               </div>
               <div class="mb-3">
