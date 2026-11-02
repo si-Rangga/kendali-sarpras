@@ -1462,7 +1462,130 @@
     let base64UpdateFotoSesudah = "";
 
     // Set tanggal default hari ini
+    
+    // =========================================================================
+    // NAVIGASI TOMBOL BACK ANDROID / MOBILE GESTURE
+    // Mencegah aplikasi keluar/terlempar saat menekan tombol back HP
+    // =========================================================================
+    let lastBackPressTime = 0;
+    let isBackHandlingActive = false;
+
+    function initAndroidBackHandler() {
+      if (isBackHandlingActive) return;
+      isBackHandlingActive = true;
+
+      if (window.history && window.history.pushState) {
+        // Buat initial state agar ada riwayat untuk ditahan
+        window.history.replaceState({ appPage: "root" }, "");
+        window.history.pushState({ appPage: "main" }, "");
+
+        window.addEventListener("popstate", function(event) {
+          // Jangan proses jika belum login atau login view sedang aktif
+          const loginView = document.getElementById("loginView");
+          if (loginView && !loginView.classList.contains("d-none")) {
+            // Biarkan browser kembali jika masih di layar login
+            return;
+          }
+
+          // 1. Jika ada modal Bootstrap yang sedang terbuka, tutup modal tersebut
+          const openModal = document.querySelector(".modal.show");
+          if (openModal) {
+            try {
+              const bsModal = bootstrap.Modal.getInstance(openModal);
+              if (bsModal) {
+                bsModal.hide();
+              } else {
+                openModal.classList.remove("show");
+                openModal.style.display = "none";
+                document.body.classList.remove("modal-open");
+                const backdrop = document.querySelector(".modal-backdrop");
+                if (backdrop) backdrop.remove();
+              }
+            } catch (err) {
+              openModal.classList.remove("show");
+              openModal.style.display = "none";
+              document.body.classList.remove("modal-open");
+              const backdrop = document.querySelector(".modal-backdrop");
+              if (backdrop) backdrop.remove();
+            }
+            // Repush state agar riwayat tetap terjaga untuk back berikutnya
+            window.history.pushState({ appPage: "main" }, "");
+            return;
+          }
+
+          // 2. Jika user sedang membuka tab selain tab beranda, arahkan kembali ke tab beranda
+          const isAdmin = currentUser && currentUser.role && 
+            (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+          const homeTabId = isAdmin ? "view-dashboard" : "view-input";
+          const homeNavEl = isAdmin ? document.getElementById("mTabDashboard") : document.getElementById("mTabInput");
+
+          const activePane = document.querySelector(".tab-pane.active");
+          if (activePane && activePane.id !== homeTabId) {
+            switchTabMobile(homeTabId, homeNavEl);
+            window.history.pushState({ appPage: "main" }, "");
+            return;
+          }
+
+          // 3. User berada di tab beranda utama -> Pola Double-Tap to Exit (Standar Android)
+          const now = Date.now();
+          const hasUnsaved = hasUnsavedChecklistForm();
+
+          if (now - lastBackPressTime < 2500) {
+            // Tekanan kedua dalam 2.5 detik: izinkan keluar / tutup tab
+            if (window.history.length > 1) {
+              window.history.back();
+            }
+          } else {
+            // Tekanan pertama: tahan navigasi & tampilkan toast Android
+            lastBackPressTime = now;
+            window.history.pushState({ appPage: "main" }, "");
+
+            if (hasUnsaved) {
+              showToastExit("⚠️ Ada isian laporan yang belum disimpan! Tekan kembali sekali lagi jika yakin ingin keluar.");
+            } else {
+              showToastExit("Tekan tombol kembali sekali lagi untuk keluar dari aplikasi");
+            }
+          }
+        });
+      }
+
+      // Cegah reload/tutup halaman saat draf laporan sedang diisi
+      window.addEventListener("beforeunload", function(e) {
+        if (hasUnsavedChecklistForm()) {
+          e.preventDefault();
+          e.returnValue = "Laporan belum disimpan. Apakah Anda yakin ingin keluar?";
+          return e.returnValue;
+        }
+      });
+    }
+
+    function hasUnsavedChecklistForm() {
+      const objek = (document.getElementById("inputObjekLokasi")?.value || "").trim();
+      const temuan = (document.getElementById("inputTemuan")?.value || "").trim();
+      const tindakan = (document.getElementById("inputTindakan")?.value || "").trim();
+      const hasPhotos = (Array.isArray(fotoSebelumArray) && fotoSebelumArray.length > 0) || 
+                        (Array.isArray(fotoSesudahArray) && fotoSesudahArray.length > 0);
+      return Boolean(objek || temuan || tindakan || hasPhotos);
+    }
+
+    function showToastExit(msg) {
+      let toastEl = document.getElementById("mobileBackToast");
+      if (!toastEl) {
+        toastEl = document.createElement("div");
+        toastEl.id = "mobileBackToast";
+        toastEl.style.cssText = "position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#ffffff;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999999;box-shadow:0 8px 24px rgba(0,0,0,0.35);text-align:center;max-width:88%;pointer-events:none;transition:opacity 0.25s ease-in-out;opacity:0;border:1px solid rgba(255,255,255,0.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);";
+        document.body.appendChild(toastEl);
+      }
+      toastEl.innerText = msg;
+      toastEl.style.opacity = "1";
+      if (window._toastExitTimer) clearTimeout(window._toastExitTimer);
+      window._toastExitTimer = setTimeout(function() {
+        toastEl.style.opacity = "0";
+      }, 2400);
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
+      initAndroidBackHandler();
       const today = new Date().toISOString().split("T")[0];
       document.getElementById("inputTanggal").value = today;
       document.getElementById("filterStartDate").value = "";
@@ -2100,6 +2223,7 @@
     }
 
     function initAppWithUser() {
+      initAndroidBackHandler();
       document.getElementById("loginView").classList.add("d-none");
       document.getElementById("mainApp").classList.remove("d-none");
       
@@ -2881,8 +3005,15 @@
       showLoading("Memuat riwayat dari Google Sheets...");
       runBackend("getChecklistHistory", { filter: {}, requestingUser: currentUser }, function(data) {
         hideLoading();
-        currentHistoryData = data || [];
-        (currentHistoryData || []).forEach(item => {
+        if (Array.isArray(data)) {
+          currentHistoryData = data;
+        } else if (data && data.status === "error") {
+          Swal.fire("Pemberitahuan", data.message || "Gagal memuat data riwayat.", "warning");
+          currentHistoryData = [];
+        } else {
+          currentHistoryData = [];
+        }
+        currentHistoryData.forEach(item => {
           if (item && item.id) globalItemsCache[item.id] = item;
         });
         populatePetugasFilter();
