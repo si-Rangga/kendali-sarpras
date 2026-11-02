@@ -714,7 +714,7 @@
         </li>
         <li class="nav-item">
           <a class="nav-link admin-only-tab" id="tab-export" data-bs-toggle="pill" href="#view-export">
-            <i class="bi bi-printer me-1"></i> Cetak Formulir
+            <i class="bi bi-download me-1"></i> Download & Cetak Laporan
           </a>
         </li>
       </ul>
@@ -1096,9 +1096,12 @@
                 <small class="text-muted">Data tersimpan di sheet DATA_CHECKLIST secara real-time</small>
                 <div id="userHistoryScopeBadge" class="mt-1"></div>
               </div>
-              <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-dark fw-semibold" onclick="handlePrintFilteredHistory()" title="Cetak Rekap Tabel PDF Sesuai Filter">
-                  <i class="bi bi-printer-fill me-1 text-primary"></i> Cetak Rekap (PDF)
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-dark fw-semibold" onclick="handlePrintFilteredHistory()" title="Cetak Rekapitulasi & Laporan PDF Berwarna Sesuai Filter">
+                  <i class="bi bi-printer-fill me-1 text-primary"></i> Cetak Rekap & Laporan (PDF)
+                </button>
+                <button class="btn btn-sm btn-success fw-semibold admin-only-tab" onclick="handleDownloadChecklistCSV()" title="Download Seluruh Data ke Format Excel (.CSV) Khusus Admin">
+                  <i class="bi bi-file-earmark-excel-fill me-1"></i> Download Data (Excel)
                 </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="loadHistory()">
                   <i class="bi bi-arrow-clockwise me-1"></i> Muat Ulang
@@ -1248,9 +1251,60 @@
         <div class="tab-pane fade" id="view-export">
           <div class="row justify-content-center">
             <div class="col-12 col-md-8">
-              <div class="card card-custom p-4">
+
+              <!-- CARD 1: DOWNLOAD DATA DATABASE & FOTO (KHUSUS ADMIN) -->
+              <div class="card card-custom p-4 mb-4">
                 <div class="d-flex align-items-center mb-3">
                   <div class="p-2 bg-success bg-opacity-10 text-success rounded-circle me-3">
+                    <i class="bi bi-file-earmark-arrow-down-fill fs-3"></i>
+                  </div>
+                  <div>
+                    <h5 class="fw-bold mb-0">Download Data Sistem & Arsip Foto Google Drive</h5>
+                    <small class="text-muted">Unduh rekaman database kendali sarpras (Excel) atau unduh seluruh foto lapangan (ZIP via Google Drive)</small>
+                  </div>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="p-3 border rounded-3 bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                      <div>
+                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-folder-fill text-warning me-2"></i>Folder Arsip Seluruh Foto (Google Drive)</h6>
+                        <small class="text-muted">Akses folder utama tempat seluruh foto asli lapangan tersimpan. Anda dapat mengunduh seluruh foto sekaligus dalam 1 paket ZIP langsung dari Google Drive untuk laporan pimpinan.</small>
+                      </div>
+                      <a id="btnOpenDriveFolder" href="https://drive.google.com" target="_blank" class="btn btn-outline-dark fw-semibold text-nowrap">
+                        <i class="bi bi-box-arrow-up-right me-1 text-primary"></i> Buka Folder Foto Drive
+                      </a>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                      <div>
+                        <h6 class="fw-bold text-dark"><i class="bi bi-table me-2 text-success"></i>Data Riwayat Checklist</h6>
+                        <p class="small text-muted mb-3">Download seluruh rekap checklist pemeliharaan, temuan, tindakan, foto link, dan petugas dalam format file Excel (.CSV).</p>
+                      </div>
+                      <button type="button" class="btn btn-success w-100 fw-semibold" onclick="handleDownloadChecklistCSV()">
+                        <i class="bi bi-download me-2"></i> Download Data Checklist (Excel)
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                      <div>
+                        <h6 class="fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Data Master Aset</h6>
+                        <p class="small text-muted mb-3">Download seluruh inventaris daftar sarana & prasarana terdaftar beserta kode aset dan kondisi fisiknya.</p>
+                      </div>
+                      <button type="button" class="btn btn-outline-primary w-100 fw-semibold" onclick="handleDownloadMasterAsetCSV()">
+                        <i class="bi bi-download me-2"></i> Download Master Aset (Excel)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CARD 2: CETAK FORMULIR RESMI GOOGLE SHEETS -->
+              <div class="card card-custom p-4">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-circle me-3">
                     <i class="bi bi-file-earmark-spreadsheet fs-3"></i>
                   </div>
                   <div>
@@ -1371,9 +1425,14 @@
         </div>
         <div class="modal-footer border-secondary py-2 px-3 d-flex justify-content-between align-items-center">
           <button type="button" class="btn btn-sm btn-outline-light px-3" data-bs-dismiss="modal">Tutup</button>
-          <a id="lightboxDriveBtn" href="#" target="_blank" class="btn btn-sm btn-primary px-3 fw-semibold">
-            <i class="bi bi-box-arrow-up-right me-1"></i> Buka di Google Drive
-          </a>
+          <div class="d-flex gap-2">
+            <button type="button" id="lightboxDownloadBtn" class="btn btn-sm btn-success px-3 fw-semibold" onclick="downloadCurrentLightboxImage()" title="Unduh foto resolusi penuh ke laptop/HP">
+              <i class="bi bi-download me-1"></i> Download Foto
+            </button>
+            <a id="lightboxDriveBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light px-3 fw-semibold" title="Buka foto di Google Drive">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Buka di Drive
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -1763,13 +1822,38 @@
       const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : "");
       const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : "");
 
-      const sblmImgTag = sblmUrl 
-        ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="max-height: 220px; max-width: 100%; object-fit: contain;" alt="Foto Sebelum">`
-        : `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Tidak ada foto fisik sebelum pengerjaan)</div>`;
+      const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
+      const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
 
-      const ssdhImgTag = ssdhUrl 
-        ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="max-height: 220px; max-width: 100%; object-fit: contain;" alt="Foto Sesudah">`
-        : `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Belum ada foto fisik perbaikan sesudah)</div>`;
+      let sblmImgTag = "";
+      if (sblmList && sblmList.length > 0) {
+        sblmImgTag = '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
+          sblmList.map((f, i) => {
+            const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
+            const maxH = sblmList.length === 1 ? "210px" : "140px";
+            return `<div style="text-align:center; flex:1; min-width:80px; max-width:${sblmList.length === 1 ? '100%' : '50%'};">
+              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="Foto Sebelum #${i+1}">
+              ${sblmList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
+            </div>`;
+          }).join("") + '</div>';
+      } else {
+        sblmImgTag = `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Tidak ada foto fisik sebelum pengerjaan)</div>`;
+      }
+
+      let ssdhImgTag = "";
+      if (ssdhList && ssdhList.length > 0) {
+        ssdhImgTag = '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
+          ssdhList.map((f, i) => {
+            const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
+            const maxH = ssdhList.length === 1 ? "210px" : "140px";
+            return `<div style="text-align:center; flex:1; min-width:80px; max-width:${ssdhList.length === 1 ? '100%' : '50%'};">
+              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="Foto Sesudah #${i+1}">
+              ${ssdhList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
+            </div>`;
+          }).join("") + '</div>';
+      } else {
+        ssdhImgTag = `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Belum ada foto fisik perbaikan sesudah)</div>`;
+      }
 
       let statusColor = "#16A34A";
       let statusBg = "#DCFCE7";
@@ -1871,7 +1955,7 @@
                   <div style="font-size: 8.5pt; font-weight: 700; color: #991B1B; margin-bottom: 6px; background: #FEE2E2; padding: 4px; border-radius: 4px; border: 1px solid #FECACA;">
                     [ FOTO SEBELUM PENANGANAN ]
                   </div>
-                  <div style="height: 220px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                  <div style="min-height: 210px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
                     ${sblmImgTag}
                   </div>
                 </td>
@@ -1879,7 +1963,7 @@
                   <div style="font-size: 8.5pt; font-weight: 700; color: #14532D; margin-bottom: 6px; background: #DCFCE7; padding: 4px; border-radius: 4px; border: 1px solid #BBF7D0;">
                     [ FOTO SESUDAH (PERBAIKAN TUNTAS) ]
                   </div>
-                  <div style="height: 220px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                  <div style="min-height: 210px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
                     ${ssdhImgTag}
                   </div>
                 </td>
@@ -1922,12 +2006,20 @@
       let loaded = 0;
       const total = imgs.length;
 
+            // Format ringkas & jelas: misal "Laporan_CHK-20261102-0014_AC_Kamar"
+      const cleanId = String(item.id || "CHK").replace(/[^a-zA-Z0-9_-]/g, "");
+      const cleanObjek = String(item.objekLokasi || "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").slice(0, 16).replace(/_$/, "");
+      const uniquePdfTitle = cleanObjek ? `Laporan_${cleanId}_${cleanObjek}` : `Laporan_${cleanId}`;
+      const originalDocTitle = document.title;
+      document.title = uniquePdfTitle;
+
       function triggerPrintDialog() {
         hideLoading();
         window.print();
-      }
-
-      if (total === 0) {
+        setTimeout(function() {
+          document.title = originalDocTitle;
+        }, 1200);
+      }  if (total === 0) {
         triggerPrintDialog();
       } else {
         imgs.forEach(function(img) {
@@ -2043,7 +2135,7 @@
           <div style="border-bottom: 2.5px solid #1E3A8A; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h2 style="margin: 0; font-size: 14pt; font-weight: 800; color: #1E3A8A; text-transform: uppercase; letter-spacing: 0.5px;">
-                REKAPITULASI PEMANTAUAN & PEMELIHARAAN SARPRAS
+                REKAPITULASI & LAPORAN PEMANTAUAN PEMELIHARAAN SARPRAS
               </h2>
               <div style="font-size: 8.5pt; color: #475569; margin-top: 2px;">
                 Laporan Monitoring & Penanganan Fasilitas Fisik Lapangan
@@ -2110,12 +2202,32 @@
       let loaded = 0;
       const total = imgs.length;
 
+            // Format ringkas & jelas: misal "Rekap_Sarpras_20261102_1709" atau "Rekap_Sarana_20261102_1709"
+      const nowHist = new Date();
+      const timeStampHist = nowHist.getFullYear() + 
+        String(nowHist.getMonth() + 1).padStart(2, "0") + 
+        String(nowHist.getDate()).padStart(2, "0") + "_" + 
+        String(nowHist.getHours()).padStart(2, "0") + 
+        String(nowHist.getMinutes()).padStart(2, "0");
+
+      let labelSingkat = "Sarpras";
+      if (katLabel && katLabel.toLowerCase().indexOf("semua") === -1) {
+        labelSingkat = katLabel.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
+      } else if (petLabel && petLabel.toLowerCase().indexOf("semua") === -1) {
+        labelSingkat = petLabel.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
+      }
+
+      const uniquePdfTitle = `Rekap_${labelSingkat}_${timeStampHist}`;
+      const originalDocTitle = document.title;
+      document.title = uniquePdfTitle;
+
       function triggerPrintDialog() {
         hideLoading();
         window.print();
-      }
-
-      if (total === 0) {
+        setTimeout(function() {
+          document.title = originalDocTitle;
+        }, 1200);
+      }  if (total === 0) {
         triggerPrintDialog();
       } else {
         imgs.forEach(function(img) {
@@ -2133,6 +2245,178 @@
     }
 
     // ==========================================
+    
+    // ==========================================
+    // DOWNLOAD DATA SISTEM (EXCEL / CSV) KHUSUS ADMIN
+    // ==========================================
+    function handleDownloadChecklistCSV() {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      if (!isAdmin) {
+        Swal.fire("Akses Ditolak", "Menu download data hanya dapat diakses oleh Administrator / Pengawas.", "error");
+        return;
+      }
+
+      const dataToExport = (lastFilteredHistoryData !== null && lastFilteredHistoryData.length > 0) 
+        ? lastFilteredHistoryData 
+        : currentHistoryData;
+
+      if (!dataToExport || dataToExport.length === 0) {
+        Swal.fire("Info", "Tidak ada data riwayat yang tersedia untuk diunduh.", "info");
+        return;
+      }
+
+      // Header Kolom CSV
+      const headers = [
+        "No",
+        "ID Checklist",
+        "Timestamp",
+        "Tanggal",
+        "Kategori",
+        "Objek & Lokasi",
+        "Kode Aset",
+        "Temuan Masalah",
+        "Tindakan Teknis",
+        "Status Pengerjaan",
+        "Foto Sebelum 1 (Link)",
+        "Foto Sebelum 2 (Link)",
+        "Foto Sebelum 3 (Link)",
+        "Foto Sesudah 1 (Link)",
+        "Foto Sesudah 2 (Link)",
+        "Foto Sesudah 3 (Link)",
+        "Petugas Pelaksana",
+        "Catatan Proyek/Lainnya"
+      ];
+
+      function escapeCsv(val) {
+        if (val === null || val === undefined) return '""';
+        let s = String(val).replace(/"/g, '""');
+        return `"${s}"`;
+      }
+
+      let csvContent = "\uFEFF" + headers.join(",") + "\r\n";
+
+      dataToExport.forEach((item, idx) => {
+        const sblmList = item.fotoSebelumList || [];
+        const ssdhList = item.fotoSesudahList || [];
+
+        const fSblm1 = sblmList[0] ? (sblmList[0].fullUrl || sblmList[0].full || sblmList[0].thumbUrl || "") : (item.fotoSebelum || "");
+        const fSblm2 = sblmList[1] ? (sblmList[1].fullUrl || sblmList[1].full || sblmList[1].thumbUrl || "") : "";
+        const fSblm3 = sblmList[2] ? (sblmList[2].fullUrl || sblmList[2].full || sblmList[2].thumbUrl || "") : "";
+
+        const fSsdh1 = ssdhList[0] ? (ssdhList[0].fullUrl || ssdhList[0].full || ssdhList[0].thumbUrl || "") : (item.fotoSesudah || "");
+        const fSsdh2 = ssdhList[1] ? (ssdhList[1].fullUrl || ssdhList[1].full || ssdhList[1].thumbUrl || "") : "";
+        const fSsdh3 = ssdhList[2] ? (ssdhList[2].fullUrl || ssdhList[2].full || ssdhList[2].thumbUrl || "") : "";
+
+        const row = [
+          idx + 1,
+          item.id || "",
+          item.timestamp || "",
+          item.tanggal || "",
+          item.kategori || "",
+          item.objekLokasi || "",
+          item.kodeAset || "",
+          item.temuan || "",
+          item.tindakan || "",
+          item.status || "",
+          fSblm1,
+          fSblm2,
+          fSblm3,
+          fSsdh1,
+          fSsdh2,
+          fSsdh3,
+          item.petugas || "",
+          item.catatan || ""
+        ];
+
+        csvContent += row.map(escapeCsv).join(",") + "\r\n";
+      });
+
+      const now = new Date();
+      const timeStr = now.getFullYear() + 
+        String(now.getMonth() + 1).padStart(2, "0") + 
+        String(now.getDate()).padStart(2, "0") + "_" + 
+        String(now.getHours()).padStart(2, "0") + 
+        String(now.getMinutes()).padStart(2, "0");
+
+      const filename = `Data_Checklist_${timeStr}.csv`;
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: "success",
+        title: "Download Berhasil!",
+        text: `File "${filename}" berhasil diunduh (${dataToExport.length} baris data). Dapat langsung dibuka di Microsoft Excel.`,
+        timer: 2500,
+        showConfirmButton: false
+      });
+    }
+
+    function handleDownloadMasterAsetCSV() {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      if (!isAdmin) {
+        Swal.fire("Akses Ditolak", "Menu download data hanya dapat diakses oleh Administrator / Pengawas.", "error");
+        return;
+      }
+
+      if (!masterAsets || masterAsets.length === 0) {
+        Swal.fire("Info", "Data master aset sedang dimuat atau masih kosong.", "info");
+        return;
+      }
+
+      const headers = ["No", "Kode Aset", "Nama Aset / Objek", "Kategori", "Lokasi", "Status Kondisi"];
+      function escapeCsv(val) {
+        if (val === null || val === undefined) return '""';
+        let s = String(val).replace(/"/g, '""');
+        return `"${s}"`;
+      }
+
+      let csvContent = "\uFEFF" + headers.join(",") + "\r\n";
+      masterAsets.forEach((item, idx) => {
+        const row = [
+          idx + 1,
+          item.id || item.kode || "",
+          item.namaAset || item.nama || "",
+          item.kategori || "",
+          item.lokasi || "",
+          item.statusKondisi || item.kondisi || "Normal"
+        ];
+        csvContent += row.map(escapeCsv).join(",") + "\r\n";
+      });
+
+      const now = new Date();
+      const timeStr = now.getFullYear() + 
+        String(now.getMonth() + 1).padStart(2, "0") + 
+        String(now.getDate()).padStart(2, "0");
+
+      const filename = `Master_Aset_${timeStr}.csv`;
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: "success",
+        title: "Download Berhasil!",
+        text: `File "${filename}" berhasil diunduh (${masterAsets.length} data aset). Dapat langsung dibuka di Microsoft Excel.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+
     // AUTHENTICATION
     // ==========================================
     // FASILITAS INTIP PASSWORD
@@ -3350,12 +3634,20 @@
       }
     }
 
+    let currentLightboxFileId = null;
+    let currentLightboxImgUrl = null;
+    let currentLightboxTitle = null;
+
     function openPhotoLightbox(imgUrl, title, driveUrl) {
       if (!imgUrl) return;
+      currentLightboxImgUrl = imgUrl;
+      currentLightboxTitle = title || "Foto_Dokumentasi";
+      const fileId = extractGoogleDriveFileId(imgUrl) || extractGoogleDriveFileId(driveUrl);
+      currentLightboxFileId = fileId;
+
       document.getElementById("lightboxTitle").innerHTML = `<i class="bi bi-image me-2 text-primary"></i> ${title || "Dokumentasi Foto"}`;
       const img = document.getElementById("lightboxImg");
       img.src = imgUrl;
-      const fileId = extractGoogleDriveFileId(imgUrl) || extractGoogleDriveFileId(driveUrl);
       img.dataset.fallbackLevel = "";
       img.onerror = function() { handleImageFallback(this, fileId); };
       
@@ -3373,6 +3665,65 @@
       const modalEl = document.getElementById("modalPhotoLightbox");
       const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
       modal.show();
+    }
+
+    function downloadCurrentLightboxImage() {
+      const img = document.getElementById("lightboxImg");
+      if (!img || !img.src) {
+        Swal.fire("Info", "Foto belum siap diunduh.", "info");
+        return;
+      }
+
+      const rawTitle = currentLightboxTitle || "Dokumentasi_Foto";
+      const cleanName = rawTitle.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").slice(0, 35) + ".jpg";
+      const fileId = currentLightboxFileId;
+
+      // 1. Jika data URL (base64)
+      if (img.src.startsWith("data:")) {
+        const a = document.createElement("a");
+        a.href = img.src;
+        a.download = cleanName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
+      // 2. Jika Google Drive file ID
+      if (fileId) {
+        showLoading("Mengunduh foto resolusi penuh...");
+        const cdnUrl = "https://lh3.googleusercontent.com/d/" + fileId;
+        fetch(cdnUrl)
+          .then(res => {
+            if (!res.ok) throw new Error("CORS / Network error");
+            return res.blob();
+          })
+          .then(blob => {
+            hideLoading();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = cleanName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+          })
+          .catch(() => {
+            hideLoading();
+            // Fallback: direct download link Google Drive
+            const exportUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
+            const a = document.createElement("a");
+            a.href = exportUrl;
+            a.target = "_blank";
+            a.download = cleanName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+      } else {
+        window.open(img.src, "_blank");
+      }
     }
 
     function showDetailModal(id) {
