@@ -1012,74 +1012,52 @@
                     </div>
                   </div>
 
-                  <!-- DOKUMENTASI FOTO (KAMERA WEBCAM/HP & GALERI) -->
+                  <!-- DOKUMENTASI FOTO LAPANGAN (MAKSIMAL 3 FOTO) -->
                   <div class="mb-4">
-                    <label class="form-label fw-bold small text-secondary mb-2">
-                      <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Foto Lapangan (Google Drive)
-                    </label>
-                    <div class="row g-2">
-                      <!-- FOTO SEBELUM -->
-                      <div class="col-6">
-                        <div class="photo-camera-card" onclick="document.getElementById('fileFotoSebelumGal').click()" title="Ketuk untuk pilih foto dari galeri HP / folder">
-                          <img id="imgPreviewSebelum" class="d-none" alt="Foto Sebelum">
-                          <div id="placeholderSebelum" class="text-center">
-                            <div class="camera-circle-icon mx-auto">
-                              <i class="bi bi-camera"></i>
-                            </div>
-                            <span class="fw-bold small d-block text-dark">Foto Sebelum</span>
-                            <span class="text-muted" style="font-size: 0.68rem;">Pilih / jepret</span>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <label class="form-label fw-bold small text-secondary mb-0">
+                        <i class="bi bi-camera-fill text-primary me-1"></i> Dokumentasi Foto Lapangan (Google Drive)
+                      </label>
+                      <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">Maksimal 3 Foto / Kategori</span>
+                    </div>
+
+                    <div class="row g-3">
+                      <!-- FOTO SEBELUM (MAKS 3 FOTO) -->
+                      <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded-3 bg-white shadow-sm h-100">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold small text-dark"><i class="bi bi-camera me-1 text-primary"></i> Foto Sebelum</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" id="badgeCountSebelum">0 / 3 Foto</span>
                           </div>
+                          
+                          <!-- Container Galeri Thumbnail Foto Sebelum -->
+                          <div id="containerFotoSebelumList">
+                            <!-- Rendered dynamically -->
+                          </div>
+
+                          <!-- Hidden File Inputs -->
+                          <input type="file" id="fileFotoSebelumCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'sebelum')">
+                          <input type="file" id="fileFotoSebelumGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'sebelum')">
                         </div>
-
-                        <!-- OPSI TOMBOL: KAMERA WEBCAM/HP ATAU GALERI -->
-                        <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
-                          <button type="button" class="btn btn-outline-primary py-1 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileFotoSebelumCam', 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')" title="Buka Kamera">
-                            <i class="bi bi-camera-fill me-1"></i> Kamera
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary py-1 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileFotoSebelumGal').click()" title="Pilih dari Galeri HP / Folder">
-                            <i class="bi bi-images me-1"></i> Galeri
-                          </button>
-                        </div>
-
-                        <!-- INPUT FILE TERSEMBUNYI -->
-                        <input type="file" id="fileFotoSebelumCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
-                        <input type="file" id="fileFotoSebelumGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
-
-                        <button type="button" id="btnResetSebelum" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none" style="font-size: 0.72rem;" onclick="clearPhotoGroup(['fileFotoSebelumCam', 'fileFotoSebelumGal'], 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum')">
-                          <i class="bi bi-trash"></i> Hapus Foto
-                        </button>
                       </div>
 
-                      <!-- FOTO SESUDAH -->
-                      <div class="col-6">
-                        <div class="photo-camera-card" onclick="document.getElementById('fileFotoSesudahGal').click()" title="Ketuk untuk pilih foto dari galeri HP / folder">
-                          <img id="imgPreviewSesudah" class="d-none" alt="Foto Sesudah">
-                          <div id="placeholderSesudah" class="text-center">
-                            <div class="camera-circle-icon mx-auto">
-                              <i class="bi bi-camera-fill text-success"></i>
-                            </div>
-                            <span class="fw-bold small d-block text-dark">Foto Sesudah</span>
-                            <span class="text-muted" style="font-size: 0.68rem;">Pilih / jepret</span>
+                      <!-- FOTO SESUDAH (MAKS 3 FOTO) -->
+                      <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded-3 bg-white shadow-sm h-100">
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold small text-dark"><i class="bi bi-camera-fill me-1 text-success"></i> Foto Sesudah</span>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountSesudah">0 / 3 Foto</span>
                           </div>
+
+                          <!-- Container Galeri Thumbnail Foto Sesudah -->
+                          <div id="containerFotoSesudahList">
+                            <!-- Rendered dynamically -->
+                          </div>
+
+                          <!-- Hidden File Inputs -->
+                          <input type="file" id="fileFotoSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'sesudah')">
+                          <input type="file" id="fileFotoSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'sesudah')">
                         </div>
-
-                        <!-- OPSI TOMBOL: KAMERA WEBCAM/HP ATAU GALERI -->
-                        <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
-                          <button type="button" class="btn btn-outline-success py-1 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileFotoSesudahCam', 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')" title="Buka Kamera">
-                            <i class="bi bi-camera-fill me-1"></i> Kamera
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary py-1 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileFotoSesudahGal').click()" title="Pilih dari Galeri HP / Folder">
-                            <i class="bi bi-images me-1"></i> Galeri
-                          </button>
-                        </div>
-
-                        <!-- INPUT FILE TERSEMBUNYI -->
-                        <input type="file" id="fileFotoSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
-                        <input type="file" id="fileFotoSesudahGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
-
-                        <button type="button" id="btnResetSesudah" class="btn btn-sm btn-outline-danger w-100 mt-2 d-none" style="font-size: 0.72rem;" onclick="clearPhotoGroup(['fileFotoSesudahCam', 'fileFotoSesudahGal'], 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah')">
-                          <i class="bi bi-trash"></i> Hapus Foto
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -1476,6 +1454,9 @@
     let currentHistoryData = [];
     let lastFilteredHistoryData = null;
     const globalItemsCache = {};
+    let listFotoSebelum = [];
+    let listFotoSesudah = [];
+    let listUpdateFotoSesudah = [];
     let base64FotoSebelum = "";
     let base64FotoSesudah = "";
     let base64UpdateFotoSesudah = "";
@@ -2170,6 +2151,8 @@
           masterAsets = res.asets || [];
           masterUsers = res.users || [];
           populateAsetDropdown();
+          renderPhotoList('sebelum');
+          renderPhotoList('sesudah');
           if (!isPetugas) populateUserDropdown();
           if (!isPetugas) populatePetugasFilter();
           renderMasterAsetTable();
@@ -2346,41 +2329,83 @@
     let currentWebcamTarget = { imgId: '', placeholderId: '', resetBtnId: '', fallbackInputId: '' };
 
     function isMobileDevice() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
     }
 
-    function triggerCamera(fileInputId, imgId, placeholderId, resetBtnId) {
-      if (isMobileDevice()) {
-        // Pada HP: panggil kamera bawaan HP
-        const el = document.getElementById(fileInputId);
-        if (el) el.click();
-      } else {
-        // Pada Laptop / PC: Buka Webcam Laptop langsung via WebRTC!
-        openLaptopWebcamModal(imgId, placeholderId, resetBtnId, fileInputId);
-      }
-    }
-
-    function openLaptopWebcamModal(imgId, placeholderId, resetBtnId, fallbackInputId) {
-      currentWebcamTarget = { imgId: imgId, placeholderId: placeholderId, resetBtnId: resetBtnId, fallbackInputId: fallbackInputId };
-      
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById(fallbackInputId).click();
+    function promptChoosePhotoSource(kategori) {
+      const list = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      if (list.length >= 3) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Batas maksimal 3 foto untuk kategori ini sudah terpenuhi. Hapus foto yang sudah ada jika ingin mengganti.',
+          confirmButtonColor: '#1D4ED8'
+        });
         return;
       }
 
+      Swal.fire({
+        title: 'Pilih Sumber Foto',
+        text: `Tambah Foto ${kategori === 'sebelum' ? 'Sebelum' : 'Sesudah'} (${list.length + 1} dari 3):`,
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-camera-fill me-1"></i> Buka Kamera',
+        denyButtonText: '<i class="bi bi-images me-1"></i> Buka Galeri HP / Folder',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#1D4ED8',
+        denyButtonColor: '#0F766E',
+        cancelButtonColor: '#64748B'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          triggerPhotoCapture(kategori, 'cam');
+        } else if (res.isDenied) {
+          triggerPhotoCapture(kategori, 'gal');
+        }
+      });
+    }
+
+    function triggerPhotoCapture(kategori, mode) {
+      const list = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      if (list.length >= 3) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Batas maksimal 3 foto untuk kategori ini sudah terpenuhi. Hapus foto lama jika ingin mengganti.',
+          confirmButtonColor: '#1D4ED8'
+        });
+        return;
+      }
+
+      const camId = kategori === 'sebelum' ? 'fileFotoSebelumCam' : (kategori === 'sesudah' ? 'fileFotoSesudahCam' : 'fileUpdateSesudahCam');
+      const galId = kategori === 'sebelum' ? 'fileFotoSebelumGal' : (kategori === 'sesudah' ? 'fileFotoSesudahGal' : 'fileUpdateSesudahGal');
+
+      if (mode === 'cam') {
+        if (isMobileDevice()) {
+          const inputCam = document.getElementById(camId);
+          if (inputCam) inputCam.click();
+        } else {
+          openLaptopWebcamModalMulti(kategori, galId);
+        }
+      } else {
+        const inputGal = document.getElementById(galId);
+        if (inputGal) inputGal.click();
+      }
+    }
+
+    let currentMultiWebcamCategory = 'sebelum';
+
+    function openLaptopWebcamModalMulti(kategori, fallbackInputId) {
+      currentMultiWebcamCategory = kategori;
       const modalEl = document.getElementById("modalLiveWebcam");
-      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      const modal = new bootstrap.Modal(modalEl);
       modal.show();
 
       document.getElementById("webcamLoading").classList.remove("d-none");
       const video = document.getElementById("webcamVideo");
 
       navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user" 
-        }, 
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }, 
         audio: false 
       })
       .then(function(stream) {
@@ -2398,10 +2423,11 @@
         Swal.fire({
           icon: 'info',
           title: 'Akses Kamera Laptop',
-          text: 'Tidak dapat membuka kamera laptop (' + err.message + '). Silakan pilih file foto dari folder.',
+          text: 'Tidak dapat membuka webcam laptop (' + err.message + '). Silakan pilih file foto dari folder.',
           confirmButtonText: 'Pilih dari Folder'
         }).then(function() {
-          document.getElementById(fallbackInputId).click();
+          const inputFallback = document.getElementById(fallbackInputId);
+          if (inputFallback) inputFallback.click();
         });
       });
     }
@@ -2421,19 +2447,14 @@
       const rawBase64 = canvas.toDataURL("image/jpeg", 0.88);
 
       compressImage(rawBase64, 960, 0.72, function(compressedBase64) {
-        const target = currentWebcamTarget;
-        if (target.imgId) {
-          const img = document.getElementById(target.imgId);
-          if (img) {
-            img.src = compressedBase64;
-            img.classList.remove("d-none");
-          }
-          if (target.placeholderId) document.getElementById(target.placeholderId).classList.add("d-none");
-          if (target.resetBtnId) document.getElementById(target.resetBtnId).classList.remove("d-none");
-
-          if (target.imgId === "imgPreviewSebelum") base64FotoSebelum = compressedBase64;
-          else if (target.imgId === "imgPreviewSesudah") base64FotoSesudah = compressedBase64;
-          else if (target.imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = compressedBase64;
+        const targetList = currentMultiWebcamCategory === 'sebelum' ? listFotoSebelum : (currentMultiWebcamCategory === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+        if (targetList.length < 3) {
+          targetList.push({
+            base64: compressedBase64,
+            previewUrl: compressedBase64,
+            name: "Foto Webcam " + (targetList.length + 1)
+          });
+          renderPhotoList(currentMultiWebcamCategory);
         }
         closeLaptopWebcam();
         Swal.fire({
@@ -2459,95 +2480,186 @@
       }
     }
 
-    // ==========================================
-    // IMAGE HANDLING (COMPRESSION & PREVIEW)
-    // ==========================================
-    function previewImage(fileInput, imgId, placeholderId, resetBtnId) {
-      const file = fileInput.files[0];
-      if (!file) return;
+    function handleMultiPhotoSelected(fileInput, kategori) {
+      const files = fileInput.files;
+      if (!files || files.length === 0) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        // Kompresi gambar client-side sebelum upload
-        compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
-          const img = document.getElementById(imgId);
-          img.src = compressedBase64;
-          img.classList.remove("d-none");
-          document.getElementById(placeholderId).classList.add("d-none");
-          document.getElementById(resetBtnId).classList.remove("d-none");
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      const remainingSlots = 3 - targetList.length;
 
-          if (imgId === "imgPreviewSebelum") base64FotoSebelum = compressedBase64;
-          else if (imgId === "imgPreviewSesudah") base64FotoSesudah = compressedBase64;
-          else if (imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = compressedBase64;
+      if (remainingSlots <= 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Batas maksimal 3 foto untuk kategori ini sudah terpenuhi. Hapus foto lama jika ingin mengganti.',
+          confirmButtonColor: '#1D4ED8'
         });
-      };
-      reader.readAsDataURL(file);
+        fileInput.value = "";
+        return;
+      }
+
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      if (files.length > remainingSlots) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Dibatasi Maksimal 3 Foto',
+          text: `Hanya ${remainingSlots} foto yang diproses agar tidak melebihi batas 3 foto dan menjaga kapasitas Google Drive.`,
+          timer: 3500,
+          showConfirmButton: false
+        });
+      }
+
+      let processedCount = 0;
+      showLoading("Mengompres Foto...", "Menyiapkan foto berkualitas ringan...");
+
+      filesToProcess.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
+            targetList.push({
+              base64: compressedBase64,
+              previewUrl: compressedBase64,
+              name: file.name || ("Foto " + (targetList.length + 1))
+            });
+            processedCount++;
+            if (processedCount === filesToProcess.length) {
+              hideLoading();
+              renderPhotoList(kategori);
+              fileInput.value = "";
+            }
+          });
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
-    function clearPhotoGroup(inputIds, imgId, placeholderId, resetBtnId) {
-      if (Array.isArray(inputIds)) {
-        inputIds.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = "";
-        });
+    function removePhoto(kategori, index) {
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      if (index >= 0 && index < targetList.length) {
+        targetList.splice(index, 1);
+        renderPhotoList(kategori);
+      }
+    }
+
+    function renderPhotoList(kategori) {
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      const containerId = kategori === 'sebelum' ? 'containerFotoSebelumList' : (kategori === 'sesudah' ? 'containerFotoSesudahList' : 'containerUpdateSesudahList');
+      const badgeId = kategori === 'sebelum' ? 'badgeCountSebelum' : (kategori === 'sesudah' ? 'badgeCountSesudah' : 'badgeCountUpdateSesudah');
+
+      const container = document.getElementById(containerId);
+      const badge = document.getElementById(badgeId);
+      if (!container) return;
+
+      const count = targetList.length;
+      if (badge) {
+        badge.innerText = `${count} / 3 Foto`;
+        if (count === 3) {
+          badge.className = "badge bg-danger text-white fw-bold";
+          badge.innerText = "3 / 3 Foto (Penuh)";
+        } else {
+          badge.className = kategori === 'sebelum' ? "badge bg-primary bg-opacity-10 text-primary fw-bold" : "badge bg-success bg-opacity-10 text-success fw-bold";
+        }
+      }
+
+      // Update backward-compatible globals
+      if (kategori === 'sebelum') base64FotoSebelum = targetList.length > 0 ? targetList[0].base64 : "";
+      else if (kategori === 'sesudah') base64FotoSesudah = targetList.length > 0 ? targetList[0].base64 : "";
+      else if (kategori === 'update_sesudah') base64UpdateFotoSesudah = targetList.length > 0 ? targetList[0].base64 : "";
+
+      if (count === 0) {
+        container.innerHTML = `
+          <div class="photo-camera-card text-center p-3" onclick="promptChoosePhotoSource('${kategori}')" title="Ketuk untuk memilih Kamera atau Galeri" style="cursor: pointer; border: 2px dashed #94A3B8; border-radius: 12px; background: #F8FAFC;">
+            <div class="camera-circle-icon mx-auto mb-2" style="width: 44px; height: 44px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #1E293B;">
+              <i class="bi bi-camera${kategori === 'sesudah' ? '-fill text-success' : ''}"></i>
+            </div>
+            <span class="fw-bold small d-block text-dark">Foto ${kategori === 'sebelum' ? 'Sebelum' : 'Sesudah'}</span>
+            <span class="text-muted" style="font-size: 0.72rem;">Belum ada foto (Maks. 3 foto)</span>
+          </div>
+          <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
+            <button type="button" class="btn btn-outline-${kategori === 'sesudah' ? 'success' : 'primary'} py-2 px-1 text-truncate fw-semibold" onclick="triggerPhotoCapture('${kategori}', 'cam')" title="Buka Kamera">
+              <i class="bi bi-camera-fill me-1"></i> Kamera
+            </button>
+            <button type="button" class="btn btn-outline-secondary py-2 px-1 text-truncate fw-semibold" onclick="triggerPhotoCapture('${kategori}', 'gal')" title="Pilih dari Galeri HP / Folder">
+              <i class="bi bi-images me-1"></i> Galeri
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let thumbsHtml = '<div class="row g-2 align-items-center">';
+      targetList.forEach((foto, idx) => {
+        thumbsHtml += `
+          <div class="col-4">
+            <div class="position-relative border rounded p-1 text-center bg-white shadow-sm h-100">
+              <span class="badge bg-dark position-absolute top-0 start-0 m-1 px-1 py-0" style="font-size: 0.65rem; border-radius: 4px; opacity: 0.85;">#${idx + 1}</span>
+              <button type="button" class="btn btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle shadow-sm" style="width: 22px; height: 22px; line-height: 1; font-weight: bold; font-size: 0.85rem;" onclick="removePhoto('${kategori}', ${idx})" title="Hapus Foto Ini">×</button>
+              <img src="${foto.previewUrl}" class="rounded" style="width: 100%; height: 75px; object-fit: cover; cursor: pointer;" onclick="openPhotoLightbox('${foto.previewUrl}', 'Foto ${kategori === 'sebelum' ? 'Sebelum' : 'Sesudah'} ${idx + 1}')" alt="Foto ${idx + 1}">
+              <div class="text-truncate text-muted mt-1" style="font-size: 0.65rem; font-weight: 600;">Foto ${idx + 1}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      if (count < 3) {
+        thumbsHtml += `
+          <div class="col-4">
+            <div class="border rounded p-2 text-center h-100 d-flex flex-column justify-content-center align-items-center" style="min-height: 98px; border-style: dashed !important; border-color: #94A3B8; background: #F8FAFC; cursor: pointer;" onclick="promptChoosePhotoSource('${kategori}')" title="Tambah foto berikutnya">
+              <i class="bi bi-plus-circle text-${kategori === 'sesudah' ? 'success' : 'primary'} fs-4 mb-1"></i>
+              <span class="fw-bold text-dark" style="font-size: 0.72rem;">+ Foto ${count + 1}</span>
+              <span class="text-muted" style="font-size: 0.62rem;">(Maks 3)</span>
+            </div>
+          </div>
+        `;
+      }
+      thumbsHtml += '</div>';
+
+      if (count < 3) {
+        thumbsHtml += `
+          <div class="btn-group btn-group-sm w-100 mt-2 photo-btn-group" role="group">
+            <button type="button" class="btn btn-outline-${kategori === 'sesudah' ? 'success' : 'primary'} py-1 px-1 text-truncate fw-semibold" onclick="triggerPhotoCapture('${kategori}', 'cam')" title="Tambah lewat Kamera">
+              <i class="bi bi-camera-fill me-1"></i> + Kamera
+            </button>
+            <button type="button" class="btn btn-outline-secondary py-1 px-1 text-truncate fw-semibold" onclick="triggerPhotoCapture('${kategori}', 'gal')" title="Tambah lewat Galeri">
+              <i class="bi bi-images me-1"></i> + Galeri
+            </button>
+          </div>
+        `;
       } else {
-        const el = document.getElementById(inputIds);
-        if (el) el.value = "";
+        thumbsHtml += `
+          <div class="mt-2 text-center text-muted" style="font-size: 0.72rem;">
+            <i class="bi bi-check-circle-fill text-success me-1"></i> Maksimal 3 foto telah terisi lengkap.
+          </div>
+        `;
       }
-      const img = document.getElementById(imgId);
-      if (img) {
-        img.src = "";
-        img.classList.add("d-none");
-      }
-      const ph = document.getElementById(placeholderId);
-      if (ph) ph.classList.remove("d-none");
-      const btn = document.getElementById(resetBtnId);
-      if (btn) btn.classList.add("d-none");
 
-      if (imgId === "imgPreviewSebelum") base64FotoSebelum = "";
-      else if (imgId === "imgPreviewSesudah") base64FotoSesudah = "";
-      else if (imgId === "imgUpdateSesudah") base64UpdateFotoSesudah = "";
-    }
-
-    function clearPhoto(fileInputId, imgId, placeholderId, resetBtnId) {
-      clearPhotoGroup([fileInputId], imgId, placeholderId, resetBtnId);
+      container.innerHTML = thumbsHtml;
     }
 
     function compressImage(base64Str, maxDim, quality, callback) {
       const img = new Image();
       img.onload = function() {
-        let width = img.width;
-        let height = img.height;
-        const limit = maxDim || 960;
-
-        if (width > height) {
-          if (width > limit) {
-            height = Math.round((height * limit) / width);
-            width = limit;
-          }
-        } else {
-          if (height > limit) {
-            width = Math.round((width * limit) / height);
-            height = limit;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
           }
         }
-
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL("image/jpeg", quality || 0.72));
-      };
-      img.onerror = function() {
-        callback(base64Str);
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL("image/jpeg", quality));
       };
       img.src = base64Str;
     }
 
-    // ==========================================
-    // SUBMIT CHECKLIST
-    // ==========================================
     function handleChecklistSubmit(e) {
       e.preventDefault();
 
@@ -2584,8 +2696,10 @@
         tindakan: document.getElementById("inputTindakan").value,
         status: document.querySelector('input[name="statusRadio"]:checked').value,
         catatan: document.getElementById("inputCatatan").value,
-        fotoSebelumBase64: base64FotoSebelum,
-        fotoSesudahBase64: base64FotoSesudah
+        fotoSebelumList: listFotoSebelum.map(f => f.base64),
+        fotoSesudahList: listFotoSesudah.map(f => f.base64),
+        fotoSebelumBase64: listFotoSebelum.length > 0 ? listFotoSebelum[0].base64 : "",
+        fotoSesudahBase64: listFotoSesudah.length > 0 ? listFotoSesudah[0].base64 : ""
       };
 
       // 2. Tampilkan Animasi Lingkaran Berputar (Spinner) pada Tombol & Disable Tombol
@@ -2660,8 +2774,12 @@
     }
 
     function resetChecklistForm() {
-      clearPhotoGroup(['fileFotoSebelumCam', 'fileFotoSebelumGal', 'fileFotoSebelum'], 'imgPreviewSebelum', 'placeholderSebelum', 'btnResetSebelum');
-      clearPhotoGroup(['fileFotoSesudahCam', 'fileFotoSesudahGal', 'fileFotoSesudah'], 'imgPreviewSesudah', 'placeholderSesudah', 'btnResetSesudah');
+      listFotoSebelum = [];
+      listFotoSesudah = [];
+      base64FotoSebelum = "";
+      base64FotoSesudah = "";
+      renderPhotoList('sebelum');
+      renderPhotoList('sesudah');
       populateUserDropdown();
     }
 
@@ -2943,10 +3061,39 @@
         const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : (item.fotoSesudah && item.fotoSesudah.indexOf("http") === 0 ? item.fotoSesudah : ""));
         const ssdhFull = item.fotoSesudahFull || (ssdhId ? ("https://drive.google.com/file/d/" + ssdhId + "/view?usp=sharing") : "");
 
+        const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, full: sblmFull, id: sblmId }] : []);
+        const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, full: ssdhFull, id: ssdhId }] : []);
+
+        let sblmThumbsHtml = "";
+        sblmList.forEach((f, idx) => {
+          sblmThumbsHtml += `
+            <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto Sebelum #${idx + 1} (Klik perbesar)">
+              <img src="${f.thumb}" referrerpolicy="no-referrer" style="width:30px;height:30px;object-fit:cover;border-radius:6px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${f.id}')">
+            </div>
+          `;
+        });
+
+        let ssdhThumbsHtml = "";
+        ssdhList.forEach((f, idx) => {
+          ssdhThumbsHtml += `
+            <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sesudah #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto Sesudah #${idx + 1} (Klik perbesar)">
+              <img src="${f.thumb}" referrerpolicy="no-referrer" style="width:30px;height:30px;object-fit:cover;border-radius:6px;border:1.5px solid #16A34A;" onerror="handleImageFallback(this, '${f.id}')">
+            </div>
+          `;
+        });
+
         const docBadge = `
-          <div class="d-flex gap-1 align-items-center">
-            ${sblmUrl ? `<div style="cursor:pointer;" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')" title="Klik untuk memperbesar Foto Sebelum"><img src="${sblmUrl}" referrerpolicy="no-referrer" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${sblmId}')"></div>` : '<span class="badge bg-light text-muted border">No</span>'}
-            ${ssdhUrl ? `<div style="cursor:pointer;" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')" title="Klik untuk memperbesar Foto Sesudah"><img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1.5px solid #16A34A;" onerror="handleImageFallback(this, '${ssdhId}')"></div>` : ''}
+          <div class="d-flex flex-column gap-1">
+            <div class="d-flex gap-1 align-items-center">
+              <span class="badge bg-primary bg-opacity-10 text-primary border" style="font-size:0.65rem;">Sblm (${sblmList.length})</span>
+              <div class="d-flex gap-1 flex-wrap">${sblmThumbsHtml || '<span class="text-muted small">-</span>'}</div>
+            </div>
+            ${ssdhList.length > 0 ? `
+              <div class="d-flex gap-1 align-items-center">
+                <span class="badge bg-success bg-opacity-10 text-success border" style="font-size:0.65rem;">Ssdh (${ssdhList.length})</span>
+                <div class="d-flex gap-1 flex-wrap">${ssdhThumbsHtml}</div>
+              </div>
+            ` : ''}
           </div>
         `;
 
@@ -3080,33 +3227,54 @@
       const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : (item.fotoSesudah && item.fotoSesudah.indexOf("http") === 0 ? item.fotoSesudah : ""));
       const ssdhFull = item.fotoSesudahFull || (ssdhId ? ("https://drive.google.com/file/d/" + ssdhId + "/view?usp=sharing") : "");
 
-      const fotoSebelumHtml = sblmUrl 
-        ? `<div class="card p-2 bg-light border shadow-sm text-center">
-             <div style="cursor: pointer;" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')" title="Klik untuk memperbesar">
-               <img src="${sblmUrl}" referrerpolicy="no-referrer" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: contain; background: #fff;" onerror="handleImageFallback(this, '${sblmId}')">
-             </div>
-             <div class="d-flex gap-2 mt-2">
-               <button type="button" class="btn btn-sm btn-outline-primary w-100 fw-semibold" onclick="openPhotoLightbox('${sblmUrl}', 'Foto Sebelum - ${escapeHtml(item.objekLokasi)}', '${sblmFull}')">
-                 <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
-               </button>
-               ${sblmFull ? `<a href="${sblmFull}" target="_blank" class="btn btn-sm btn-primary w-100 fw-semibold"><i class="bi bi-box-arrow-up-right me-1"></i> Drive</a>` : ''}
-             </div>
-           </div>`
-        : `<div class="p-4 bg-light text-center text-muted rounded border"><i class="bi bi-camera-slash fs-3"></i><br>Tidak ada foto sebelum</div>`;
+      const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, full: sblmFull, id: sblmId }] : []);
+      const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, full: ssdhFull, id: ssdhId }] : []);
 
-      const fotoSesudahHtml = ssdhUrl
-        ? `<div class="card p-2 bg-light border shadow-sm text-center">
-             <div style="cursor: pointer;" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')" title="Klik untuk memperbesar">
-               <img src="${ssdhUrl}" referrerpolicy="no-referrer" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: contain; background: #fff;" onerror="handleImageFallback(this, '${ssdhId}')">
-             </div>
-             <div class="d-flex gap-2 mt-2">
-               <button type="button" class="btn btn-sm btn-outline-success w-100 fw-semibold" onclick="openPhotoLightbox('${ssdhUrl}', 'Foto Sesudah - ${escapeHtml(item.objekLokasi)}', '${ssdhFull}')">
-                 <i class="bi bi-arrows-fullscreen me-1"></i> Perbesar
-               </button>
-               ${ssdhFull ? `<a href="${ssdhFull}" target="_blank" class="btn btn-sm btn-success w-100 fw-semibold"><i class="bi bi-box-arrow-up-right me-1"></i> Drive</a>` : ''}
-             </div>
-           </div>`
-        : `<div class="p-4 bg-light text-center text-muted rounded border"><i class="bi bi-camera-slash fs-3"></i><br>Tidak ada foto sesudah</div>`;
+      let fotoSebelumHtml = "";
+      if (sblmList.length > 0) {
+        fotoSebelumHtml = '<div class="row g-2">';
+        sblmList.forEach((f, idx) => {
+          fotoSebelumHtml += `
+            <div class="${sblmList.length === 1 ? 'col-12' : (sblmList.length === 2 ? 'col-6' : 'col-4')}">
+              <div class="card p-1 bg-light border shadow-sm text-center h-100">
+                <div style="cursor: pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Klik perbesar">
+                  <img src="${f.thumb}" referrerpolicy="no-referrer" class="img-fluid rounded" style="height: 120px; width: 100%; object-fit: cover; background: #fff;" onerror="handleImageFallback(this, '${f.id}')">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                  <span class="small fw-bold text-dark" style="font-size: 0.72rem;">#${idx + 1}</span>
+                  ${f.full ? `<a href="${f.full}" target="_blank" class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right"></i> Drive</a>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        fotoSebelumHtml += '</div>';
+      } else {
+        fotoSebelumHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera-slash fs-4"></i><br>Tidak ada foto sebelum</div>`;
+      }
+
+      let fotoSesudahHtml = "";
+      if (ssdhList.length > 0) {
+        fotoSesudahHtml = '<div class="row g-2">';
+        ssdhList.forEach((f, idx) => {
+          fotoSesudahHtml += `
+            <div class="${ssdhList.length === 1 ? 'col-12' : (ssdhList.length === 2 ? 'col-6' : 'col-4')}">
+              <div class="card p-1 bg-light border shadow-sm text-center h-100">
+                <div style="cursor: pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sesudah #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Klik perbesar">
+                  <img src="${f.thumb}" referrerpolicy="no-referrer" class="img-fluid rounded" style="height: 120px; width: 100%; object-fit: cover; background: #fff;" onerror="handleImageFallback(this, '${f.id}')">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                  <span class="small fw-bold text-dark" style="font-size: 0.72rem;">#${idx + 1}</span>
+                  ${f.full ? `<a href="${f.full}" target="_blank" class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right"></i> Drive</a>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        fotoSesudahHtml += '</div>';
+      } else {
+        fotoSesudahHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera-slash fs-4"></i><br>Tidak ada foto sesudah</div>`;
+      }
 
       let updateSection = "";
       if (st.indexOf("selesai") === -1) {
@@ -3127,22 +3295,15 @@
                 <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Filter sudah dicuci bersih, AC dingin normal">
               </div>
               <div class="mb-3">
-                <label class="form-label small fw-semibold">Lampirkan Foto Sesudah (Setelah Perbaikan)</label>
-              <div class="btn-group btn-group-sm w-100 mb-2 photo-btn-group" role="group">
-                <button type="button" class="btn btn-outline-success py-2 px-1 text-truncate fw-semibold" onclick="triggerCamera('fileUpdateSesudahCam', 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')" title="Buka Kamera">
-                  <i class="bi bi-camera-fill me-1"></i> Jepret Kamera
-                </button>
-                <button type="button" class="btn btn-outline-primary py-2 px-1 text-truncate fw-semibold" onclick="document.getElementById('fileUpdateSesudahGal').click()" title="Pilih dari Galeri HP / Folder">
-                  <i class="bi bi-images me-1"></i> Galeri HP
-                </button>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-semibold mb-0">Lampirkan Foto Sesudah (Maks. 3 Foto)</label>
+                <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountUpdateSesudah">0 / 3 Foto</span>
               </div>
-              <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="previewImage(this, 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">
-              <input type="file" id="fileUpdateSesudahGal" accept="image/*" class="d-none" onchange="previewImage(this, 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">
-              <div class="mt-2 text-center">
-                <img id="imgUpdateSesudah" class="img-fluid rounded border d-none" style="max-height: 160px; object-fit: contain;">
-                <span id="placeholderUpdateSesudah"></span>
-                <button type="button" id="btnResetUpdateSesudah" class="btn btn-sm btn-outline-danger mt-1 d-none" onclick="clearPhotoGroup(['fileUpdateSesudahCam', 'fileUpdateSesudahGal'], 'imgUpdateSesudah', 'placeholderUpdateSesudah', 'btnResetUpdateSesudah')">Hapus Foto</button>
+              <div id="containerUpdateSesudahList" class="mb-2">
+                <!-- Multi-photo rendered dynamically -->
               </div>
+              <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
+              <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
             </div>
             <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold">
                 <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
@@ -3214,6 +3375,10 @@
 
       const modal = new bootstrap.Modal(document.getElementById("modalDetail"));
       modal.show();
+      listUpdateFotoSesudah = [];
+      if (document.getElementById("containerUpdateSesudahList")) {
+        renderPhotoList('update_sesudah');
+      }
     }
 
     function handleUpdateStatus(e, id) {
@@ -3250,7 +3415,8 @@
           id: id,
           status: newStatus,
           tindakan: tindakan,
-          fotoSesudahBase64: base64UpdateFotoSesudah
+          fotoSesudahList: listUpdateFotoSesudah.map(f => f.base64),
+          fotoSesudahBase64: listUpdateFotoSesudah.length > 0 ? listUpdateFotoSesudah[0].base64 : ""
         }
       }, function(res) {
         hideLoading();
