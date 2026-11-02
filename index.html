@@ -324,17 +324,70 @@
       margin-bottom: 6px;
     }
 
-    /* SUBMIT BUTTON */
+    /* SUBMIT BUTTON DENGAN SPINNER STATE */
     .btn-submit-action {
       background: #1E3A8A;
       background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%);
-      color: #FFFFFF;
+      color: #FFFFFF !important;
       font-weight: 700;
       border: none;
       border-radius: 12px;
       padding: 14px;
       box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
       width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .btn-submit-action:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(29, 78, 216, 0.45);
+      color: #FFFFFF !important;
+    }
+    .btn-submit-action:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .btn-submit-action:disabled {
+      opacity: 0.88 !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      filter: saturate(80%);
+    }
+
+    /* LOADING OVERLAY MODERN & THUMB-FRIENDLY */
+    .loading-overlay {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(15, 23, 42, 0.82) !important;
+      z-index: 99999 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      padding: 20px !important;
+      text-align: center !important;
+    }
+    .loading-overlay.d-none {
+      display: none !important;
+    }
+    .loading-overlay .spinner-box {
+      background: #FFFFFF;
+      padding: 26px 28px;
+      border-radius: 20px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 90vw;
+      width: 360px;
     }
 
     /* TABEL RIWAYAT */
@@ -555,10 +608,13 @@
 
   <!-- LOADING OVERLAY -->
   <div id="loadingOverlay" class="loading-overlay d-none">
-    <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem;" role="status">
-      <span class="visually-hidden">Loading...</span>
+    <div class="spinner-box">
+      <div class="spinner-border text-primary mb-3" style="width: 3.4rem; height: 3.4rem; border-width: 0.35rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h5 class="fw-bold text-dark mb-1" id="loadingText">Menghubungkan ke Google Sheets...</h5>
+      <p class="text-secondary small mb-0" id="loadingSubtext">Mohon tunggu, sedang memproses data...</p>
     </div>
-    <p class="mt-3 fw-semibold text-secondary" id="loadingText">Menghubungkan ke Google Sheets...</p>
   </div>
 
   <!-- LOGIN SCREEN -->
@@ -1035,7 +1091,7 @@
                   </div>
 
                   <div class="mt-4">
-                    <button type="submit" class="btn btn-submit-action py-3">
+                    <button type="submit" class="btn btn-submit-action py-3" id="btnSubmitChecklist">
                       <i class="bi bi-cloud-arrow-up-fill me-2 fs-5"></i> Simpan Laporan Kendali
                     </button>
                     <button type="reset" class="btn btn-link text-muted w-100 mt-2 text-decoration-none small" onclick="resetChecklistForm()">
@@ -1443,13 +1499,57 @@
       }
     });
 
-    function showLoading(text) {
-      document.getElementById("loadingText").innerText = text || "Memproses...";
-      document.getElementById("loadingOverlay").classList.remove("d-none");
+    function showLoading(text, subtext) {
+      const elText = document.getElementById("loadingText");
+      if (elText) elText.innerText = text || "Memproses...";
+      const elSub = document.getElementById("loadingSubtext");
+      if (elSub) elSub.innerText = subtext || "Mohon tunggu, sedang memproses data...";
+      const elOverlay = document.getElementById("loadingOverlay");
+      if (elOverlay) elOverlay.classList.remove("d-none");
     }
 
     function hideLoading() {
-      document.getElementById("loadingOverlay").classList.add("d-none");
+      const elOverlay = document.getElementById("loadingOverlay");
+      if (elOverlay) elOverlay.classList.add("d-none");
+    }
+
+    // Helper pendeteksi kegagalan jaringan / offline
+    function isNetworkError(err) {
+      if (!navigator.onLine) return true;
+      if (!err) return false;
+      const msg = (err.message || err.toString() || "").toLowerCase();
+      return msg.includes("failed to fetch") || 
+             msg.includes("networkerror") || 
+             msg.includes("abort") || 
+             msg.includes("timeout") || 
+             msg.includes("offline") || 
+             msg.includes("load failed") || 
+             msg.includes("network request failed") ||
+             msg.includes("koneksi") ||
+             msg.includes("jaringan") ||
+             msg.includes("scripterror") ||
+             msg.includes("connection");
+    }
+
+    // Notifikasi khusus ketika terjadi gangguan koneksi internet
+    function showNetworkErrorAlert() {
+      Swal.fire({
+        icon: "warning",
+        title: "Koneksi Terputus / Gangguan Sinyal",
+        html: `
+          <div class="text-start">
+            <p class="mb-2">Laporan kendali <strong>belum berhasil disimpan</strong> ke Google Sheets karena koneksi internet Anda terputus atau sinyal seluler di lokasi tidak stabil.</p>
+            <div class="alert alert-info py-2 px-3 small mb-2 d-flex align-items-center" style="background-color: #EFF6FF; border: 1.5px solid #93C5FD; color: #1E3A8A; border-radius: 10px;">
+              <i class="bi bi-shield-check fs-5 me-2 text-primary"></i>
+              <div><strong>Data Anda Aman:</strong> Seluruh isian form dan foto yang sudah Anda ambil <strong>TIDAK HILANG</strong>.</div>
+            </div>
+            <p class="small text-muted mb-0">Silakan pastikan kembali sinyal internet Anda lancar, lalu tekan tombol <strong>Simpan Laporan Kendali</strong> kembali.</p>
+          </div>
+        `,
+        confirmButtonText: '<i class="bi bi-arrow-repeat me-1"></i> Mengerti, Coba Simpan Lagi Nanti',
+        confirmButtonColor: "#1D4ED8",
+        allowOutsideClick: false
+      });
     }
 
     // ==========================================
@@ -1458,15 +1558,35 @@
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzD2J6XyAFMPGcj10T3F3wElhwrA80ZfYdI1sxdjbtLIWyn5eG_zWRPFKG6Xn7kWrXj/exec";
 
     function runBackend(action, data, onSuccess, onFailure) {
+      // 1. Cek offline lebih awal
+      if (!navigator.onLine) {
+        const errOffline = new Error("Perangkat sedang offline / tidak ada internet.");
+        if (onFailure) {
+          onFailure(errOffline);
+        } else {
+          hideLoading();
+          showNetworkErrorAlert();
+        }
+        return;
+      }
+
       const isRunningInGAS = typeof google !== "undefined" && google.script && google.script.run && window.location.hostname.indexOf("google") !== -1;
       
       if (isRunningInGAS) {
         // Mode 1: Didalam Google Apps Script
         const runner = google.script.run
           .withSuccessHandler(onSuccess)
-          .withFailureHandler(onFailure || function(err) {
+          .withFailureHandler(function(err) {
             hideLoading();
-            Swal.fire("Error", err.toString(), "error");
+            if (onFailure) {
+              onFailure(err);
+            } else {
+              if (isNetworkError(err)) {
+                showNetworkErrorAlert();
+              } else {
+                Swal.fire("Error", err.toString(), "error");
+              }
+            }
           });
         
         if (action === "loginUser") runner.loginUser(data.username, data.password);
@@ -1477,14 +1597,20 @@
         else if (action === "updateChecklistStatus") runner.updateChecklistStatus(data.payload);
         else if (action === "saveMasterAset") runner.saveMasterAset(data.payload);
         else if (action === "exportToPrintableTemplate") runner.exportToPrintableTemplate(data.kategori, data.tanggal);
+        else if (action === "deleteChecklist") runner.deleteChecklist(data.id, data.requestingUser);
       } else {
-        // Mode 2: GitHub Pages / Server Eksternal (CORS Simple Request via POST)
+        // Mode 2: GitHub Pages / Server Eksternal (CORS Simple Request via POST) dengan Timeout 65 detik
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 65000);
+
         const payload = Object.assign({ action: action }, data || {});
         fetch(GAS_API_URL, {
           method: "POST",
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         })
         .then(function(res) {
+          clearTimeout(timeoutId);
           if (!res.ok) throw new Error("HTTP Status " + res.status);
           return res.json();
         })
@@ -1492,15 +1618,20 @@
           onSuccess(result);
         })
         .catch(function(err) {
+          clearTimeout(timeoutId);
           if (onFailure) {
             onFailure(err);
           } else {
             hideLoading();
-            Swal.fire({
-              icon: "error",
-              title: "Koneksi Database",
-              text: "Gagal menghubungkan ke server Google Sheets: " + err.message
-            });
+            if (isNetworkError(err)) {
+              showNetworkErrorAlert();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Koneksi Database",
+                text: "Gagal menghubungkan ke server: " + (err.message || err.toString())
+              });
+            }
           }
         });
       }
@@ -2420,6 +2551,15 @@
     function handleChecklistSubmit(e) {
       e.preventDefault();
 
+      const btnSubmit = document.getElementById("btnSubmitChecklist");
+      const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : "";
+
+      // 1. Cek koneksi internet sebelum submit
+      if (!navigator.onLine) {
+        showNetworkErrorAlert();
+        return;
+      }
+
       let petugas = "";
       const lockedPetugas = document.getElementById("inputPetugasDirect");
       if (lockedPetugas) {
@@ -2448,29 +2588,74 @@
         fotoSesudahBase64: base64FotoSesudah
       };
 
-      showLoading("Menyimpan ke Google Sheets & Upload Foto...");
+      // 2. Tampilkan Animasi Lingkaran Berputar (Spinner) pada Tombol & Disable Tombol
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="width: 1.25rem; height: 1.25rem; border-width: 0.22em;"></span>
+          <span>Sedang Menyimpan Laporan...</span>
+        `;
+      }
+
+      function restoreSubmitButton() {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = originalBtnHtml;
+        }
+      }
+
+      // 3. Tampilkan Layar Overlay Loading dengan Spinner Berputar
+      const hasPhoto = (base64FotoSebelum && base64FotoSebelum.length > 50) || (base64FotoSesudah && base64FotoSesudah.length > 50);
+      const loadingTitle = hasPhoto 
+        ? "Mengunggah Foto ke Drive & Menyimpan ke Spreadsheet..." 
+        : "Menyimpan Data Checklist ke Google Sheets...";
+      showLoading(loadingTitle, "Mohon tunggu hingga proses selesai, jangan tutup aplikasi...");
+
+      // 4. Jalankan pengiriman ke backend
       runBackend("submitChecklist", { payload: payload }, function(res) {
         hideLoading();
+        restoreSubmitButton();
+
         if (res && res.status === "success") {
           Swal.fire({
             icon: "success",
-            title: "Berhasil!",
-            text: res.message,
-            confirmButtonColor: "#1F4E79"
+            title: "Laporan Berhasil Disimpan!",
+            text: res.message || "Data checklist dan dokumentasi foto berhasil masuk ke sistem.",
+            confirmButtonColor: "#1D4ED8"
           }).then(() => {
             resetChecklistForm();
             // Pindah ke tab riwayat
-            const tabHistory = new bootstrap.Tab(document.getElementById('tab-history'));
-            tabHistory.show();
+            const tabHistoryEl = document.getElementById('tab-history');
+            if (tabHistoryEl) {
+              const tabHistory = new bootstrap.Tab(tabHistoryEl);
+              tabHistory.show();
+            }
+            switchTabMobile("view-history", document.getElementById("mTabHistory"));
             loadHistory();
             loadDashboard();
           });
         } else {
-          Swal.fire("Gagal", (res && res.message) || "Gagal menyimpan data.", "error");
+          Swal.fire({
+            icon: "error",
+            title: "Gagal Menyimpan",
+            text: (res && res.message) || "Terjadi kendala saat menyimpan data ke spreadsheet.",
+            confirmButtonColor: "#DC2626"
+          });
         }
       }, function(err) {
         hideLoading();
-        Swal.fire("Error", err.toString(), "error");
+        restoreSubmitButton();
+
+        if (isNetworkError(err)) {
+          showNetworkErrorAlert();
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Gagal Menyimpan",
+            text: err.message || err.toString() || "Terjadi kesalahan sistem saat menyimpan data.",
+            confirmButtonColor: "#DC2626"
+          });
+        }
       });
     }
 
@@ -2649,8 +2834,95 @@
       filterHistoryLocal();
     }
 
+    // ==========================================
+    // HARD DELETE KHUSUS ADMINISTRATOR / PENGAWAS
+    // ==========================================
+    function confirmDeleteChecklist(id, objekLokasi) {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      
+      if (!isAdmin) {
+        Swal.fire({
+          icon: "error",
+          title: "Akses Ditolak",
+          text: "Hanya Administrator / Pengawas yang memiliki izin untuk menghapus data."
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "Hapus Permanen Data?",
+        html: `
+          <div class="text-start">
+            <p class="mb-2">Anda akan menghapus data checklist berikut:</p>
+            <div class="p-3 bg-light border rounded small mb-3">
+              <div class="mb-1"><strong>ID Laporan:</strong> <span class="badge bg-secondary">${escapeHtml(id)}</span></div>
+              <div><strong>Objek & Lokasi:</strong> ${escapeHtml(objekLokasi || '-')}</div>
+            </div>
+            <div class="alert alert-danger py-2 px-3 small mb-0 d-flex align-items-center" style="background-color: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; border-radius: 10px;">
+              <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+              <div>
+                <strong>Peringatan Hard Delete:</strong><br>
+                Baris data di Google Sheets dan file foto di Google Drive akan <strong>dihapus permanen</strong> dan tidak dapat dikembalikan.
+              </div>
+            </div>
+          </div>
+        `,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#DC2626",
+        cancelButtonColor: "#64748B",
+        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Permanen',
+        cancelButtonText: 'Batal',
+        focusCancel: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoading("Menghapus data dari Google Sheets & Drive...", "Mohon tunggu sebentar...");
+          runBackend("deleteChecklist", { id: id, requestingUser: currentUser }, function(res) {
+            hideLoading();
+            if (res && res.status === "success") {
+              // Tutup modal detail jika sedang terbuka
+              const modalEl = document.getElementById("modalDetail");
+              const modalInst = bootstrap.Modal.getInstance(modalEl);
+              if (modalInst) modalInst.hide();
+
+              Swal.fire({
+                icon: "success",
+                title: "Data Berhasil Dihapus!",
+                text: res.message || "Data dan foto telah dihapus secara permanen dari server.",
+                confirmButtonColor: "#1D4ED8"
+              });
+              loadHistory();
+              loadDashboard();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Gagal Menghapus",
+                text: (res && res.message) || "Gagal menghapus data dari sistem.",
+                confirmButtonColor: "#DC2626"
+              });
+            }
+          }, function(err) {
+            hideLoading();
+            if (isNetworkError(err)) {
+              showNetworkErrorAlert();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: err.message || err.toString() || "Terjadi kesalahan saat menghapus data.",
+                confirmButtonColor: "#DC2626"
+              });
+            }
+          });
+        }
+      });
+    }
+
     function renderHistoryTable(data) {
       const tbody = document.getElementById("historyTableBody");
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
       if (!data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data checklist yang sesuai.</td></tr>';
         return;
@@ -2691,10 +2963,15 @@
             <td><span class="badge ${badgeClass} px-2 py-1">${escapeHtml(item.status)}</span></td>
             <td>${docBadge}</td>
             <td class="small">${escapeHtml(item.petugas || '-')}</td>
-            <td class="text-center">
+            <td class="text-center text-nowrap">
               <button class="btn btn-sm btn-outline-primary" onclick="showDetailModal('${item.id}')" title="Lihat Detail & Perbarui">
                 <i class="bi bi-eye"></i> Detail
               </button>
+              ${isAdmin ? `
+                <button class="btn btn-sm btn-outline-danger ms-1" onclick="confirmDeleteChecklist('${item.id}', '${escapeHtml(item.objekLokasi)}')" title="Hapus Permanen (Khusus Admin)">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -2779,6 +3056,8 @@
     }
 
     function showDetailModal(id) {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
       const item = globalItemsCache[id] || (currentHistoryData || []).find(x => x.id === id);
       if (!item) {
         console.warn("Item tidak ditemukan:", id);
@@ -2914,6 +3193,23 @@
         </div>
 
         ${updateSection}
+
+        <div class="mt-3 d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="handlePrintCurrentDetail()">
+            <i class="bi bi-printer me-1"></i> Cetak Laporan Kerja (PDF)
+          </button>
+        </div>
+
+        ${isAdmin ? `
+          <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="text-danger small fw-semibold">
+              <i class="bi bi-shield-lock-fill me-1"></i> Area Kendali Admin:
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="confirmDeleteChecklist('${item.id}', '${escapeHtml(item.objekLokasi)}')">
+              <i class="bi bi-trash3-fill me-1"></i> Hapus Permanen Laporan Ini
+            </button>
+          </div>
+        ` : ''}
       `;
 
       const modal = new bootstrap.Modal(document.getElementById("modalDetail"));
@@ -2922,10 +3218,33 @@
 
     function handleUpdateStatus(e, id) {
       e.preventDefault();
+      const btnUpdate = e.target.querySelector('button[type="submit"]');
+      const originalUpdateBtnHtml = btnUpdate ? btnUpdate.innerHTML : "";
+
+      if (!navigator.onLine) {
+        showNetworkErrorAlert();
+        return;
+      }
+
+      if (btnUpdate) {
+        btnUpdate.disabled = true;
+        btnUpdate.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <span>Menyimpan Perubahan...</span>
+        `;
+      }
+
+      function restoreUpdateBtn() {
+        if (btnUpdate) {
+          btnUpdate.disabled = false;
+          btnUpdate.innerHTML = originalUpdateBtnHtml;
+        }
+      }
+
       const newStatus = document.getElementById("updateStatusSelect").value;
       const tindakan = document.getElementById("updateTindakanInput").value;
 
-      showLoading("Menyimpan perubahan ke Google Sheets...");
+      showLoading("Menyimpan pembaruan status...", "Mengunggah data ke Google Sheets...");
       runBackend("updateChecklistStatus", {
         payload: {
           id: id,
@@ -2935,17 +3254,23 @@
         }
       }, function(res) {
         hideLoading();
-        if (res.status === "success") {
+        restoreUpdateBtn();
+        if (res && res.status === "success") {
           bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
-          Swal.fire("Berhasil", res.message, "success");
+          Swal.fire("Berhasil", res.message || "Status pengerjaan berhasil diperbarui!", "success");
           loadHistory();
           loadDashboard();
         } else {
-          Swal.fire("Gagal", res.message, "error");
+          Swal.fire("Gagal", (res && res.message) || "Gagal memperbarui status.", "error");
         }
       }, function(err) {
         hideLoading();
-        Swal.fire("Error", err.toString(), "error");
+        restoreUpdateBtn();
+        if (isNetworkError(err)) {
+          showNetworkErrorAlert();
+        } else {
+          Swal.fire("Error", err.message || err.toString(), "error");
+        }
       });
     }
 
