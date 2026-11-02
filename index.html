@@ -1986,7 +1986,7 @@
               </tr>
               <tr>
                 <td>
-                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">${escapeHtml(item.petugas || 'Petugas Lapangan')}</div>
+                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">( ${escapeHtml((item.petugas ? item.petugas.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : 'Petugas Lapangan'))} )</div>
                 </td>
                 <td>
                   <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">Pengawas Sarpras</div>
@@ -2080,15 +2080,55 @@
         const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
         const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
 
-        const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : "";
-        const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : "";
+        const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : "");
+        const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : "");
 
-        const fotoHtml = `
-          <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-            ${sblmUrl ? `<img src="${sblmUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1.5px solid #DC2626 !important;" alt="Sebelum">` : '<span style="font-size: 7.5pt; color: #94A3B8;">-</span>'}
-            ${ssdhUrl ? `<img src="${ssdhUrl}" referrerpolicy="no-referrer" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1.5px solid #16A34A !important;" alt="Sesudah">` : ''}
-          </div>
-        `;
+        const sblmList = (Array.isArray(item.fotoSebelumList) && item.fotoSebelumList.length > 0)
+          ? item.fotoSebelumList
+          : (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
+        const ssdhList = (Array.isArray(item.fotoSesudahList) && item.fotoSesudahList.length > 0)
+          ? item.fotoSesudahList
+          : (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
+
+        function getImgSrc(f) {
+          if (!f) return "";
+          if (typeof f === "string") return f;
+          return f.thumbUrl || f.thumb || (f.id ? ("https://lh3.googleusercontent.com/d/" + f.id) : (f.fullUrl || f.full || ""));
+        }
+
+        let fotoHtml = '<div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">';
+        let hasAnyPhoto = false;
+
+        sblmList.forEach((f, fIdx) => {
+          const u = getImgSrc(f);
+          if (u) {
+            hasAnyPhoto = true;
+            fotoHtml += `
+              <div style="text-align: center; display: inline-block;">
+                <img src="${u}" referrerpolicy="no-referrer" style="width: 38px; height: 38px; object-fit: cover; border-radius: 4px; border: 1.5px solid #DC2626 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Sblm #${fIdx + 1}" title="Foto Sebelum #${fIdx + 1}">
+                ${sblmList.length > 1 ? `<div style="font-size: 6pt; color: #DC2626; font-weight: bold; line-height: 1; margin-top: 1px;">Sblm #${fIdx + 1}</div>` : ''}
+              </div>
+            `;
+          }
+        });
+
+        ssdhList.forEach((f, fIdx) => {
+          const u = getImgSrc(f);
+          if (u) {
+            hasAnyPhoto = true;
+            fotoHtml += `
+              <div style="text-align: center; display: inline-block;">
+                <img src="${u}" referrerpolicy="no-referrer" style="width: 38px; height: 38px; object-fit: cover; border-radius: 4px; border: 1.5px solid #16A34A !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Ssdh #${fIdx + 1}" title="Foto Sesudah #${fIdx + 1}">
+                ${ssdhList.length > 1 ? `<div style="font-size: 6pt; color: #16A34A; font-weight: bold; line-height: 1; margin-top: 1px;">Ssdh #${fIdx + 1}</div>` : ''}
+              </div>
+            `;
+          }
+        });
+
+        if (!hasAnyPhoto) {
+          fotoHtml += '<span style="font-size: 7.5pt; color: #94A3B8;">-</span>';
+        }
+        fotoHtml += '</div>';
 
         // Warna status kontras tinggi untuk cetak berwarna
         let statusBg = "#DCFCE7";
@@ -2128,6 +2168,32 @@
         `;
       });
 
+      function formatNamaPetugas(n) {
+        if (!n) return "";
+        return String(n).trim().split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ");
+      }
+
+      // Tentukan Nama Petugas Pelaksana Lapangan untuk Lembar Tanda Tangan
+      let namaPetugasTtd = "";
+      const listPetugas = dataToPrint.map(d => (d.petugas || "").trim()).filter(Boolean);
+      const uniquePetugas = [...new Set(listPetugas)];
+
+      if (petLabel && petLabel.toLowerCase() !== "semua petugas" && petLabel.toLowerCase() !== "semua") {
+        namaPetugasTtd = petLabel;
+      } else if (uniquePetugas.length === 1) {
+        namaPetugasTtd = uniquePetugas[0];
+      } else if (uniquePetugas.length > 1 && uniquePetugas.length <= 3) {
+        namaPetugasTtd = uniquePetugas.map(p => formatNamaPetugas(p)).join(" / ");
+      } else if (currentUser && currentUser.nama && (currentUser.role || "").toLowerCase().indexOf("admin") === -1 && (currentUser.role || "").toLowerCase().indexOf("pengawas") === -1) {
+        namaPetugasTtd = currentUser.nama;
+      } else if (uniquePetugas.length > 3) {
+        namaPetugasTtd = "Tim Pelaksana Lapangan";
+      } else {
+        namaPetugasTtd = "Petugas Lapangan";
+      }
+
+      const namaPetugasTtdDisplay = formatNamaPetugas(namaPetugasTtd) || "Petugas Lapangan";
+
       const printHtml = `
         <div style="font-family: Arial, sans-serif; color: #0F172A; width: 100%; margin: 0 auto; line-height: 1.3;">
           
@@ -2159,14 +2225,14 @@
           <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 18px;">
             <thead>
               <tr style="background-color: #1E3A8A !important; color: #FFFFFF !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 4%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">No</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 9%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal</th>
-                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 20%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
-                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 22%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
-                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 20%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tindakan Teknis</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 11%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Status</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 6%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Foto</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 8%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Petugas</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 3%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">No</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 8%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 18%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tindakan Teknis</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 10%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Status</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 18%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Foto</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 9%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Petugas</th>
               </tr>
             </thead>
             <tbody>
@@ -2186,7 +2252,7 @@
                 </td>
               </tr>
               <tr>
-                <td><b style="text-decoration: underline;">( ${escapeHtml(petLabel !== "Semua Petugas" ? petLabel : "Petugas Lapangan")} )</b></td>
+                <td><b style="text-decoration: underline;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
                 <td><b style="text-decoration: underline;">( Pengawas / Administrator Sarpras )</b></td>
               </tr>
             </table>
