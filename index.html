@@ -1094,6 +1094,7 @@
               <div>
                 <h5 class="fw-bold mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Riwayat Pemeriksaan & Status Pengerjaan</h5>
                 <small class="text-muted">Data tersimpan di sheet DATA_CHECKLIST secara real-time</small>
+                <div id="userHistoryScopeBadge" class="mt-1"></div>
               </div>
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-outline-dark fw-semibold" onclick="handlePrintFilteredHistory()" title="Cetak Rekap Tabel PDF Sesuai Filter">
@@ -2202,19 +2203,25 @@
       showLoading("Memeriksa akun...");
       runBackend("loginUser", { username: u, password: p }, function(res) {
         hideLoading();
-        if (res.status === "success") {
-          currentUser = res.user;
+        if (res && res.status === "success") {
+          currentUser = res.user || {
+            id: res.id,
+            username: res.username,
+            nama: res.nama,
+            role: res.role,
+            noHp: res.noHp
+          };
           localStorage.setItem("sarpras_user", JSON.stringify(currentUser));
           initAppWithUser();
           Swal.fire({
             icon: "success",
             title: "Selamat Datang!",
-            text: "Login berhasil sebagai " + currentUser.nama,
+            text: "Login berhasil sebagai " + (currentUser.nama || currentUser.username || "Pengguna"),
             timer: 1500,
             showConfirmButton: false
           });
         } else {
-          Swal.fire("Login Gagal", res.message, "error");
+          Swal.fire("Login Gagal", (res && res.message) ? res.message : "Username atau password salah.", "error");
         }
       }, function(err) {
         hideLoading();
@@ -2245,6 +2252,16 @@
       } else {
         // Admin / Pengawas diarahkan ke Dashboard Ringkasan
         switchTabMobile("view-dashboard", document.getElementById("mTabDashboard"));
+      }
+
+      // Update scope badge riwayat
+      const scopeBadge = document.getElementById("userHistoryScopeBadge");
+      if (scopeBadge) {
+        if (isPetugas) {
+          scopeBadge.innerHTML = `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1"><i class="bi bi-person-fill-lock me-1"></i> Data Khusus Petugas: <strong>${currentUser.nama}</strong></span>`;
+        } else {
+          scopeBadge.innerHTML = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-shield-check me-1"></i> Mode Pengawas: Seluruh Data Petugas</span>`;
+        }
       }
 
       // Pengaturan hak akses form, filter & menu
@@ -3003,7 +3020,15 @@
     // ==========================================
     function loadHistory() {
       showLoading("Memuat riwayat dari Google Sheets...");
-      runBackend("getChecklistHistory", { filter: {}, requestingUser: currentUser }, function(data) {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      
+      const filterPayload = {};
+      if (!isAdmin && currentUser && currentUser.nama) {
+        filterPayload.petugas = currentUser.nama;
+      }
+
+      runBackend("getChecklistHistory", { filter: filterPayload, requestingUser: currentUser }, function(data) {
         hideLoading();
         if (Array.isArray(data)) {
           currentHistoryData = data;
@@ -3028,13 +3053,34 @@
       const kw = (document.getElementById("filterKeyword") ? document.getElementById("filterKeyword").value : "").toLowerCase().trim();
       const kat = (document.getElementById("filterKategori") ? document.getElementById("filterKategori").value : "semua").toLowerCase();
       const stat = (document.getElementById("filterStatus") ? document.getElementById("filterStatus").value : "semua").toLowerCase();
-      const filterPetugasBox = document.getElementById("filterPetugasContainer");
-      const isPetugasFilterActive = filterPetugasBox && !filterPetugasBox.classList.contains("d-none");
-      const petugas = (isPetugasFilterActive && document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase();
       const startDate = document.getElementById("filterStartDate") ? document.getElementById("filterStartDate").value : "";
       const endDate = document.getElementById("filterEndDate") ? document.getElementById("filterEndDate").value : "";
 
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+
+      // Tentukan filter petugas:
+      let petugas = "semua";
+      if (!isAdmin && currentUser && currentUser.nama) {
+        // Petugas Lapangan WAJIB selalu terkunci ke data miliknya sendiri
+        petugas = currentUser.nama.toLowerCase().trim();
+      } else {
+        const filterPetugasBox = document.getElementById("filterPetugasContainer");
+        const isPetugasFilterActive = filterPetugasBox && !filterPetugasBox.classList.contains("d-none");
+        petugas = (isPetugasFilterActive && document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase();
+      }
+
       const filtered = (currentHistoryData || []).filter(item => {
+        // ISOLASI PETUGAS LAPANGAN:
+        if (!isAdmin && currentUser && currentUser.nama) {
+          const itemPet = (item.petugas || "").toLowerCase().trim();
+          const userPet = currentUser.nama.toLowerCase().trim();
+          if (itemPet !== userPet && itemPet.indexOf(userPet) === -1) return false;
+        } else if (petugas !== "semua") {
+          const pLow = (item.petugas || "").toLowerCase().trim();
+          if (pLow.indexOf(petugas) === -1) return false;
+        }
+
         if (kat !== "semua") {
           const kLow = (item.kategori || "").toLowerCase().trim();
           if (kat === "prasarana" && kLow.indexOf("prasarana") === -1) return false;
@@ -3046,10 +3092,6 @@
           if (stat === "selesai" && sLow.indexOf("selesai") === -1) return false;
           if (stat === "on progress" && sLow.indexOf("progress") === -1) return false;
           if (stat === "perlu tindak lanjut" && sLow.indexOf("tindak") === -1) return false;
-        }
-        if (petugas !== "semua") {
-          const pLow = (item.petugas || "").toLowerCase().trim();
-          if (pLow.indexOf(petugas) === -1) return false;
         }
         if (kw) {
           const combined = (item.objekLokasi + " " + item.kodeAset + " " + item.temuan + " " + item.tindakan + " " + item.petugas).toLowerCase();
