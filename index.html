@@ -576,16 +576,38 @@
       }
       html, body {
         background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
         color: #0F172A !important;
         padding: 0 !important;
         margin: 0 !important;
+        overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
       }
-      /* Sembunyikan elemen web aplikasi biasa saat mencetak PDF */
-      #mainApp, .navbar-custom, .bottom-nav-bar, .modal, .loading-overlay, #loginView, .desktop-pills, .btn {
+      /* Sembunyikan SEMUA elemen web, modal, backdrop gelap (.modal-backdrop), sweetalert & overlay saat mencetak */
+      #mainApp, 
+      .navbar-custom, 
+      .bottom-nav-bar, 
+      .modal, 
+      .modal-backdrop, 
+      .loading-overlay, 
+      #loadingOverlay,
+      .swal2-container, 
+      .swal2-backdrop-show, 
+      .offcanvas, 
+      .offcanvas-backdrop, 
+      #loginView, 
+      .desktop-pills, 
+      .btn {
         display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        z-index: -9999 !important;
+      }
+      body.modal-open {
+        overflow: visible !important;
+        padding-right: 0 !important;
       }
       #printableReportContainer, #printableReportContainer * {
         -webkit-print-color-adjust: exact !important;
@@ -594,10 +616,13 @@
       }
       #printableReportContainer {
         display: block !important;
+        position: relative !important;
+        z-index: 999999 !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 8mm 10mm !important;
         background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
       }
       .page-break {
         page-break-after: always !important;
@@ -1905,12 +1930,174 @@
     // ==========================================
     let currentDetailItemForPrint = null;
 
-    function handlePrintCurrentDetail() {
-      if (!currentDetailItemForPrint) return;
-      printSingleWorkOrder(currentDetailItemForPrint);
+    // ==========================================
+    // DIALOG PEMILIHAN PEJABAT PENANDATANGAN DOKUMEN PDF (SOLUSI 1 + PILIHAN BEBAS)
+    // ==========================================
+    function getReportSignerSettings(isRekap, callback) {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+
+      // 1. JIKA PETUGAS LAPANGAN:
+      if (!isAdmin) {
+        // Petugas Lapangan HANYA 1 tanda tangan miliknya sendiri (tanpa pop-up)
+        callback({
+          mode: "petugas_only",
+          namaPetugas: (currentUser && currentUser.nama) ? currentUser.nama : "Petugas Lapangan",
+          namaAdmin: "",
+          jabatanAdmin: "",
+          nipAdmin: ""
+        });
+        return;
+      }
+
+      // 2. JIKA ADMIN / PENGAWAS:
+      const currentNama = (currentUser && currentUser.nama) ? currentUser.nama.trim() : "Administrator";
+      const currentRole = (currentUser && currentUser.role) ? currentUser.role.trim() : "Pengawas Sarpras";
+
+      // Ambil daftar admin terdaftar dari masterUsers
+      const adminList = (masterUsers || []).filter(u => {
+        const r = (u.role || "").toLowerCase();
+        return r.indexOf("admin") !== -1 || r.indexOf("pengawas") !== -1 || r.indexOf("koordinator") !== -1 || r.indexOf("supervisor") !== -1;
+      });
+
+      const savedType = localStorage.getItem("sarpras_signer_type") || "current";
+      const savedCustomNama = localStorage.getItem("sarpras_signer_custom_nama") || "";
+      const savedCustomJabatan = localStorage.getItem("sarpras_signer_custom_jabatan") || "";
+      const savedCustomNip = localStorage.getItem("sarpras_signer_custom_nip") || "";
+      const savedMode = localStorage.getItem("sarpras_signer_mode") || "keduanya";
+
+      let optionsHtml = `<option value="current" ${savedType === "current" ? "selected" : ""}>👤 [Saya Sendiri] ${escapeHtml(currentNama)} (${escapeHtml(currentRole)})</option>`;
+
+      adminList.forEach(u => {
+        if (u && u.nama && u.nama.toLowerCase().trim() !== currentNama.toLowerCase().trim()) {
+          const isSel = (savedType === ("admin_" + u.nama)) ? "selected" : "";
+          optionsHtml += `<option value="admin_${escapeHtml(u.nama)}" data-nama="${escapeHtml(u.nama)}" data-role="${escapeHtml(u.role || 'Pengawas Sarpras')}" ${isSel}>👤 ${escapeHtml(u.nama)} (${escapeHtml(u.role || 'Pengawas')})</option>`;
+        }
+      });
+
+      optionsHtml += `<option value="custom" ${savedType === "custom" ? "selected" : ""}>✍️ Bebas / Kustom (Ketik Nama & Jabatan Lain)...</option>`;
+
+      const swalHtml = `
+        <div class="text-start" style="font-size: 0.88rem;">
+          <p class="text-muted small mb-2">Pilih nama dan jabatan pejabat pengawas yang akan menandatangani dokumen ini:</p>
+          
+          <div class="mb-3">
+            <label class="fw-bold small text-dark mb-1"><i class="bi bi-person-badge text-primary me-1"></i>Pejabat Penandatangan:</label>
+            <select id="swalSignerSelect" class="form-select form-select-sm" onchange="window.toggleSwalCustomSigner(this.value)">
+              ${optionsHtml}
+            </select>
+          </div>
+
+          <!-- FORM INPUT BEBAS / KUSTOM NAMA & JABATAN -->
+          <div id="swalCustomSignerBox" class="p-3 border rounded bg-light mb-3 ${savedType === 'custom' ? '' : 'd-none'}" style="border-left: 3.5px solid #2563EB !important;">
+            <div class="small fw-bold text-primary mb-2"><i class="bi bi-pencil-square me-1"></i>Ketik Bebas Nama & Jabatan Penandatangan:</div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1">Nama Lengkap & Gelar:</label>
+              <input type="text" id="swalCustomNama" class="form-control form-control-sm" placeholder="Contoh: Ir. H. Ahmad Fauzi, M.T." value="${escapeHtml(savedCustomNama)}">
+            </div>
+            <div class="mb-2">
+              <label class="small text-muted mb-1">Jabatan Resmi:</label>
+              <input type="text" id="swalCustomJabatan" class="form-control form-control-sm" placeholder="Contoh: Kepala Bagian Umum & Rumah Tangga" value="${escapeHtml(savedCustomJabatan)}">
+            </div>
+            <div>
+              <label class="small text-muted mb-1">NIP / NIK (Opsional):</label>
+              <input type="text" id="swalCustomNip" class="form-control form-control-sm" placeholder="Contoh: NIP. 19800215 200501 1 003" value="${escapeHtml(savedCustomNip)}">
+            </div>
+          </div>
+
+          <!-- FORMAT SUSUNAN TANDA TANGAN -->
+          <div class="mb-2">
+            <label class="fw-bold small text-dark mb-1"><i class="bi bi-layout-split text-primary me-1"></i>Format Kolom Lembar Pengesahan:</label>
+            <select id="swalSignerMode" class="form-select form-select-sm">
+              <option value="keduanya" ${savedMode === "keduanya" ? "selected" : ""}>👥 Dua Pihak (Pelaksana Lapangan & Pengawas)</option>
+              <option value="admin" ${savedMode === "admin" ? "selected" : ""}>👤 Satu Pihak (Hanya Pengawas / Administrator)</option>
+            </select>
+          </div>
+        </div>
+      `;
+
+      Swal.fire({
+        title: isRekap ? "Cetak Rekapitulasi PDF" : "Cetak Lembar Kerja PDF",
+        html: swalHtml,
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-printer-fill me-1"></i> Lanjut Cetak PDF',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#1E3A8A',
+        cancelButtonColor: '#64748B',
+        focusConfirm: false,
+        didOpen: () => {
+          window.toggleSwalCustomSigner = function(val) {
+            const box = document.getElementById("swalCustomSignerBox");
+            if (box) {
+              if (val === "custom") {
+                box.classList.remove("d-none");
+                const namaInp = document.getElementById("swalCustomNama");
+                if (namaInp) namaInp.focus();
+              } else {
+                box.classList.add("d-none");
+              }
+            }
+          };
+        },
+        preConfirm: () => {
+          const type = document.getElementById("swalSignerSelect").value;
+          const mode = document.getElementById("swalSignerMode").value;
+          let nama = "";
+          let jabatan = "Pengawas / Administrator Sarpras";
+          let nip = "";
+
+          if (type === "current") {
+            nama = currentNama;
+            jabatan = currentRole || "Pengawas / Administrator Sarpras";
+          } else if (type === "custom") {
+            const cNama = (document.getElementById("swalCustomNama").value || "").trim();
+            const cJab = (document.getElementById("swalCustomJabatan").value || "").trim();
+            const cNip = (document.getElementById("swalCustomNip").value || "").trim();
+
+            if (!cNama) {
+              Swal.showValidationMessage("Silakan ketik nama pejabat penandatangan!");
+              return false;
+            }
+            nama = cNama;
+            jabatan = cJab || "Pengawas / Administrator Sarpras";
+            nip = cNip;
+
+            localStorage.setItem("sarpras_signer_custom_nama", cNama);
+            localStorage.setItem("sarpras_signer_custom_jabatan", cJab);
+            localStorage.setItem("sarpras_signer_custom_nip", cNip);
+          } else {
+            const selEl = document.getElementById("swalSignerSelect");
+            const selOpt = selEl.options[selEl.selectedIndex];
+            nama = selOpt.getAttribute("data-nama") || selOpt.text.replace("👤 ", "").split(" (")[0];
+            jabatan = selOpt.getAttribute("data-role") || "Pengawas Sarpras";
+          }
+
+          localStorage.setItem("sarpras_signer_type", type);
+          localStorage.setItem("sarpras_signer_mode", mode);
+
+          return {
+            mode: mode,
+            namaAdmin: nama,
+            jabatanAdmin: jabatan,
+            nipAdmin: nip
+          };
+        }
+      }).then(result => {
+        if (result.isConfirmed && result.value) {
+          callback(result.value);
+        }
+      });
     }
 
-    function printSingleWorkOrder(item) {
+    function handlePrintCurrentDetail() {
+      if (!currentDetailItemForPrint) return;
+      getReportSignerSettings(false, function(signerSettings) {
+        printSingleWorkOrder(currentDetailItemForPrint, signerSettings);
+      });
+    }
+
+    function printSingleWorkOrder(item, signerSettings) {
       if (!item) return;
       showLoading("Menyiapkan dokumen PDF & foto...");
 
@@ -2069,29 +2256,87 @@
             </table>
           </div>
 
-          <!-- LEMBAR TANDA TANGAN -->
-          <div style="page-break-inside: avoid; margin-top: 25px;">
-            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9pt;">
-              <tr>
-                <td style="width: 50%; padding-bottom: 65px;">
-                  Petugas Pelaksana Lapangan,
-                  <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Pelaksana Pekerjaan)</div>
-                </td>
-                <td style="width: 50%; padding-bottom: 65px;">
-                  Mengetahui / Memeriksa,
-                  <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Pengawas / Administrator Sarpras)</div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">( ${escapeHtml((item.petugas ? item.petugas.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : 'Petugas Lapangan'))} )</div>
-                </td>
-                <td>
-                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">( ${escapeHtml((currentUser && currentUser.nama) ? currentUser.nama.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : 'Pengawas Sarpras')} )</div>
-                </td>
-              </tr>
-            </table>
-          </div>
+          <!-- LEMBAR TANDA TANGAN (SESUAI PERAN & PILIHAN PENANDATANGAN) -->
+          ${(function() {
+            const isAdm = currentUser && currentUser.role && (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+            const mode = (signerSettings && signerSettings.mode) ? signerSettings.mode : (isAdm ? "keduanya" : "petugas_only");
+            const rawPetugas = (item.petugas ? item.petugas.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : (currentUser ? currentUser.nama : "Petugas Lapangan"));
+            const rawAdmin = (signerSettings && signerSettings.namaAdmin) ? signerSettings.namaAdmin : (currentUser ? currentUser.nama : "Pengawas Sarpras");
+            const jabatanAdmin = (signerSettings && signerSettings.jabatanAdmin) ? signerSettings.jabatanAdmin : "Pengawas / Administrator Sarpras";
+            const nipAdmin = (signerSettings && signerSettings.nipAdmin) ? signerSettings.nipAdmin : "";
+
+            if (mode === "petugas_only") {
+              return `
+                <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
+                  <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+                    <tr>
+                      <td style="padding-bottom: 5px; color: #475569; font-size: 8.5pt;">${todayStr}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding-bottom: 60px;">
+                        Pelaksana Pekerjaan Lapangan,
+                        <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Petugas Pemeliharaan Sarpras)</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div style="font-weight: 700; text-decoration: underline; color: #0F172A; font-size: 9.5pt;">( ${escapeHtml(rawPetugas)} )</div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              `;
+            } else if (mode === "admin") {
+              return `
+                <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
+                  <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+                    <tr>
+                      <td style="padding-bottom: 5px; color: #475569; font-size: 8.5pt;">${todayStr}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding-bottom: 60px;">
+                        Mengetahui / Memeriksa,
+                        <div style="font-size: 8.5pt; color: #1E3A8A; font-weight: 700; margin-top: 2px;">${escapeHtml(jabatanAdmin)}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div style="font-weight: 700; text-decoration: underline; color: #0F172A; font-size: 9.5pt;">( ${escapeHtml(rawAdmin)} )</div>
+                        ${nipAdmin ? `<div style="font-size: 8pt; color: #475569; margin-top: 3px;">NIP/NIK. ${escapeHtml(nipAdmin)}</div>` : ''}
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              `;
+            } else {
+              return `
+                <div style="page-break-inside: avoid; margin-top: 25px;">
+                  <div style="text-align: right; font-size: 8.5pt; color: #475569; margin-bottom: 8px;">${todayStr}</div>
+                  <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9pt;">
+                    <tr>
+                      <td style="width: 50%; vertical-align: top; padding-bottom: 60px;">
+                        Pelaksana Pekerjaan Lapangan,
+                        <div style="font-size: 8pt; color: #64748B; margin-top: 2px;">(Petugas Pemeliharaan Sarpras)</div>
+                      </td>
+                      <td style="width: 50%; vertical-align: top; padding-bottom: 60px;">
+                        Mengetahui / Memeriksa,
+                        <div style="font-size: 8.5pt; color: #1E3A8A; font-weight: 700; margin-top: 2px;">${escapeHtml(jabatanAdmin)}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div style="font-weight: 700; text-decoration: underline; color: #0F172A; font-size: 9.5pt;">( ${escapeHtml(rawPetugas)} )</div>
+                      </td>
+                      <td>
+                        <div style="font-weight: 700; text-decoration: underline; color: #0F172A; font-size: 9.5pt;">( ${escapeHtml(rawAdmin)} )</div>
+                        ${nipAdmin ? `<div style="font-size: 8pt; color: #475569; margin-top: 3px;">NIP/NIK. ${escapeHtml(nipAdmin)}</div>` : ''}
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              `;
+            }
+          })()}
 
         </div>
       `;
@@ -2113,9 +2358,15 @@
 
       function triggerPrintDialog() {
         hideLoading();
+        // Sembunyikan backdrop modal hitam (.modal-backdrop) & sweetalert agar preview print putih bersih
+        const darkBackdrops = document.querySelectorAll(".modal-backdrop, .swal2-container, .loading-overlay");
+        darkBackdrops.forEach(el => el.style.setProperty("display", "none", "important"));
+
         window.print();
+
         setTimeout(function() {
           document.title = originalDocTitle;
+          darkBackdrops.forEach(el => el.style.removeProperty("display"));
         }, 1200);
       }  if (total === 0) {
         triggerPrintDialog();
@@ -2147,6 +2398,12 @@
         return;
       }
 
+      getReportSignerSettings(true, function(signerSettings) {
+        executePrintFilteredHistory(dataToPrint, signerSettings);
+      });
+    }
+
+    function executePrintFilteredHistory(dataToPrint, signerSettings) {
       showLoading("Menyiapkan dokumen rekap PDF berwarna...");
       const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -2304,37 +2561,23 @@
 
       const namaPetugasTtdDisplay = formatNamaPetugas(namaPetugasTtd) || "Petugas Lapangan";
 
-      // Tentukan Nama Admin / Pengawas Penandatangan
-      const rawAdmin = (currentUser && currentUser.nama) ? currentUser.nama : "Pengawas / Administrator Sarpras";
-      const namaAdminTtdDisplay = formatNamaPetugas(rawAdmin) || "Pengawas Sarpras";
-
-      // Baca Opsi Penandatangan dari Dropdown Filter (Khusus Admin)
-      const ttdSelect = document.getElementById("filterTandaTangan");
-      const ttdMode = ttdSelect ? ttdSelect.value : "keduanya";
+      // Tentukan Identitas Penandatangan dari signerSettings
+      const isAdmUser = currentUser && currentUser.role && (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      const effectiveMode = (signerSettings && signerSettings.mode) ? signerSettings.mode : (isAdmUser ? "keduanya" : "petugas_only");
+      
+      const namaAdminTtdDisplay = (signerSettings && signerSettings.namaAdmin) ? formatNamaPetugas(signerSettings.namaAdmin) : (currentUser ? formatNamaPetugas(currentUser.nama) : "Pengawas Sarpras");
+      const jabatanAdminTtdDisplay = (signerSettings && signerSettings.jabatanAdmin) ? signerSettings.jabatanAdmin : "Pengawas / Administrator Sarpras";
+      const nipAdminTtdDisplay = (signerSettings && signerSettings.nipAdmin) ? signerSettings.nipAdmin : "";
 
       let signatureBlockHtml = "";
-      if (ttdMode === "admin") {
-        signatureBlockHtml = `
-          <!-- KOLOM TANDA TANGAN: HANYA ADMIN / PENGAWAS -->
-          <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
-            <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
-              <tr>
-                <td style="padding-bottom: 55px;">
-                  <div>Dibuat / Dilaporkan Oleh,</div>
-                  <b style="color: #1E3A8A; font-size: 9pt;">Pengawas / Pengelola Sarana Prasarana</b>
-                </td>
-              </tr>
-              <tr>
-                <td><b style="text-decoration: underline; font-size: 9pt;">( ${escapeHtml(namaAdminTtdDisplay)} )</b></td>
-              </tr>
-            </table>
-          </div>
-        `;
-      } else if (ttdMode === "petugas") {
+      if (effectiveMode === "petugas_only") {
         signatureBlockHtml = `
           <!-- KOLOM TANDA TANGAN: HANYA PETUGAS LAPANGAN -->
           <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
             <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
+              <tr>
+                <td style="padding-bottom: 5px; color: #475569;">${todayStr}</td>
+              </tr>
               <tr>
                 <td style="padding-bottom: 55px;">
                   <div>Pelaksana Pekerjaan Lapangan,</div>
@@ -2342,27 +2585,56 @@
                 </td>
               </tr>
               <tr>
-                <td><b style="text-decoration: underline; font-size: 9pt;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
+                <td><b style="text-decoration: underline; font-size: 9pt; color: #0F172A;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
+              </tr>
+            </table>
+          </div>
+        `;
+      } else if (effectiveMode === "admin") {
+        signatureBlockHtml = `
+          <!-- KOLOM TANDA TANGAN: HANYA ADMIN / PENGAWAS -->
+          <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
+            <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
+              <tr>
+                <td style="padding-bottom: 5px; color: #475569;">${todayStr}</td>
+              </tr>
+              <tr>
+                <td style="padding-bottom: 55px;">
+                  <div>Mengetahui / Memeriksa,</div>
+                  <b style="color: #1E3A8A; font-size: 9pt;">${escapeHtml(jabatanAdminTtdDisplay)}</b>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b style="text-decoration: underline; font-size: 9pt; color: #0F172A;">( ${escapeHtml(namaAdminTtdDisplay)} )</b>
+                  ${nipAdminTtdDisplay ? `<div style="font-size: 8pt; color: #475569; margin-top: 2px;">NIP/NIK. ${escapeHtml(nipAdminTtdDisplay)}</div>` : ''}
+                </td>
               </tr>
             </table>
           </div>
         `;
       } else {
         signatureBlockHtml = `
-          <!-- KOLOM TANDA TANGAN: DUA PIHAK (STANDAR) -->
+          <!-- KOLOM TANDA TANGAN: DUA PIHAK (STANDAR ADMIN) -->
           <div style="page-break-inside: avoid; margin-top: 20px;">
+            <div style="text-align: right; font-size: 8.5pt; color: #475569; margin-bottom: 6px;">${todayStr}</div>
             <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
               <tr>
-                <td style="width: 50%; padding-bottom: 50px;">
-                  Petugas Pelaksana Lapangan,
+                <td style="width: 50%; vertical-align: top; padding-bottom: 50px;">
+                  <div>Pelaksana Pekerjaan Lapangan,</div>
+                  <b style="color: #1E3A8A; font-size: 8.5pt;">Petugas Pemeliharaan Sarpras</b>
                 </td>
-                <td style="width: 50%; padding-bottom: 50px;">
-                  Mengetahui / Pengawas Sarpras,
+                <td style="width: 50%; vertical-align: top; padding-bottom: 50px;">
+                  <div>Mengetahui / Memeriksa,</div>
+                  <b style="color: #1E3A8A; font-size: 8.5pt;">${escapeHtml(jabatanAdminTtdDisplay)}</b>
                 </td>
               </tr>
               <tr>
-                <td><b style="text-decoration: underline;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
-                <td><b style="text-decoration: underline;">( ${escapeHtml(namaAdminTtdDisplay)} )</b></td>
+                <td><b style="text-decoration: underline; color: #0F172A;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
+                <td>
+                  <b style="text-decoration: underline; color: #0F172A;">( ${escapeHtml(namaAdminTtdDisplay)} )</b>
+                  ${nipAdminTtdDisplay ? `<div style="font-size: 8pt; color: #475569; margin-top: 2px;">NIP/NIK. ${escapeHtml(nipAdminTtdDisplay)}</div>` : ''}
+                </td>
               </tr>
             </table>
           </div>
@@ -2449,9 +2721,15 @@
 
       function triggerPrintDialog() {
         hideLoading();
+        // Sembunyikan backdrop modal hitam (.modal-backdrop) & sweetalert agar preview print putih bersih
+        const darkBackdrops = document.querySelectorAll(".modal-backdrop, .swal2-container, .loading-overlay");
+        darkBackdrops.forEach(el => el.style.setProperty("display", "none", "important"));
+
         window.print();
+
         setTimeout(function() {
           document.title = originalDocTitle;
+          darkBackdrops.forEach(el => el.style.removeProperty("display"));
         }, 1200);
       }  if (total === 0) {
         triggerPrintDialog();
