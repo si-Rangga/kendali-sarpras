@@ -2486,29 +2486,29 @@
         return;
       }
 
-      // Header Kolom CSV Sesuai Susunan Baru yang Sangat Logis & Rapi:
+      // Header Kolom CSV Sesuai Urutan 17+3 Kolom Database
       const headers = [
         "No",
         "ID Checklist",
-        "Tanggal Pemeriksaan",
-        "Waktu Input (Timestamp)",
+        "Timestamp",
+        "Tanggal",
         "Kategori",
         "Objek & Lokasi",
         "Kode Aset",
         "Temuan Masalah",
         "Tindakan Teknis",
         "Status Pengerjaan",
-        "Petugas Pelaksana",
-        "Waktu Mulai Pengerjaan",
-        "Waktu Selesai",
-        "Durasi Penanganan",
-        "Catatan & Arahan Pimpinan",
         "Foto Sebelum 1 (Link)",
         "Foto Sebelum 2 (Link)",
         "Foto Sebelum 3 (Link)",
         "Foto Sesudah 1 (Link)",
         "Foto Sesudah 2 (Link)",
-        "Foto Sesudah 3 (Link)"
+        "Foto Sesudah 3 (Link)",
+        "Petugas Pelaksana",
+        "Catatan Proyek / Arahan Pimpinan",
+        "Waktu Mulai Pengerjaan",
+        "Waktu Selesai",
+        "Durasi Penanganan"
       ];
 
       function escapeCsv(val) {
@@ -2534,25 +2534,25 @@
         const row = [
           idx + 1,
           item.id || "",
-          item.tanggal || "",
           item.timestamp || "",
+          item.tanggal || "",
           item.kategori || "",
           item.objekLokasi || "",
           item.kodeAset || "",
           item.temuan || "",
           item.tindakan || "",
           item.status || "",
-          item.petugas || "",
-          item.waktuMulai || "",
-          item.waktuSelesai || "",
-          item.durasi || item.durasiPenanganan || "",
-          item.catatan || "",
           fSblm1,
           fSblm2,
           fSblm3,
           fSsdh1,
           fSsdh2,
-          fSsdh3
+          fSsdh3,
+          item.petugas || "",
+          item.catatan || "",
+          item.waktuMulai || "",
+          item.waktuSelesai || "",
+          item.durasi || item.durasiPenanganan || ""
         ];
 
         csvContent += row.map(escapeCsv).join(",") + "\r\n";
