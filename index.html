@@ -178,7 +178,7 @@
     /* STATUS SELECTOR CARDS */
     .status-card-group {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 8px;
     }
     .status-tile {
@@ -218,6 +218,12 @@
       background: var(--selesai-bg);
       color: var(--selesai-text);
       box-shadow: 0 0 0 2px var(--selesai-border);
+    }
+    .btn-check:checked + .status-tile.tile-ditunda {
+      border-color: #64748B;
+      background: #F1F5F9;
+      color: #334155;
+      box-shadow: 0 0 0 2px #64748B;
     }
 
     /* MODERN INPUT & FORM CONTROLS */
@@ -759,6 +765,34 @@
             </div>
           </div>
 
+          <!-- BARIS KINERJA & TIKET DITUNDA -->
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <div class="card card-custom p-3 border-start border-4 border-info h-100 d-flex flex-row justify-content-between align-items-center">
+                <div>
+                  <div class="small fw-bold text-secondary text-uppercase" style="letter-spacing: 0.5px;">Temuan Pending & On Progress</div>
+                  <div class="fs-3 fw-bold text-primary mt-1" id="dashPendingCount">0</div>
+                  <small class="text-muted"><i class="bi bi-hourglass-bottom text-warning me-1"></i>Pekerjaan aktif dipantau durasinya dari temuan awal</small>
+                </div>
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-circle fs-3">
+                  <i class="bi bi-speedometer2"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="card card-custom p-3 border-start border-4 border-secondary h-100 d-flex flex-row justify-content-between align-items-center">
+                <div>
+                  <div class="small fw-bold text-secondary text-uppercase" style="letter-spacing: 0.5px;">Ditunda / Arahan Pimpinan</div>
+                  <div class="fs-3 fw-bold text-secondary mt-1" id="dashDitunda">0</div>
+                  <small class="text-muted"><i class="bi bi-pause-circle text-secondary me-1"></i>Kendala anggaran / wewenang (Timer SLA berhenti)</small>
+                </div>
+                <div class="p-3 bg-secondary bg-opacity-10 text-secondary rounded-circle fs-3">
+                  <i class="bi bi-clipboard2-pause"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- KATEGORI PROGRESS BAR -->
           <div class="row g-4 mb-4">
             <div class="col-12 col-lg-5">
@@ -989,25 +1023,67 @@
                     </label>
                     <div class="status-card-group">
                       <div>
-                        <input type="radio" class="btn-check" name="statusRadio" id="statTindak" value="Perlu Tindak Lanjut" checked>
+                        <input type="radio" class="btn-check" name="statusRadio" id="statTindak" value="Perlu Tindak Lanjut" checked onchange="toggleInputAlasanTunda(this.value)">
                         <label class="status-tile tile-tindak w-100" for="statTindak">
                           <i class="bi bi-exclamation-octagon-fill text-danger"></i>
                           <span class="status-title">Perlu Tindak Lanjut</span>
                         </label>
                       </div>
                       <div>
-                        <input type="radio" class="btn-check" name="statusRadio" id="statProgress" value="On Progress">
+                        <input type="radio" class="btn-check" name="statusRadio" id="statProgress" value="On Progress" onchange="toggleInputAlasanTunda(this.value)">
                         <label class="status-tile tile-progress w-100" for="statProgress">
                           <i class="bi bi-clock-history text-warning"></i>
                           <span class="status-title">On Progress</span>
                         </label>
                       </div>
                       <div>
-                        <input type="radio" class="btn-check" name="statusRadio" id="statSelesai" value="Selesai">
+                        <input type="radio" class="btn-check" name="statusRadio" id="statSelesai" value="Selesai" onchange="toggleInputAlasanTunda(this.value)">
                         <label class="status-tile tile-selesai w-100" for="statSelesai">
                           <i class="bi bi-check-circle-fill text-success"></i>
                           <span class="status-title">Selesai</span>
                         </label>
+                      </div>
+                      <div>
+                        <input type="radio" class="btn-check" name="statusRadio" id="statDitunda" value="Ditunda / Tidak Dikerjakan" onchange="toggleInputAlasanTunda(this.value)">
+                        <label class="status-tile tile-ditunda w-100" for="statDitunda">
+                          <i class="bi bi-pause-circle-fill text-secondary"></i>
+                          <span class="status-title">Ditunda Pimpinan</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- KONTANER ALASAN & KETERANGAN BEBAS (KHUSUS DITUNDA / TIDAK DIKERJAKAN) -->
+                    <div id="containerInputAlasanTunda" class="d-none mt-3 p-3 border rounded-3 bg-warning bg-opacity-10">
+                      <div class="d-flex align-items-center mb-2 text-dark">
+                        <i class="bi bi-pause-circle-fill text-warning fs-5 me-2"></i>
+                        <div>
+                          <div class="fw-bold small">Penundaan / Penghentian Pekerjaan (Arahan Pimpinan)</div>
+                          <div class="text-muted" style="font-size: 0.72rem;">Timer durasi dibekukan & tidak memotong indikator kinerja petugas</div>
+                        </div>
+                      </div>
+                      
+                      <!-- Pilihan Alasan Cepat -->
+                      <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                          <i class="bi bi-tag-fill me-1 text-primary"></i> Pilihan Alasan Cepat (Kategori):
+                        </label>
+                        <select id="inputAlasanTundaSelect" class="form-select form-select-sm">
+                          <option value="Keterbatasan Anggaran">💰 Keterbatasan Anggaran (Usul di RKA/RKBMN)</option>
+                          <option value="Di Luar Wewenang">🏢 Di Luar Wewenang (Gedung Sewa / Pihak Ketiga / PU)</option>
+                          <option value="Usul Hapus Aset">🗑️ Usulan Penghapusan / Penggantian Aset</option>
+                          <option value="Arahan Khusus Pimpinan">📋 Arahan Khusus Pimpinan / Kebijakan Lain</option>
+                        </select>
+                      </div>
+
+                      <!-- Keterangan Bebas -->
+                      <div class="mb-1">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                          <i class="bi bi-chat-left-text-fill me-1 text-primary"></i> Keterangan Bebas & Catatan Arahan Pimpinan:
+                        </label>
+                        <textarea id="inputCatatanPimpinan" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, nomor nota dinas/disposisi, atau pertimbangan penundaan..."></textarea>
+                        <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                          <i class="bi bi-info-circle me-1"></i>Keterangan bebas ini otomatis tercatat pada riwayat kendali dan lembar laporan cetak pimpinan.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1130,6 +1206,9 @@
                   <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-bold text-nowrap qf-status" id="qfStat-selesai" onclick="setQuickStatusFilter('selesai')">
                     🟢 Selesai
                   </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold text-nowrap qf-status" id="qfStat-ditunda" onclick="setQuickStatusFilter('ditunda')">
+                    ⚪ Ditunda
+                  </button>
                 </div>
               </div>
 
@@ -1154,6 +1233,7 @@
                     <option value="perlu tindak lanjut">🔴 Perlu Tindak Lanjut</option>
                     <option value="on progress">🟡 On Progress</option>
                     <option value="selesai">🟢 Selesai</option>
+                    <option value="ditunda">⚪ Ditunda / Tidak Dikerjakan</option>
                   </select>
                 </div>
                 <div class="col-12 col-md-2 admin-only-tab d-none" id="filterPetugasContainer">
@@ -1171,13 +1251,25 @@
                   </div>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 pt-2 border-top">
                 <div class="small text-muted" id="filterCountBadge">
                   Menampilkan <b id="filterCountVal">0</b> dari total <b id="filterTotalVal">0</b> data riwayat
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="resetFilterHistory()">
-                  <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filter
-                </button>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <div class="d-flex align-items-center gap-2 admin-only-tab d-none" id="filterTtdContainer">
+                    <label class="small text-dark fw-bold mb-0 text-nowrap" for="filterTandaTangan">
+                      <i class="bi bi-pen-fill text-primary me-1"></i>TTD Cetak:
+                    </label>
+                    <select id="filterTandaTangan" class="form-select form-select-sm modern-dropdown" style="min-width: 220px;" title="Pilih Format Penandatangan Saat Mencetak Rekapitulasi PDF">
+                      <option value="keduanya" selected>👥 Dua Pihak (Petugas & Admin)</option>
+                      <option value="admin">👤 Hanya Admin / Pengawas</option>
+                      <option value="petugas">👷 Hanya Petugas Lapangan</option>
+                    </select>
+                  </div>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="resetFilterHistory()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filter
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1935,10 +2027,10 @@
 
           ${item.catatan ? `
           <div style="margin-bottom: 12px;">
-            <div style="font-size: 9pt; font-weight: 700; color: #475569; margin-bottom: 3px;">
-              Catatan Koordinasi Vendor / Proyek:
+            <div style="font-size: 9pt; font-weight: 700; color: ${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? '#B45309' : '#475569'}; margin-bottom: 3px;">
+              ${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? '⚠️ ARAHAN PIMPINAN / KETERANGAN PENUNDAAN PEKERJAAN:' : 'Catatan Koordinasi Vendor / Arahan Tambahan:'}
             </div>
-            <div style="border: 1px solid #E2E8F0; background: #F8FAFC; padding: 6px 10px; border-radius: 6px; font-size: 8.5pt; color: #334155;">
+            <div style="border: 1px solid ${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? '#FDE68A' : '#E2E8F0'}; background: ${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? '#FEF3C7' : '#F8FAFC'}; padding: 8px 12px; border-radius: 6px; font-size: 8.5pt; color: #0F172A; white-space: pre-line;">
               ${escapeHtml(item.catatan)}
             </div>
           </div>
@@ -1989,7 +2081,7 @@
                   <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">( ${escapeHtml((item.petugas ? item.petugas.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : 'Petugas Lapangan'))} )</div>
                 </td>
                 <td>
-                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">Pengawas Sarpras</div>
+                  <div style="font-weight: 700; text-decoration: underline; color: #0F172A;">( ${escapeHtml((currentUser && currentUser.nama) ? currentUser.nama.split(" ").map(w => w.length > 0 ? (w[0].toUpperCase() + w.slice(1)) : "").join(" ") : 'Pengawas Sarpras')} )</div>
                 </td>
               </tr>
             </table>
@@ -2143,6 +2235,10 @@
           statusBg = "#FEF3C7";
           statusColor = "#78350F";
           statusBorder = "#D97706";
+        } else if (stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) {
+          statusBg = "#F1F5F9";
+          statusColor = "#475569";
+          statusBorder = "#94A3B8";
         }
 
         const rowBg = idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
@@ -2156,11 +2252,19 @@
               ${item.kodeAset ? `<br><small style="color: #475569; font-family: monospace; font-size: 7.5pt;">Aset: ${escapeHtml(item.kodeAset)}</small>` : ''}
             </td>
             <td style="padding: 6px 6px; border: 1px solid #CBD5E1; color: #334155;">${escapeHtml(item.temuan)}</td>
-            <td style="padding: 6px 6px; border: 1px solid #CBD5E1; color: #1E293B;">${escapeHtml(item.tindakan)}</td>
+            <td style="padding: 6px 6px; border: 1px solid #CBD5E1; color: #1E293B;">
+              ${escapeHtml(item.tindakan)}
+              ${(stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1 || (item.catatan && item.catatan.indexOf("ARAHAN PIMPINAN") !== -1)) && item.catatan ? `
+                <div style="margin-top: 4px; padding: 4px 6px; background: #FEF3C7; border-left: 2.5px solid #D97706; font-size: 7pt; color: #78350F; border-radius: 2px; text-align: left; white-space: pre-line;">
+                  <b>Arahan Pimpinan / Keterangan:</b><br>${escapeHtml(item.catatan)}
+                </div>
+              ` : ''}
+            </td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">
               <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 7.5pt; background-color: ${statusBg} !important; color: ${statusColor} !important; border: 1.5px solid ${statusBorder} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 ${escapeHtml(item.status)}
               </span>
+              ${item.durasi ? `<div style="font-size: 6.5pt; color: #475569; margin-top: 2px; font-weight: 600;">${escapeHtml(item.durasi)}</div>` : ''}
             </td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${fotoHtml}</td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; font-weight: 600; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
@@ -2193,6 +2297,71 @@
       }
 
       const namaPetugasTtdDisplay = formatNamaPetugas(namaPetugasTtd) || "Petugas Lapangan";
+
+      // Tentukan Nama Admin / Pengawas Penandatangan
+      const rawAdmin = (currentUser && currentUser.nama) ? currentUser.nama : "Pengawas / Administrator Sarpras";
+      const namaAdminTtdDisplay = formatNamaPetugas(rawAdmin) || "Pengawas Sarpras";
+
+      // Baca Opsi Penandatangan dari Dropdown Filter (Khusus Admin)
+      const ttdSelect = document.getElementById("filterTandaTangan");
+      const ttdMode = ttdSelect ? ttdSelect.value : "keduanya";
+
+      let signatureBlockHtml = "";
+      if (ttdMode === "admin") {
+        signatureBlockHtml = `
+          <!-- KOLOM TANDA TANGAN: HANYA ADMIN / PENGAWAS -->
+          <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
+            <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
+              <tr>
+                <td style="padding-bottom: 55px;">
+                  <div>Dibuat / Dilaporkan Oleh,</div>
+                  <b style="color: #1E3A8A; font-size: 9pt;">Pengawas / Pengelola Sarana Prasarana</b>
+                </td>
+              </tr>
+              <tr>
+                <td><b style="text-decoration: underline; font-size: 9pt;">( ${escapeHtml(namaAdminTtdDisplay)} )</b></td>
+              </tr>
+            </table>
+          </div>
+        `;
+      } else if (ttdMode === "petugas") {
+        signatureBlockHtml = `
+          <!-- KOLOM TANDA TANGAN: HANYA PETUGAS LAPANGAN -->
+          <div style="page-break-inside: avoid; margin-top: 25px; display: flex; justify-content: flex-end;">
+            <table style="width: 45%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
+              <tr>
+                <td style="padding-bottom: 55px;">
+                  <div>Pelaksana Pekerjaan Lapangan,</div>
+                  <b style="color: #1E3A8A; font-size: 9pt;">Petugas Pemeliharaan Sarpras</b>
+                </td>
+              </tr>
+              <tr>
+                <td><b style="text-decoration: underline; font-size: 9pt;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
+              </tr>
+            </table>
+          </div>
+        `;
+      } else {
+        signatureBlockHtml = `
+          <!-- KOLOM TANDA TANGAN: DUA PIHAK (STANDAR) -->
+          <div style="page-break-inside: avoid; margin-top: 20px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
+              <tr>
+                <td style="width: 50%; padding-bottom: 50px;">
+                  Petugas Pelaksana Lapangan,
+                </td>
+                <td style="width: 50%; padding-bottom: 50px;">
+                  Mengetahui / Pengawas Sarpras,
+                </td>
+              </tr>
+              <tr>
+                <td><b style="text-decoration: underline;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
+                <td><b style="text-decoration: underline;">( ${escapeHtml(namaAdminTtdDisplay)} )</b></td>
+              </tr>
+            </table>
+          </div>
+        `;
+      }
 
       const printHtml = `
         <div style="font-family: Arial, sans-serif; color: #0F172A; width: 100%; margin: 0 auto; line-height: 1.3;">
@@ -2240,23 +2409,8 @@
             </tbody>
           </table>
 
-          <!-- KOLOM TANDA TANGAN -->
-          <div style="page-break-inside: avoid; margin-top: 20px;">
-            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 8.5pt;">
-              <tr>
-                <td style="width: 50%; padding-bottom: 50px;">
-                  Petugas Pelaksana Lapangan,
-                </td>
-                <td style="width: 50%; padding-bottom: 50px;">
-                  Mengetahui / Pengawas Sarpras,
-                </td>
-              </tr>
-              <tr>
-                <td><b style="text-decoration: underline;">( ${escapeHtml(namaPetugasTtdDisplay)} )</b></td>
-                <td><b style="text-decoration: underline;">( Pengawas / Administrator Sarpras )</b></td>
-              </tr>
-            </table>
-          </div>
+          <!-- KOLOM TANDA TANGAN (SESUAI OPSI ADMIN) -->
+          ${signatureBlockHtml}
 
         </div>
       `;
@@ -2332,26 +2486,29 @@
         return;
       }
 
-      // Header Kolom CSV
+      // Header Kolom CSV Sesuai Susunan Baru yang Sangat Logis & Rapi:
       const headers = [
         "No",
         "ID Checklist",
-        "Timestamp",
-        "Tanggal",
+        "Tanggal Pemeriksaan",
+        "Waktu Input (Timestamp)",
         "Kategori",
         "Objek & Lokasi",
         "Kode Aset",
         "Temuan Masalah",
         "Tindakan Teknis",
         "Status Pengerjaan",
+        "Petugas Pelaksana",
+        "Waktu Mulai Pengerjaan",
+        "Waktu Selesai",
+        "Durasi Penanganan",
+        "Catatan & Arahan Pimpinan",
         "Foto Sebelum 1 (Link)",
         "Foto Sebelum 2 (Link)",
         "Foto Sebelum 3 (Link)",
         "Foto Sesudah 1 (Link)",
         "Foto Sesudah 2 (Link)",
-        "Foto Sesudah 3 (Link)",
-        "Petugas Pelaksana",
-        "Catatan Proyek/Lainnya"
+        "Foto Sesudah 3 (Link)"
       ];
 
       function escapeCsv(val) {
@@ -2377,51 +2534,45 @@
         const row = [
           idx + 1,
           item.id || "",
-          item.timestamp || "",
           item.tanggal || "",
+          item.timestamp || "",
           item.kategori || "",
           item.objekLokasi || "",
           item.kodeAset || "",
           item.temuan || "",
           item.tindakan || "",
           item.status || "",
+          item.petugas || "",
+          item.waktuMulai || "",
+          item.waktuSelesai || "",
+          item.durasi || item.durasiPenanganan || "",
+          item.catatan || "",
           fSblm1,
           fSblm2,
           fSblm3,
           fSsdh1,
           fSsdh2,
-          fSsdh3,
-          item.petugas || "",
-          item.catatan || ""
+          fSsdh3
         ];
 
         csvContent += row.map(escapeCsv).join(",") + "\r\n";
       });
 
-      const now = new Date();
-      const timeStr = now.getFullYear() + 
-        String(now.getMonth() + 1).padStart(2, "0") + 
-        String(now.getDate()).padStart(2, "0") + "_" + 
-        String(now.getHours()).padStart(2, "0") + 
-        String(now.getMinutes()).padStart(2, "0");
-
-      const filename = `Data_Checklist_${timeStr}.csv`;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const filename = `REKAP_DATA_SARPRAS_${todayStr}.csv`;
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       Swal.fire({
         icon: "success",
-        title: "Download Berhasil!",
-        text: `File "${filename}" berhasil diunduh (${dataToExport.length} baris data). Dapat langsung dibuka di Microsoft Excel.`,
-        timer: 2500,
-        showConfirmButton: false
+        title: "Download Berhasil",
+        text: `Data ${dataToExport.length} riwayat pekerjaan berhasil diunduh ke format Excel (${filename}).`
       });
     }
 
@@ -2819,6 +2970,26 @@
     let webcamStream = null;
     let currentWebcamTarget = { imgId: '', placeholderId: '', resetBtnId: '', fallbackInputId: '' };
 
+    function toggleAlasanTunda(val) {
+      const c = document.getElementById("containerAlasanTunda");
+      if (!c) return;
+      if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+        c.classList.remove("d-none");
+      } else {
+        c.classList.add("d-none");
+      }
+    }
+
+    function toggleInputAlasanTunda(val) {
+      const c = document.getElementById("containerInputAlasanTunda");
+      if (!c) return;
+      if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+        c.classList.remove("d-none");
+      } else {
+        c.classList.add("d-none");
+      }
+    }
+
     function isMobileDevice() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
     }
@@ -3177,6 +3348,10 @@
       }
       if (!petugas && currentUser) petugas = currentUser.nama;
 
+      const stVal = document.querySelector('input[name="statusRadio"]:checked').value;
+      const alasanTundaInput = document.getElementById("inputAlasanTundaSelect") ? document.getElementById("inputAlasanTundaSelect").value : "";
+      const catatanPimpinanInput = document.getElementById("inputCatatanPimpinan") ? document.getElementById("inputCatatanPimpinan").value.trim() : "";
+
       const payload = {
         tanggal: document.getElementById("inputTanggal").value,
         petugas: petugas,
@@ -3185,7 +3360,9 @@
         kodeAset: document.getElementById("inputKodeAset").value,
         temuan: document.getElementById("inputTemuan").value,
         tindakan: document.getElementById("inputTindakan").value,
-        status: document.querySelector('input[name="statusRadio"]:checked').value,
+        status: stVal,
+        alasanTunda: alasanTundaInput,
+        catatanPimpinan: catatanPimpinanInput,
         catatan: document.getElementById("inputCatatan").value,
         fotoSebelumList: listFotoSebelum.map(f => f.base64),
         fotoSesudahList: listFotoSesudah.map(f => f.base64),
@@ -3292,8 +3469,15 @@
       if (!stats) return;
       document.getElementById("dashTotal").innerText = stats.total || 0;
       document.getElementById("dashSelesai").innerText = stats.selesai || 0;
-      document.getElementById("dashProgress").innerText = stats.onProgress || 0;
-      document.getElementById("dashTindak").innerText = stats.perluTindakLanjut || 0;
+      document.getElementById("dashProgress").innerText = stats.progress || stats.onProgress || 0;
+      document.getElementById("dashTindak").innerText = stats.tindakLanjut || stats.perluTindakLanjut || 0;
+      if (document.getElementById("dashDitunda")) {
+        document.getElementById("dashDitunda").innerText = stats.ditunda || stats.ditundaCount || 0;
+      }
+      if (document.getElementById("dashPendingCount")) {
+        const pTotal = (stats.tindakLanjut || stats.perluTindakLanjut || 0) + (stats.progress || stats.onProgress || 0);
+        document.getElementById("dashPendingCount").innerText = pTotal + " Pekerjaan";
+      }
 
       document.getElementById("dashSaranaCount").innerText = stats.sarana || 0;
       document.getElementById("dashPrasaranaCount").innerText = stats.prasarana || 0;
@@ -3305,7 +3489,7 @@
       document.getElementById("barProyek").style.width = Math.round(((stats.proyek || 0) / total) * 100) + "%";
 
       // Render rekap per petugas
-      renderPetugasBreakdown(stats.perPetugas);
+      renderPetugasBreakdown(stats.perPetugas || stats.petugasBreakdown);
     }
 
     function renderPetugasBreakdown(petugasMap) {
@@ -3471,6 +3655,7 @@
       if (document.getElementById("filterPetugas")) document.getElementById("filterPetugas").value = "semua";
       if (document.getElementById("filterStartDate")) document.getElementById("filterStartDate").value = "";
       if (document.getElementById("filterEndDate")) document.getElementById("filterEndDate").value = "";
+      if (document.getElementById("filterTandaTangan")) document.getElementById("filterTandaTangan").value = "keduanya";
       updateQuickStatusButtons("semua");
       filterHistoryLocal();
     }
@@ -3572,9 +3757,44 @@
       let html = "";
       data.forEach(item => {
         let badgeClass = "badge-selesai";
-        const st = item.status.toLowerCase();
+        const st = (item.status || "").toLowerCase();
         if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
         else if (st.indexOf("tindak") !== -1) badgeClass = "badge-tindak";
+        else if (st.indexOf("tunda") !== -1 || st.indexOf("tidak dikerjakan") !== -1) badgeClass = "badge bg-secondary text-white border";
+
+        // Hitung umur / durasi terpending dari waktu temuan awal
+        let daysPending = 0;
+        try {
+          const tglStr = item.timestamp || item.tanggal;
+          if (tglStr) {
+            let sClean = String(tglStr).trim().replace(/\s+/, 'T');
+            let dStart = new Date(sClean);
+            if (isNaN(dStart.getTime())) {
+              const m = String(tglStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+              if (m) dStart = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+            }
+            if (!isNaN(dStart.getTime())) {
+              daysPending = Math.max(0, Math.floor((new Date() - dStart) / (1000 * 60 * 60 * 24)));
+            }
+          }
+        } catch (e) {}
+
+        let kpiBadge = "";
+        if (st.indexOf("selesai") !== -1) {
+          const dur = item.durasi || item.durasiPenanganan || (daysPending === 0 ? "Selesai (Hari Sama)" : `Selesai dlm ${daysPending} Hari`);
+          kpiBadge = `<div class="mt-1"><span class="badge bg-success bg-opacity-10 text-success border border-success" style="font-size:0.65rem;" title="${escapeHtml(dur)}"><i class="bi bi-check2 me-1"></i>${escapeHtml(dur)}</span></div>`;
+        } else if (st.indexOf("tunda") !== -1 || st.indexOf("tidak dikerjakan") !== -1) {
+          kpiBadge = `<div class="mt-1"><span class="badge bg-light text-secondary border" style="font-size:0.65rem;" title="Ditunda atas arahan pimpinan (Waktu terhenti)"><i class="bi bi-pause-circle me-1"></i>Ditunda Pimpinan</span></div>`;
+        } else if (st.indexOf("progress") !== -1) {
+          kpiBadge = `<div class="mt-1"><span class="badge bg-warning bg-opacity-10 text-dark border border-warning" style="font-size:0.65rem;" title="Sedang dikerjakan teknisi"><i class="bi bi-clock-history me-1"></i>Berjalan Hari ke-${daysPending + 1}</span></div>`;
+        } else {
+          // Perlu tindak lanjut: pantau berapa hari terpending
+          if (daysPending >= 3) {
+            kpiBadge = `<div class="mt-1"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger fw-bold" style="font-size:0.65rem;" title="Laporan temuan belum disentuh ${daysPending} hari"><i class="bi bi-exclamation-triangle-fill me-1"></i>Pending ${daysPending} Hari</span></div>`;
+          } else {
+            kpiBadge = `<div class="mt-1"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger" style="font-size:0.65rem;"><i class="bi bi-clock me-1"></i>Pending ${daysPending === 0 ? 'Hari ini' : daysPending + ' Hari'}</span></div>`;
+          }
+        }
 
         const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
         const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
@@ -3630,7 +3850,10 @@
             </td>
             <td class="small">${escapeHtml(item.temuan)}</td>
             <td class="small">${escapeHtml(item.tindakan)}</td>
-            <td><span class="badge ${badgeClass} px-2 py-1">${escapeHtml(item.status)}</span></td>
+            <td>
+              <span class="badge ${badgeClass} px-2 py-1">${escapeHtml(item.status)}</span>
+              ${kpiBadge}
+            </td>
             <td>${docBadge}</td>
             <td class="small">${escapeHtml(item.petugas || '-')}</td>
             <td class="text-center text-nowrap">
@@ -3874,11 +4097,45 @@
             <form onsubmit="handleUpdateStatus(event, '${item.id}')">
               <div class="mb-3">
                 <label class="form-label small fw-semibold">Ubah Status Menjadi</label>
-                <select id="updateStatusSelect" class="form-select modern-dropdown">
+                <select id="updateStatusSelect" class="form-select modern-dropdown" onchange="toggleAlasanTunda(this.value)">
                   <option value="Perlu Tindak Lanjut">🔴 Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
                   <option value="On Progress">🟡 On Progress (Sedang Dikerjakan)</option>
                   <option value="Selesai" selected>🟢 Selesai (Tuntas Beres)</option>
+                  <option value="Ditunda / Tidak Dikerjakan">⚪ Ditunda / Tidak Dikerjakan (Arahan Pimpinan)</option>
                 </select>
+              </div>
+              <div id="containerAlasanTunda" class="d-none mb-3 p-3 border rounded-3 bg-warning bg-opacity-10">
+                <div class="d-flex align-items-center mb-2 text-dark">
+                  <i class="bi bi-pause-circle-fill text-warning fs-5 me-2"></i>
+                  <div>
+                    <div class="fw-bold small">Penundaan / Penghentian Pekerjaan (Arahan Pimpinan)</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">Timer durasi dibekukan & tidak memotong indikator kinerja petugas</div>
+                  </div>
+                </div>
+
+                <!-- Pilihan Alasan Cepat -->
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-tag-fill me-1 text-primary"></i> Pilihan Alasan Cepat (Kategori):
+                  </label>
+                  <select id="updateAlasanTundaSelect" class="form-select form-select-sm">
+                    <option value="Keterbatasan Anggaran">💰 Keterbatasan Anggaran (Usul di RKA/RKBMN)</option>
+                    <option value="Di Luar Wewenang">🏢 Di Luar Wewenang (Gedung Sewa / Pihak Ketiga / PU)</option>
+                    <option value="Usul Hapus Aset">🗑️ Usulan Penghapusan / Penggantian Aset</option>
+                    <option value="Arahan Khusus Pimpinan">📋 Arahan Khusus Pimpinan / Kebijakan Lain</option>
+                  </select>
+                </div>
+
+                <!-- Keterangan Bebas / Catatan Arahan Pimpinan -->
+                <div class="mb-1">
+                  <label class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-chat-left-text-fill me-1 text-primary"></i> Keterangan Bebas & Catatan Arahan Pimpinan:
+                  </label>
+                  <textarea id="updateCatatanPimpinanInput" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, nomor nota dinas/disposisi pimpinan, atau rincian kendala..."></textarea>
+                  <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                    <i class="bi bi-info-circle me-1"></i>Keterangan bebas ini otomatis tercatat pada riwayat kendali dan lembar laporan cetak pimpinan.
+                  </div>
+                </div>
               </div>
               <div class="mb-3">
                 <label class="form-label small fw-semibold">Tindakan Penyelesaian / Tambahan</label>
@@ -3907,12 +4164,15 @@
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <table class="table table-sm table-borderless">
-              <tr><td class="text-secondary" style="width: 35%;">Tanggal</td><td>: <b>${escapeHtml(item.tanggal)}</b></td></tr>
+              <tr><td class="text-secondary" style="width: 38%;">Tanggal Lapor</td><td>: <b>${escapeHtml(item.tanggal)}</b></td></tr>
               <tr><td class="text-secondary">Kategori</td><td>: <span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td></tr>
               <tr><td class="text-secondary">Objek & Lokasi</td><td>: <b>${escapeHtml(item.objekLokasi)}</b></td></tr>
               <tr><td class="text-secondary">Kode Aset</td><td>: ${escapeHtml(item.kodeAset || '-')}</td></tr>
               <tr><td class="text-secondary">Petugas</td><td>: ${escapeHtml(item.petugas || '-')}</td></tr>
               <tr><td class="text-secondary">Status</td><td>: <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td></tr>
+              ${item.waktuMulai ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: ${escapeHtml(item.waktuMulai)}</td></tr>` : ''}
+              ${item.waktuSelesai ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: ${escapeHtml(item.waktuSelesai)}</td></tr>` : ''}
+              ${item.durasi ? `<tr><td class="text-secondary">Durasi / Status Waktu</td><td>: <b class="text-primary">${escapeHtml(item.durasi)}</b></td></tr>` : ''}
             </table>
           </div>
           <div class="col-12 col-md-6">
@@ -3926,8 +4186,8 @@
             </div>
             ${item.catatan ? `
             <div>
-              <label class="small text-secondary fw-semibold">Catatan:</label>
-              <div class="p-2 bg-light rounded small text-muted">${escapeHtml(item.catatan)}</div>
+              <label class="small text-secondary fw-semibold">${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? '<span class="text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>Arahan Pimpinan / Catatan:</span>' : 'Catatan Tambahan:'}</label>
+              <div class="p-2 rounded small ${item.catatan.indexOf('ARAHAN PIMPINAN') !== -1 ? 'bg-warning bg-opacity-10 border border-warning text-dark' : 'bg-light text-muted'}" style="white-space: pre-line;">${escapeHtml(item.catatan)}</div>
             </div>` : ''}
           </div>
         </div>
@@ -3998,6 +4258,8 @@
 
       const newStatus = document.getElementById("updateStatusSelect").value;
       const tindakan = document.getElementById("updateTindakanInput").value;
+      const alasanTunda = document.getElementById("updateAlasanTundaSelect") ? document.getElementById("updateAlasanTundaSelect").value : "";
+      const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
 
       showLoading("Menyimpan pembaruan status...", "Mengunggah data ke Google Sheets...");
       runBackend("updateChecklistStatus", {
@@ -4005,6 +4267,8 @@
           id: id,
           status: newStatus,
           tindakan: tindakan,
+          alasanTunda: alasanTunda,
+          catatanPimpinan: catatanPimpinan,
           fotoSesudahList: listUpdateFotoSesudah.map(f => f.base64),
           fotoSesudahBase64: listUpdateFotoSesudah.length > 0 ? listUpdateFotoSesudah[0].base64 : ""
         }
