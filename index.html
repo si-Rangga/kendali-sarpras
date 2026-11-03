@@ -2097,6 +2097,43 @@
       });
     }
 
+    function formatDurasiPenanganan(item) {
+      if (!item) return "";
+      const stLow = (item.status || "").toLowerCase();
+      const rawDur = String(item.durasi || item.durasiPenanganan || "").trim();
+
+      if (stLow.indexOf("selesai") !== -1) {
+        if (rawDur && rawDur.indexOf("|") !== -1) {
+          const tLapor = item.tanggal || item.timestamp;
+          const tSel = item.waktuSelesai || item.timestamp || item.tanggal;
+          if (tLapor && tSel) {
+            try {
+              const sL = String(tLapor).trim().split(" ")[0].replace("T", " ");
+              const sS = String(tSel).trim().split(" ")[0].replace("T", " ");
+              const pL = sL.split("-");
+              const pS = sS.split("-");
+              if (pL.length === 3 && pS.length === 3) {
+                const dL = new Date(parseInt(pL[0], 10), parseInt(pL[1], 10) - 1, parseInt(pL[2], 10));
+                const dS = new Date(parseInt(pS[0], 10), parseInt(pS[1], 10) - 1, parseInt(pS[2], 10));
+                const diffDays = Math.max(0, Math.round((dS.getTime() - dL.getTime()) / (1000 * 60 * 60 * 24)));
+                const realTotal = diffDays <= 0 ? "Total Hari yg Sama" : ("Total " + diffDays + " Hari");
+                const kerjaPart = rawDur.split("|")[1].trim() || (item.waktuMulai ? "Kerja Selesai" : "Tanpa On Progress");
+                return realTotal + " | " + kerjaPart;
+              }
+            } catch (e) {}
+          }
+          return rawDur;
+        }
+        return "Total Hari yg Sama | Tanpa On Progress";
+      } else if (stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) {
+        return rawDur || "Ditunda Pimpinan";
+      } else if (stLow.indexOf("progress") !== -1) {
+        return rawDur || "Sedang Dikerjakan";
+      } else {
+        return rawDur || "Menunggu Respon";
+      }
+    }
+
     function printSingleWorkOrder(item, signerSettings) {
       if (!item) return;
       showLoading("Menyiapkan dokumen PDF & foto...");
@@ -2140,16 +2177,52 @@
         ssdhImgTag = `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Belum ada foto fisik perbaikan sesudah)</div>`;
       }
 
+      const stLow = (item.status || "").toLowerCase();
+      const isSelesai = stLow.indexOf("selesai") !== -1;
+      const isDitunda = stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1;
+      const isProgress = stLow.indexOf("progress") !== -1;
+
       let statusColor = "#16A34A";
       let statusBg = "#DCFCE7";
-      const stLow = (item.status || "").toLowerCase();
       if (stLow.indexOf("tindak") !== -1) {
         statusColor = "#DC2626";
         statusBg = "#FEE2E2";
-      } else if (stLow.indexOf("progress") !== -1) {
+      } else if (isProgress) {
         statusColor = "#D97706";
         statusBg = "#FEF3C7";
+      } else if (isDitunda) {
+        statusColor = "#475569";
+        statusBg = "#F1F5F9";
       }
+
+      // 1. Tentukan Waktu On Progress
+      let waktuMulaiDisplay = "";
+      if (item.waktuMulai && String(item.waktuMulai).trim()) {
+        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(item.waktuMulai)}</b>`;
+      } else if (isProgress) {
+        const tProg = item.timestamp || item.tanggal || "Sedang Berjalan";
+        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(tProg)}</b>`;
+      } else if (isSelesai || isDitunda) {
+        waktuMulaiDisplay = '<span style="color: #64748B; font-style: italic;">Tanpa On Progress (Langsung Selesai)</span>';
+      } else {
+        waktuMulaiDisplay = '<span style="color: #64748B; font-style: italic;">Belum Dimulai</span>';
+      }
+
+      // 2. Tentukan Waktu Selesai / Tunda (Anti-Buntet: Tidak pernah menampilkan Belum Selesai jika status sudah Selesai)
+      let waktuSelesaiDisplay = "";
+      const effectiveSelesai = item.waktuSelesai || item.timestamp || item.tanggal;
+      if (isSelesai) {
+        waktuSelesaiDisplay = `<b style="color: #15803D;"><i class="bi bi-check2-circle me-1"></i>${escapeHtml(effectiveSelesai || "Sudah Selesai")}</b>`;
+      } else if (isDitunda) {
+        waktuSelesaiDisplay = `<b style="color: #475569;"><i class="bi bi-pause-circle me-1"></i>${escapeHtml(effectiveSelesai || "-")} (Ditunda)</b>`;
+      } else if (isProgress) {
+        waktuSelesaiDisplay = '<span style="color: #D97706; font-style: italic;"><i class="bi bi-hourglass-split me-1"></i>Sedang Dikerjakan</span>';
+      } else {
+        waktuSelesaiDisplay = '<span style="color: #DC2626; font-style: italic;"><i class="bi bi-exclamation-circle me-1"></i>Menunggu Tindak Lanjut</span>';
+      }
+
+      // 3. Tentukan Durasi Penanganan Akurat
+      const displayDurasi = formatDurasiPenanganan(item);
 
       const todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -2197,29 +2270,29 @@
               <td style="padding: 6px 8px; border: 1px solid #CBD5E1; font-family: monospace;">${escapeHtml(item.kodeAset || '-')}</td>
             </tr>
             <!-- BARIS RIWAYAT WAKTU: ON PROGRESS & SELESAI / TUNDA -->
-            <tr>
-              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu On Progress</td>
-              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
-                ${item.waktuMulai ? `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(item.waktuMulai)}</b>` : '<span style="color: #64748B; font-style: italic;">Tanpa On Progress</span>'}
-              </td>
-              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu Selesai / Tunda</td>
-              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
-                ${item.waktuSelesai ? `<b style="color: #15803D;"><i class="bi bi-check2-circle me-1"></i>${escapeHtml(item.waktuSelesai)}</b>` : '<span style="color: #DC2626; font-style: italic;">Belum Selesai</span>'}
-              </td>
-            </tr>
-            ${(item.durasi || item.durasiPenanganan) ? `
-            <tr>
-              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Durasi Penanganan</td>
-              <td colspan="3" style="padding: 6px 8px; border: 1px solid #CBD5E1;">
-                <span style="display: inline-block; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; padding: 2px 10px; border-radius: 4px; font-weight: 700;">
-                  ⏱️ ${escapeHtml(item.durasi || item.durasiPenanganan)}
-                </span>
-              </td>
-            </tr>
-            ` : ''}
-          </table>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu On Progress</td>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                  ${waktuMulaiDisplay}
+                </td>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu Selesai / Tunda</td>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                  ${waktuSelesaiDisplay}
+                </td>
+              </tr>
+              ${displayDurasi ? `
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Durasi Penanganan</td>
+                <td colspan="3" style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                  <span style="display: inline-block; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; padding: 2px 10px; border-radius: 4px; font-weight: 700;">
+                    ⏱️ ${escapeHtml(displayDurasi)}
+                  </span>
+                </td>
+              </tr>
+              ` : ''}
+            </table>
 
-          <!-- 1. TEMUAN MASALAH -->
+            <!-- 1. TEMUAN MASALAH -->
           <div style="margin-bottom: 12px;">
             <div style="font-size: 9.5pt; font-weight: 800; color: #0F172A; margin-bottom: 4px; border-left: 4px solid #DC2626; padding-left: 6px;">
               1. TEMUAN MASALAH / GANGGUAN DI LOKASI:
@@ -2525,15 +2598,38 @@
           statusBorder = "#94A3B8";
         }
 
+        const effMulai = item.waktuMulai || (stLow.indexOf("progress") !== -1 ? (item.timestamp || item.tanggal) : "");
+        const effSelesai = item.waktuSelesai || ((stLow.indexOf("selesai") !== -1 || stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) ? (item.timestamp || item.tanggal) : "");
+
+        let timelineCellHtml = `<div><b style="color: #0F172A;">Lapor:</b> <span style="white-space: nowrap;">${escapeHtml(item.tanggal)}</span></div>`;
+        if (effMulai) {
+          timelineCellHtml += `<div style="margin-top: 2px; color: #92400E;"><b style="color: #78350F;">Mulai:</b> <span style="white-space: nowrap;">${escapeHtml(effMulai)}</span></div>`;
+        }
+        if (stLow.indexOf("selesai") !== -1) {
+          timelineCellHtml += `<div style="margin-top: 2px; color: #166534;"><b style="color: #14532D;">Selesai:</b> <span style="white-space: nowrap;">${escapeHtml(effSelesai || "Sudah Selesai")}</span></div>`;
+        } else if (stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) {
+          timelineCellHtml += `<div style="margin-top: 2px; color: #475569;"><b style="color: #334155;">Ditunda:</b> <span style="white-space: nowrap;">${escapeHtml(effSelesai || "Ditunda")}</span></div>`;
+        } else if (stLow.indexOf("progress") !== -1) {
+          timelineCellHtml += `<div style="margin-top: 2px; color: #D97706; font-style: italic;"><i class="bi bi-hourglass-split me-1"></i>Sedang Dikerjakan</div>`;
+        }
+
+        const dispDurasi = formatDurasiPenanganan(item);
+        let durasiCellHtml = "";
+        if (dispDurasi) {
+          durasiCellHtml = `
+            <div style="font-size: 6.5pt; color: #1E3A8A; margin-top: 3px; font-weight: 700; line-height: 1.25; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 2px 4px; border-radius: 3px;">
+              ⏱️ ${escapeHtml(dispDurasi)}
+            </div>
+          `;
+        }
+
         const rowBg = idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
 
         rowsHtml += `
           <tr style="background-color: ${rowBg} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-weight: 700;">${idx + 1}</td>
             <td style="padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 7.5pt; text-align: left; line-height: 1.35;">
-              <div><b style="color: #0F172A;">Lapor:</b> <span style="white-space: nowrap;">${escapeHtml(item.tanggal)}</span></div>
-              ${item.waktuMulai ? `<div style="margin-top: 2px; color: #92400E;"><b style="color: #78350F;">Mulai:</b> <span style="white-space: nowrap;">${escapeHtml(item.waktuMulai)}</span></div>` : ''}
-              ${item.waktuSelesai ? `<div style="margin-top: 2px; color: #166534;"><b style="color: #14532D;">Selesai:</b> <span style="white-space: nowrap;">${escapeHtml(item.waktuSelesai)}</span></div>` : ''}
+              ${timelineCellHtml}
             </td>
             <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">
               <b style="color: #0F172A;">${escapeHtml(item.objekLokasi)}</b>
@@ -2552,12 +2648,8 @@
               <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 7.5pt; background-color: ${statusBg} !important; color: ${statusColor} !important; border: 1.5px solid ${statusBorder} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 ${escapeHtml(item.status)}
               </span>
-              ${(item.durasi || item.durasiPenanganan) ? `
-                <div style="font-size: 6.5pt; color: #1E3A8A; margin-top: 3px; font-weight: 700; line-height: 1.25; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 2px 4px; border-radius: 3px;">
-                  ⏱️ ${escapeHtml(item.durasi || item.durasiPenanganan)}
-                </div>
-              ` : ''}
-            </td>
+              ${durasiCellHtml}
+            </td></td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${fotoHtml}</td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; font-weight: 600; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
           </tr>
@@ -4239,20 +4331,11 @@
 
         let kpiBadge = "";
         if (st.indexOf("selesai") !== -1) {
-          let durRaw = String(item.durasi || item.durasiPenanganan || "");
-          let totalPart = "";
-          let kerjaPart = "";
-          
-          if (durRaw.indexOf("|") !== -1) {
-            const parts = durRaw.split("|").map(s => s.trim());
-            totalPart = parts[0];
-            kerjaPart = parts[1];
-          } else {
-            totalPart = daysPending === 0 ? "Total Hari yg Sama" : `Total ${daysPending} Hari`;
-            kerjaPart = (!item.waktuMulai || durRaw.indexOf("Tanpa On Progress") !== -1) ? "Tanpa On Progress" : (durRaw || "Kerja Selesai");
-          }
-
-          const isTanpa = kerjaPart.indexOf("Tanpa On Progress") !== -1 || (!item.waktuMulai && kerjaPart.indexOf("Hari") !== -1);
+          const durFormatted = formatDurasiPenanganan(item);
+          const parts = durFormatted.split("|").map(s => s.trim());
+          const totalPart = parts[0] || "Total Hari yg Sama";
+          let kerjaPart = parts[1] || "Tanpa On Progress";
+          const isTanpa = kerjaPart.indexOf("Tanpa On Progress") !== -1;
           if (isTanpa) kerjaPart = "Tanpa On Progress";
 
           kpiBadge = `
@@ -4665,8 +4748,9 @@
               <tr><td class="text-secondary">Kode Aset</td><td>: ${escapeHtml(item.kodeAset || '-')}</td></tr>
               <tr><td class="text-secondary">Petugas</td><td>: ${escapeHtml(item.petugas || '-')}</td></tr>
               <tr><td class="text-secondary">Status</td><td>: <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td></tr>
-              ${item.waktuMulai ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">${escapeHtml(item.waktuMulai)}</span></td></tr>` : ''}
-              ${item.waktuSelesai ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: <span class="badge bg-success bg-opacity-10 text-success border border-success">${escapeHtml(item.waktuSelesai)}</span></td></tr>` : ''}
+              ${(item.waktuMulai || st.indexOf('progress') !== -1) ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">${escapeHtml(item.waktuMulai || (item.timestamp || item.tanggal))}</span></td></tr>` : ''}
+              ${st.indexOf('selesai') !== -1 ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: <span class="badge bg-success bg-opacity-10 text-success border border-success">${escapeHtml(item.waktuSelesai || item.timestamp || item.tanggal || "Sudah Selesai")}</span></td></tr>` : ''}
+              ${(st.indexOf('tunda') !== -1 || st.indexOf('tidak dikerjakan') !== -1) ? `<tr><td class="text-secondary">Waktu Penundaan</td><td>: <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">${escapeHtml(item.waktuSelesai || item.timestamp || item.tanggal || "-")}</span></td></tr>` : ''}
               ${(() => {
                 if (st.indexOf('selesai') !== -1) {
                   let dRaw = String(item.durasi || item.durasiPenanganan || "");
