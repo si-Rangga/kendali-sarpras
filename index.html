@@ -3781,8 +3781,28 @@
 
         let kpiBadge = "";
         if (st.indexOf("selesai") !== -1) {
-          const dur = item.durasi || item.durasiPenanganan || (daysPending === 0 ? "Selesai (Hari Sama)" : `Selesai dlm ${daysPending} Hari`);
-          kpiBadge = `<div class="mt-1"><span class="badge bg-success bg-opacity-10 text-success border border-success" style="font-size:0.65rem;" title="${escapeHtml(dur)}"><i class="bi bi-check2 me-1"></i>${escapeHtml(dur)}</span></div>`;
+          let durRaw = String(item.durasi || item.durasiPenanganan || "");
+          let totalPart = "";
+          let kerjaPart = "";
+          
+          if (durRaw.indexOf("|") !== -1) {
+            const parts = durRaw.split("|").map(s => s.trim());
+            totalPart = parts[0];
+            kerjaPart = parts[1];
+          } else {
+            totalPart = daysPending === 0 ? "Total Hari yg Sama" : `Total ${daysPending} Hari`;
+            kerjaPart = (!item.waktuMulai || durRaw.indexOf("Tanpa On Progress") !== -1) ? "Tanpa On Progress" : (durRaw || "Kerja Selesai");
+          }
+
+          const isTanpa = kerjaPart.indexOf("Tanpa On Progress") !== -1 || (!item.waktuMulai && kerjaPart.indexOf("Hari") !== -1);
+          if (isTanpa) kerjaPart = "Tanpa On Progress";
+
+          kpiBadge = `
+            <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary" style="font-size:0.62rem;" title="Total masa penanganan sejak lapor"><i class="bi bi-calendar-check me-1"></i>${escapeHtml(totalPart)}</span>
+              <span class="badge ${isTanpa ? 'bg-secondary bg-opacity-10 text-secondary border border-secondary' : 'bg-success bg-opacity-10 text-success border border-success'}" style="font-size:0.62rem;" title="Lama kerja fisik teknisi"><i class="bi ${isTanpa ? 'bi-dash-circle' : 'bi-stopwatch'} me-1"></i>${escapeHtml(kerjaPart)}</span>
+            </div>
+          `;
         } else if (st.indexOf("tunda") !== -1 || st.indexOf("tidak dikerjakan") !== -1) {
           kpiBadge = `<div class="mt-1"><span class="badge bg-light text-secondary border" style="font-size:0.65rem;" title="Ditunda atas arahan pimpinan (Waktu terhenti)"><i class="bi bi-pause-circle me-1"></i>Ditunda Pimpinan</span></div>`;
         } else if (st.indexOf("progress") !== -1) {
@@ -4170,9 +4190,40 @@
               <tr><td class="text-secondary">Kode Aset</td><td>: ${escapeHtml(item.kodeAset || '-')}</td></tr>
               <tr><td class="text-secondary">Petugas</td><td>: ${escapeHtml(item.petugas || '-')}</td></tr>
               <tr><td class="text-secondary">Status</td><td>: <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td></tr>
-              ${item.waktuMulai ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: ${escapeHtml(item.waktuMulai)}</td></tr>` : ''}
-              ${item.waktuSelesai ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: ${escapeHtml(item.waktuSelesai)}</td></tr>` : ''}
-              ${item.durasi ? `<tr><td class="text-secondary">Durasi / Status Waktu</td><td>: <b class="text-primary">${escapeHtml(item.durasi)}</b></td></tr>` : ''}
+              ${item.waktuMulai ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">${escapeHtml(item.waktuMulai)}</span></td></tr>` : ''}
+              ${item.waktuSelesai ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: <span class="badge bg-success bg-opacity-10 text-success border border-success">${escapeHtml(item.waktuSelesai)}</span></td></tr>` : ''}
+              ${(() => {
+                if (st.indexOf('selesai') !== -1) {
+                  let dRaw = String(item.durasi || item.durasiPenanganan || "");
+                  let totStr = "Total Hari yg Sama";
+                  let krjStr = "Tanpa On Progress";
+                  if (dRaw.indexOf("|") !== -1) {
+                    const sp = dRaw.split("|").map(s => s.trim());
+                    totStr = sp[0];
+                    krjStr = sp[1];
+                  } else {
+                    totStr = dRaw || "Total Selesai";
+                    krjStr = !item.waktuMulai ? "Tanpa On Progress" : "Kerja Selesai";
+                  }
+                  const isTanpaP = krjStr.indexOf("Tanpa On Progress") !== -1 || (!item.waktuMulai && krjStr.indexOf("Hari") !== -1);
+                  if (isTanpaP) krjStr = "Tanpa On Progress";
+
+                  return `
+                    <tr><td class="text-secondary">Total Penanganan</td><td>: <b class="text-primary">${escapeHtml(totStr)}</b> <small class="text-muted">(sejak lapor)</small></td></tr>
+                    <tr><td class="text-secondary">Pengerjaan Fisik</td><td>: <b class="${isTanpaP ? 'text-secondary' : 'text-success'}">${escapeHtml(krjStr)}</b></td></tr>
+                    ${isTanpaP ? `
+                      <tr><td colspan="2" class="pt-2">
+                        <div class="alert alert-warning py-1 px-2 small mb-0 rounded-2 border-warning">
+                          <i class="bi bi-info-circle-fill text-warning me-1"></i> <b>Catatan:</b> Tim lapangan tidak klik tombol <i>On Progress</i>, sehingga lama pengerjaan teknis di lokasi tidak terlacak.
+                        </div>
+                      </td></tr>
+                    ` : ''}
+                  `;
+                } else if (item.durasi) {
+                  return `<tr><td class="text-secondary">Status Durasi</td><td>: <b class="text-primary">${escapeHtml(item.durasi)}</b></td></tr>`;
+                }
+                return '';
+              })()}
             </table>
           </div>
           <div class="col-12 col-md-6">
