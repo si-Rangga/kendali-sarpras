@@ -3258,14 +3258,79 @@
     let webcamStream = null;
     let currentWebcamTarget = { imgId: '', placeholderId: '', resetBtnId: '', fallbackInputId: '' };
 
-    function toggleAlasanTunda(val) {
-      const c = document.getElementById("containerAlasanTunda");
-      if (!c) return;
-      if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
-        c.classList.remove("d-none");
-      } else {
-        c.classList.add("d-none");
+    // ==========================================
+    // HELPER KONTROL WAKTU SELESAI / TUNDA MANUAL
+    // ==========================================
+    function formatForDateTimeLocal(d) {
+      const dt = d ? new Date(d) : new Date();
+      if (isNaN(dt.getTime())) return "";
+      const yyyy = dt.getFullYear();
+      const mm = String(dt.getMonth() + 1).padStart(2, "0");
+      const dd = String(dt.getDate()).padStart(2, "0");
+      const hh = String(dt.getHours()).padStart(2, "0");
+      const min = String(dt.getMinutes()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    function resetWaktuSelesaiNow() {
+      const inp = document.getElementById("updateWaktuSelesaiInput");
+      if (inp) {
+        const nowStr = formatForDateTimeLocal(new Date());
+        inp.value = nowStr;
+        inp.max = nowStr;
       }
+    }
+
+    function validateWaktuSelesaiManual(inputEl) {
+      if (!inputEl || !inputEl.value) return;
+      const dInput = new Date(inputEl.value);
+      const dNow = new Date();
+      // Validasi tegas: tidak boleh melebihi tanggal dan jam aktif laptop/HP saat ini
+      if (dInput.getTime() > dNow.getTime() + 60000) {
+        Swal.fire({
+          icon: "warning",
+          title: "Waktu Tidak Valid",
+          text: "Tanggal & waktu selesai tidak boleh melebihi tanggal dan jam aktif laptop atau HP Anda saat ini!"
+        });
+        inputEl.value = formatForDateTimeLocal(new Date());
+      }
+    }
+
+    function onUpdateStatusChange(val) {
+      // 1. Kontrol Tampilan Alasan Tunda
+      const cTunda = document.getElementById("containerAlasanTunda");
+      if (cTunda) {
+        if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+          cTunda.classList.remove("d-none");
+        } else {
+          cTunda.classList.add("d-none");
+        }
+      }
+
+      // 2. Kontrol Tampilan Input Waktu Selesai / Tunda Manual
+      const cWaktu = document.getElementById("containerWaktuSelesaiManual");
+      const lblWaktu = document.getElementById("labelWaktuSelesaiManual");
+      if (cWaktu) {
+        if (val === "Selesai") {
+          cWaktu.classList.remove("d-none");
+          cWaktu.style.setProperty("border-left", "3.5px solid #16A34A", "important");
+          if (lblWaktu) {
+            lblWaktu.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal & Waktu Selesai (Manual):';
+          }
+        } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+          cWaktu.classList.remove("d-none");
+          cWaktu.style.setProperty("border-left", "3.5px solid #64748B", "important");
+          if (lblWaktu) {
+            lblWaktu.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal & Waktu Penundaan (Manual):';
+          }
+        } else {
+          cWaktu.classList.add("d-none");
+        }
+      }
+    }
+
+    function toggleAlasanTunda(val) {
+      onUpdateStatusChange(val);
     }
 
     function toggleInputAlasanTunda(val) {
@@ -4481,7 +4546,7 @@
             <form onsubmit="handleUpdateStatus(event, '${item.id}')">
               <div class="mb-3">
                 <label class="form-label small fw-semibold">Ubah Status Menjadi</label>
-                <select id="updateStatusSelect" class="form-select modern-dropdown" onchange="toggleAlasanTunda(this.value)">
+                <select id="updateStatusSelect" class="form-select modern-dropdown" onchange="onUpdateStatusChange(this.value)">
                   <option value="Perlu Tindak Lanjut">🔴 Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
                   <option value="On Progress">🟡 On Progress (Sedang Dikerjakan)</option>
                   <option value="Selesai" selected>🟢 Selesai (Tuntas Beres)</option>
@@ -4519,6 +4584,23 @@
                   <div class="text-muted mt-1" style="font-size: 0.72rem;">
                     <i class="bi bi-info-circle me-1"></i>Keterangan bebas ini otomatis tercatat pada riwayat kendali dan lembar laporan cetak pimpinan.
                   </div>
+                </div>
+              </div>
+
+              <!-- EDIT MANUAL TANGGAL SELESAI / TUNDA (BATAS MAKSIMAL: WAKTU AKTIF HP / LAPTOP) -->
+              <div id="containerWaktuSelesaiManual" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-bold text-dark mb-0" id="labelWaktuSelesaiManual">
+                    <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal & Waktu Selesai (Manual):
+                  </label>
+                  <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuSelesaiNow()" title="Kembalikan ke tanggal dan jam aktif laptop/HP saat ini">
+                    <i class="bi bi-clock-history me-1"></i>Waktu Sekarang
+                  </button>
+                </div>
+                <input type="datetime-local" id="updateWaktuSelesaiInput" class="form-control form-control-sm" onchange="validateWaktuSelesaiManual(this)">
+                <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
+                  <span><i class="bi bi-info-circle me-1"></i>Bisa diedit jika teknisi lupa klik saat beres.</span>
+                  <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Waktu Sekarang</span>
                 </div>
               </div>
               <div class="mb-3">
@@ -4644,6 +4726,19 @@
       if (document.getElementById("containerUpdateSesudahList")) {
         renderPhotoList('update_sesudah');
       }
+      // Inisialisasi Waktu Selesai/Tunda Manual dengan Waktu Lokal Laptop/HP
+      setTimeout(() => {
+        const wsInp = document.getElementById("updateWaktuSelesaiInput");
+        if (wsInp) {
+          const nowStr = formatForDateTimeLocal(new Date());
+          wsInp.value = nowStr;
+          wsInp.max = nowStr;
+          if (item.tanggal || item.timestamp) {
+            const minStr = formatForDateTimeLocal(new Date(String(item.tanggal || item.timestamp).replace(" ", "T")));
+            if (minStr) wsInp.min = minStr;
+          }
+        }
+      }, 50);
     }
 
     function handleUpdateStatus(e, id) {
@@ -4675,6 +4770,46 @@
       const tindakan = document.getElementById("updateTindakanInput").value;
       const alasanTunda = document.getElementById("updateAlasanTundaSelect") ? document.getElementById("updateAlasanTundaSelect").value : "";
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
+      const waktuSelesaiInput = document.getElementById("updateWaktuSelesaiInput") ? document.getElementById("updateWaktuSelesaiInput").value : "";
+
+      // Validasi ketat Tanggal & Waktu Selesai / Tunda Manual
+      if (newStatus === "Selesai" || newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
+        if (!waktuSelesaiInput) {
+          Swal.fire("Peringatan", "Silakan tentukan tanggal & waktu selesai/tunda pekerjaan.", "warning");
+          restoreUpdateBtn();
+          return;
+        }
+
+        const dInput = new Date(waktuSelesaiInput);
+        const dNow = new Date();
+        // Maksimal waktu: tidak boleh melebihi tanggal/jam aktif laptop atau HP saat ini
+        if (dInput.getTime() > dNow.getTime() + 60000) {
+          Swal.fire({
+            icon: "error",
+            title: "Waktu Tidak Valid",
+            text: "Tanggal & waktu selesai tidak boleh melebihi tanggal dan jam aktif laptop atau HP Anda saat ini (tidak boleh tanggal masa depan)!"
+          });
+          restoreUpdateBtn();
+          return;
+        }
+
+        // Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat
+        const currentItem = currentDetailItemForPrint || (currentHistoryData || []).find(x => x.id === id);
+        if (currentItem && (currentItem.tanggal || currentItem.timestamp)) {
+          const dLapor = new Date(String(currentItem.tanggal || currentItem.timestamp).replace(" ", "T"));
+          if (!isNaN(dLapor.getTime()) && dInput.getTime() < dLapor.getTime() - 60000) {
+            Swal.fire({
+              icon: "warning",
+              title: "Waktu Terlalu Awal",
+              text: "Tanggal & waktu selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + currentItem.tanggal + ")!"
+            });
+            restoreUpdateBtn();
+            return;
+          }
+        }
+      }
+
+      const formattedWaktuSelesai = waktuSelesaiInput ? waktuSelesaiInput.replace("T", " ") + (waktuSelesaiInput.split(":").length === 2 ? ":00" : "") : "";
 
       showLoading("Menyimpan pembaruan status...", "Mengunggah data ke Google Sheets...");
       runBackend("updateChecklistStatus", {
@@ -4684,6 +4819,7 @@
           tindakan: tindakan,
           alasanTunda: alasanTunda,
           catatanPimpinan: catatanPimpinan,
+          waktuSelesai: formattedWaktuSelesai,
           fotoSesudahList: listUpdateFotoSesudah.map(f => f.base64),
           fotoSesudahBase64: listUpdateFotoSesudah.length > 0 ? listUpdateFotoSesudah[0].base64 : ""
         }
