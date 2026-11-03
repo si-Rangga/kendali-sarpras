@@ -2172,10 +2172,10 @@
             </div>
           </div>
 
-          <!-- TABEL INFORMASI UMUM -->
+          <!-- TABEL INFORMASI UMUM LENGKAP DENGAN TIMELINE WAKTU (ON PROGRESS & SELESAI) -->
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9pt;">
             <tr>
-              <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal Pemeriksaan</td>
+              <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal Lapor / Temuan</td>
               <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 600;">${escapeHtml(item.tanggal)}</td>
               <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Petugas Pelaksana</td>
               <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 700; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
@@ -2196,6 +2196,27 @@
               <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Kode / No. Seri Aset</td>
               <td style="padding: 6px 8px; border: 1px solid #CBD5E1; font-family: monospace;">${escapeHtml(item.kodeAset || '-')}</td>
             </tr>
+            <!-- BARIS RIWAYAT WAKTU: ON PROGRESS & SELESAI / TUNDA -->
+            <tr>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu On Progress</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                ${item.waktuMulai ? `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(item.waktuMulai)}</b>` : '<span style="color: #64748B; font-style: italic;">Tanpa On Progress</span>'}
+              </td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu Selesai / Tunda</td>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                ${item.waktuSelesai ? `<b style="color: #15803D;"><i class="bi bi-check2-circle me-1"></i>${escapeHtml(item.waktuSelesai)}</b>` : '<span style="color: #DC2626; font-style: italic;">Belum Selesai</span>'}
+              </td>
+            </tr>
+            ${(item.durasi || item.durasiPenanganan) ? `
+            <tr>
+              <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Durasi Penanganan</td>
+              <td colspan="3" style="padding: 6px 8px; border: 1px solid #CBD5E1;">
+                <span style="display: inline-block; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; padding: 2px 10px; border-radius: 4px; font-weight: 700;">
+                  ⏱️ ${escapeHtml(item.durasi || item.durasiPenanganan)}
+                </span>
+              </td>
+            </tr>
+            ` : ''}
           </table>
 
           <!-- 1. TEMUAN MASALAH -->
@@ -2509,7 +2530,11 @@
         rowsHtml += `
           <tr style="background-color: ${rowBg} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-weight: 700;">${idx + 1}</td>
-            <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; white-space: nowrap;">${escapeHtml(item.tanggal)}</td>
+            <td style="padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 7.5pt; text-align: left; line-height: 1.35;">
+              <div><b style="color: #0F172A;">Lapor:</b> <span style="white-space: nowrap;">${escapeHtml(item.tanggal)}</span></div>
+              ${item.waktuMulai ? `<div style="margin-top: 2px; color: #92400E;"><b style="color: #78350F;">Mulai:</b> <span style="white-space: nowrap;">${escapeHtml(item.waktuMulai)}</span></div>` : ''}
+              ${item.waktuSelesai ? `<div style="margin-top: 2px; color: #166534;"><b style="color: #14532D;">Selesai:</b> <span style="white-space: nowrap;">${escapeHtml(item.waktuSelesai)}</span></div>` : ''}
+            </td>
             <td style="padding: 6px 6px; border: 1px solid #CBD5E1;">
               <b style="color: #0F172A;">${escapeHtml(item.objekLokasi)}</b>
               ${item.kodeAset ? `<br><small style="color: #475569; font-family: monospace; font-size: 7.5pt;">Aset: ${escapeHtml(item.kodeAset)}</small>` : ''}
@@ -2527,7 +2552,11 @@
               <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: 7.5pt; background-color: ${statusBg} !important; color: ${statusColor} !important; border: 1.5px solid ${statusBorder} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 ${escapeHtml(item.status)}
               </span>
-              ${item.durasi ? `<div style="font-size: 6.5pt; color: #475569; margin-top: 2px; font-weight: 600;">${escapeHtml(item.durasi)}</div>` : ''}
+              ${(item.durasi || item.durasiPenanganan) ? `
+                <div style="font-size: 6.5pt; color: #1E3A8A; margin-top: 3px; font-weight: 700; line-height: 1.25; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 2px 4px; border-radius: 3px;">
+                  ⏱️ ${escapeHtml(item.durasi || item.durasiPenanganan)}
+                </div>
+              ` : ''}
             </td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1;">${fotoHtml}</td>
             <td style="text-align: center; padding: 6px 4px; border: 1px solid #CBD5E1; font-size: 8pt; font-weight: 600; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
@@ -2673,13 +2702,13 @@
             <thead>
               <tr style="background-color: #1E3A8A !important; color: #FFFFFF !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 3%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">No</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 8%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal</th>
-                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
-                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 18%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 12%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal & Timeline Waktu</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 15%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
+                <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
                 <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tindakan Teknis</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 10%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Status</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 18%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Foto</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 9%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Petugas</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 11%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Status & Durasi</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 17%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Foto</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 8%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Petugas</th>
               </tr>
             </thead>
             <tbody>
