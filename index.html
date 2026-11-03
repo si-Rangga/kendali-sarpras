@@ -1215,7 +1215,7 @@
               <div class="row g-2">
                 <div class="col-12 col-md-3">
                   <label class="small text-secondary fw-semibold"><i class="bi bi-search text-primary me-1"></i>Pencarian</label>
-                  <input type="text" id="filterKeyword" class="form-control" placeholder="Ketik objek, aset, masalah..." onkeyup="filterHistoryLocal()">
+                  <input type="text" id="filterKeyword" class="form-control" placeholder="Cari objek, aset, masalah, ID, petugas..." onkeyup="filterHistoryLocal()" oninput="filterHistoryLocal()">
                 </div>
                 <div class="col-6 col-md-2">
                   <label class="small text-secondary fw-semibold"><i class="bi bi-layers-fill text-primary me-1"></i>Kategori</label>
@@ -1243,10 +1243,16 @@
                   </select>
                 </div>
                 <div class="col-12 col-md-3">
-                  <label class="small text-secondary fw-semibold"><i class="bi bi-calendar-event text-primary me-1"></i>Rentang Tanggal</label>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="small text-secondary fw-semibold mb-0"><i class="bi bi-calendar-range text-primary me-1"></i>Rentang Tanggal</label>
+                    <div class="d-flex gap-1">
+                      <button type="button" class="btn btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="setFilterDateToday()" title="Hanya tampilkan laporan hari ini">Hari Ini</button>
+                      <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetFilterDate()" title="Hapus filter rentang tanggal">Reset Tgl</button>
+                    </div>
+                  </div>
                   <div class="input-group">
                     <input type="date" id="filterStartDate" class="form-control" onchange="filterHistoryLocal()" title="Dari Tanggal">
-                    <span class="input-group-text bg-white px-2 text-muted fw-bold">-</span>
+                    <span class="input-group-text bg-light px-2 text-muted fw-bold">-</span>
                     <input type="date" id="filterEndDate" class="form-control" onchange="filterHistoryLocal()" title="Sampai Tanggal">
                   </div>
                 </div>
@@ -2675,11 +2681,12 @@
     function updateQuickStatusButtons(activeVal) {
       const val = (activeVal || "semua").toLowerCase();
       document.querySelectorAll(".qf-status").forEach(btn => {
-        btn.classList.remove("active", "btn-dark", "btn-danger", "btn-warning", "btn-success");
+        btn.classList.remove("active", "btn-dark", "btn-danger", "btn-warning", "btn-success", "btn-secondary");
         if (btn.id === "qfStat-semua") { btn.className = "btn btn-sm btn-outline-dark rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
         if (btn.id === "qfStat-tindak") { btn.className = "btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
         if (btn.id === "qfStat-progress") { btn.className = "btn btn-sm btn-outline-warning rounded-pill px-3 py-1 fw-bold text-nowrap qf-status text-dark"; }
         if (btn.id === "qfStat-selesai") { btn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
+        if (btn.id === "qfStat-ditunda") { btn.className = "btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold text-nowrap qf-status"; }
       });
       if (val === "semua") {
         const el = document.getElementById("qfStat-semua");
@@ -2693,6 +2700,9 @@
       } else if (val.indexOf("selesai") !== -1) {
         const el = document.getElementById("qfStat-selesai");
         if (el) { el.className = "btn btn-sm btn-success text-white rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
+      } else if (val.indexOf("tunda") !== -1 || val.indexOf("tidak dikerjakan") !== -1) {
+        const el = document.getElementById("qfStat-ditunda");
+        if (el) { el.className = "btn btn-sm btn-secondary text-white rounded-pill px-3 py-1 fw-bold text-nowrap qf-status active"; }
       }
     }
 
@@ -3583,12 +3593,60 @@
       });
     }
 
+    // ==========================================
+    // HELPER FILTER TANGGAL & STATUS PINTAS
+    // ==========================================
+    function extractISODate(val) {
+      if (!val) return "";
+      const s = String(val).trim();
+      const mIso = s.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (mIso) {
+        return mIso[1] + "-" + mIso[2].padStart(2, "0") + "-" + mIso[3].padStart(2, "0");
+      }
+      const mId = s.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+      if (mId) {
+        return mId[3] + "-" + mId[2].padStart(2, "0") + "-" + mId[1].padStart(2, "0");
+      }
+      return "";
+    }
+
+    function setFilterDateToday() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      const startEl = document.getElementById("filterStartDate");
+      const endEl = document.getElementById("filterEndDate");
+      if (startEl) startEl.value = todayStr;
+      if (endEl) endEl.value = todayStr;
+      filterHistoryLocal();
+    }
+
+    function resetFilterDate() {
+      const startEl = document.getElementById("filterStartDate");
+      const endEl = document.getElementById("filterEndDate");
+      if (startEl) startEl.value = "";
+      if (endEl) endEl.value = "";
+      filterHistoryLocal();
+    }
+
     function filterHistoryLocal() {
       const kw = (document.getElementById("filterKeyword") ? document.getElementById("filterKeyword").value : "").toLowerCase().trim();
       const kat = (document.getElementById("filterKategori") ? document.getElementById("filterKategori").value : "semua").toLowerCase();
       const stat = (document.getElementById("filterStatus") ? document.getElementById("filterStatus").value : "semua").toLowerCase();
-      const startDate = document.getElementById("filterStartDate") ? document.getElementById("filterStartDate").value : "";
-      const endDate = document.getElementById("filterEndDate") ? document.getElementById("filterEndDate").value : "";
+      
+      const rawStart = document.getElementById("filterStartDate") ? document.getElementById("filterStartDate").value : "";
+      const rawEnd = document.getElementById("filterEndDate") ? document.getElementById("filterEndDate").value : "";
+      let cleanStart = extractISODate(rawStart);
+      let cleanEnd = extractISODate(rawEnd);
+
+      // Otomatis balik urutan jika pengguna salah memilih tanggal mulai lebih baru daripada tanggal akhir
+      if (cleanStart && cleanEnd && cleanStart > cleanEnd) {
+        const tmp = cleanStart;
+        cleanStart = cleanEnd;
+        cleanEnd = tmp;
+      }
 
       const isAdmin = currentUser && currentUser.role && 
         (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
@@ -3601,11 +3659,11 @@
       } else {
         const filterPetugasBox = document.getElementById("filterPetugasContainer");
         const isPetugasFilterActive = filterPetugasBox && !filterPetugasBox.classList.contains("d-none");
-        petugas = (isPetugasFilterActive && document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase();
+        petugas = (isPetugasFilterActive && document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase().trim();
       }
 
       const filtered = (currentHistoryData || []).filter(item => {
-        // ISOLASI PETUGAS LAPANGAN:
+        // 1. ISOLASI PETUGAS LAPANGAN:
         if (!isAdmin && currentUser && currentUser.nama) {
           const itemPet = (item.petugas || "").toLowerCase().trim();
           const userPet = currentUser.nama.toLowerCase().trim();
@@ -3615,24 +3673,52 @@
           if (pLow.indexOf(petugas) === -1) return false;
         }
 
+        // 2. FILTER KATEGORI:
         if (kat !== "semua") {
           const kLow = (item.kategori || "").toLowerCase().trim();
           if (kat === "prasarana" && kLow.indexOf("prasarana") === -1) return false;
           if (kat === "sarana" && (kLow.indexOf("prasarana") !== -1 || kLow.indexOf("sarana") === -1)) return false;
           if (kat === "proyek" && kLow.indexOf("proyek") === -1) return false;
         }
+
+        // 3. FILTER STATUS (LENGKAP SEMUA 4 STATUS):
         if (stat !== "semua") {
           const sLow = (item.status || "").toLowerCase().trim();
-          if (stat === "selesai" && sLow.indexOf("selesai") === -1) return false;
-          if (stat === "on progress" && sLow.indexOf("progress") === -1) return false;
-          if (stat === "perlu tindak lanjut" && sLow.indexOf("tindak") === -1) return false;
+          if (stat === "selesai") {
+            if (sLow.indexOf("selesai") === -1) return false;
+          } else if (stat === "on progress") {
+            if (sLow.indexOf("progress") === -1 && sLow.indexOf("proses") === -1 && sLow.indexOf("pengerjaan") === -1) return false;
+          } else if (stat === "perlu tindak lanjut") {
+            if (sLow.indexOf("tindak") === -1 && sLow.indexOf("lanjut") === -1 && sLow.indexOf("baru") === -1 && sLow.indexOf("open") === -1) return false;
+          } else if (stat === "ditunda") {
+            if (sLow.indexOf("tunda") === -1 && sLow.indexOf("tidak dikerjakan") === -1 && sLow.indexOf("pending") === -1 && sLow.indexOf("hold") === -1) return false;
+          } else {
+            if (sLow.indexOf(stat) === -1) return false;
+          }
         }
+
+        // 4. PENCARIAN KATA KUNCI (KEYWORD PADA SEMUA BIDANG TERMASUK ID & CATATAN):
         if (kw) {
-          const combined = (item.objekLokasi + " " + item.kodeAset + " " + item.temuan + " " + item.tindakan + " " + item.petugas).toLowerCase();
+          const combined = [
+            item.id || "",
+            item.objekLokasi || "",
+            item.kodeAset || "",
+            item.temuan || "",
+            item.tindakan || "",
+            item.petugas || "",
+            item.catatan || "",
+            item.kategori || "",
+            item.status || "",
+            item.durasiPenanganan || ""
+          ].join(" ").toLowerCase();
           if (combined.indexOf(kw) === -1) return false;
         }
-        if (startDate && item.tanggal < startDate) return false;
-        if (endDate && item.tanggal > endDate) return false;
+
+        // 5. RENTANG TANGGAL (PRESISI HARI TUNGGAL MAUPUN RENTANG):
+        const itemDate = extractISODate(item.tanggal || item.timestamp);
+        if (cleanStart && (!itemDate || itemDate < cleanStart)) return false;
+        if (cleanEnd && (!itemDate || itemDate > cleanEnd)) return false;
+
         return true;
       });
 
