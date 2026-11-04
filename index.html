@@ -1576,6 +1576,96 @@
     </div>
   </div>
 
+  <!-- MODAL EDIT / KOREKSI LAPORAN (KHUSUS ADMINISTRATOR / PENGAWAS) -->
+  <div class="modal fade" id="modalEditChecklist" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow">
+        <div class="modal-header bg-warning bg-opacity-10 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-warning text-dark"><i class="bi bi-shield-lock-fill me-1"></i>Khusus Admin</span>
+            <h5 class="modal-title fw-bold text-dark mb-0" id="modalEditTitle">Edit / Koreksi Data Laporan</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form onsubmit="handleSaveEditChecklist(event)">
+          <div class="modal-body p-3 p-md-4">
+            <input type="hidden" id="editChecklistId">
+
+            <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
+              <i class="bi bi-info-circle-fill me-2 fs-5 flex-shrink-0"></i>
+              <div>Fitur koreksi data ini hanya dapat diakses oleh Administrator/Pengawas untuk memperbaiki kesalahan ketik, tanggal, objek lokasi, atau penugasan petugas di lapangan.</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Tanggal Lapor / Temuan</label>
+                <input type="date" id="editChecklistTanggal" class="form-control" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Kategori Pekerjaan</label>
+                <select id="editChecklistKategori" class="form-select" required>
+                  <option value="Sarana">Sarana (AC, Mesin, Panel)</option>
+                  <option value="Prasarana">Prasarana (Gedung, Saluran)</option>
+                  <option value="Pemantauan Proyek">Pemantauan Proyek (Gangguan Fisik)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-7">
+                <label class="form-label small fw-semibold text-secondary">Objek & Lokasi (Identitas Alias)</label>
+                <input type="text" id="editChecklistObjek" class="form-control" required placeholder="Contoh: AC Ruang Rapat Lt. 2">
+              </div>
+              <div class="col-12 col-md-5">
+                <label class="form-label small fw-semibold text-secondary">Kode / No. Seri Aset</label>
+                <input type="text" id="editChecklistKodeAset" class="form-control" placeholder="Opsional / Contoh: AC-01">
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Petugas Pelaksana</label>
+                <select id="editChecklistPetugas" class="form-select">
+                  <!-- Populated from masterUsers -->
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-semibold text-secondary">Status Pengerjaan</label>
+                <select id="editChecklistStatus" class="form-select">
+                  <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut</option>
+                  <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
+                  <option value="Selesai">Selesai (Tuntas Beres)</option>
+                  <option value="Ditunda / Tidak Dikerjakan">Ditunda / Tidak Dikerjakan</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Temuan Masalah di Lokasi</label>
+              <textarea id="editChecklistTemuan" class="form-control" rows="2" required placeholder="Rincian masalah fisik di lapangan..."></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Tindakan Teknis / Penanganan</label>
+              <textarea id="editChecklistTindakan" class="form-control" rows="2" placeholder="Tindakan perbaikan atau langkah yang diambil..."></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Catatan Proyek / Vendor / Arahan Pimpinan</label>
+              <textarea id="editChecklistCatatan" class="form-control" rows="2" placeholder="Catatan tambahan, disposisi, atau keterangan penundaan..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold" id="btnSaveEditChecklist">
+              <i class="bi bi-save2-fill me-1"></i> Simpan Perubahan Data
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL TAMBAH ASET -->
   <div class="modal fade" id="modalTambahAset" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -1882,6 +1972,7 @@
         else if (action === "getChecklistHistory") runner.getChecklistHistory(data.filter, data.requestingUser);
         else if (action === "submitChecklist") runner.submitChecklist(data.payload);
         else if (action === "updateChecklistStatus") runner.updateChecklistStatus(data.payload);
+        else if (action === "updateChecklistDetails" || action === "editChecklist") runner.updateChecklistDetails(data.payload, data.requestingUser);
         else if (action === "saveMasterAset") runner.saveMasterAset(data.payload);
         else if (action === "exportToPrintableTemplate") runner.exportToPrintableTemplate(data.kategori, data.tanggal);
         else if (action === "deleteChecklist") runner.deleteChecklist(data.id, data.requestingUser);
@@ -2097,6 +2188,29 @@
       });
     }
 
+    function formatOnlyDate(val) {
+      if (!val) return "";
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      let s = String(val).trim().split("T")[0].split(" ")[0];
+      const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (m) {
+        return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+      }
+      const dObj = new Date(val);
+      if (!isNaN(dObj.getTime())) {
+        const y = dObj.getFullYear();
+        const mo = String(dObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dObj.getDate()).padStart(2, '0');
+        return `${y}-${mo}-${d}`;
+      }
+      return s;
+    }
+
     function formatDurasiPenanganan(item) {
       if (!item) return "";
       const stLow = (item.status || "").toLowerCase();
@@ -2104,12 +2218,12 @@
 
       if (stLow.indexOf("selesai") !== -1) {
         if (rawDur && rawDur.indexOf("|") !== -1) {
-          const tLapor = item.tanggal || item.timestamp;
-          const tSel = item.waktuSelesai || item.timestamp || item.tanggal;
+          const tLapor = formatOnlyDate(item.tanggal || item.timestamp);
+          const tSel = formatOnlyDate(item.waktuSelesai || item.timestamp || item.tanggal);
           if (tLapor && tSel) {
             try {
-              const sL = String(tLapor).trim().split(" ")[0].replace("T", " ");
-              const sS = String(tSel).trim().split(" ")[0].replace("T", " ");
+              const sL = tLapor;
+              const sS = tSel;
               const pL = sL.split("-");
               const pS = sS.split("-");
               if (pL.length === 3 && pS.length === 3) {
@@ -2195,22 +2309,22 @@
         statusBg = "#F1F5F9";
       }
 
-      // 1. Tentukan Waktu On Progress
+      // 1. Tentukan Tanggal On Progress (Hanya Tanggal, Tanpa Jam)
       let waktuMulaiDisplay = "";
       if (item.waktuMulai && String(item.waktuMulai).trim()) {
-        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(item.waktuMulai)}</b>`;
+        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-calendar-event me-1"></i>${escapeHtml(formatOnlyDate(item.waktuMulai))}</b>`;
       } else if (isProgress) {
-        const tProg = item.timestamp || item.tanggal || "Sedang Berjalan";
-        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-clock-history me-1"></i>${escapeHtml(tProg)}</b>`;
+        const tProg = formatOnlyDate(item.timestamp || item.tanggal || new Date());
+        waktuMulaiDisplay = `<b style="color: #B45309;"><i class="bi bi-calendar-event me-1"></i>${escapeHtml(tProg)}</b>`;
       } else if (isSelesai || isDitunda) {
         waktuMulaiDisplay = '<span style="color: #64748B; font-style: italic;">Tanpa On Progress (Langsung Selesai)</span>';
       } else {
         waktuMulaiDisplay = '<span style="color: #64748B; font-style: italic;">Belum Dimulai</span>';
       }
 
-      // 2. Tentukan Waktu Selesai / Tunda (Anti-Buntet: Tidak pernah menampilkan Belum Selesai jika status sudah Selesai)
+      // 2. Tentukan Tanggal Selesai / Tunda (Hanya Tanggal, Tanpa Jam)
       let waktuSelesaiDisplay = "";
-      const effectiveSelesai = item.waktuSelesai || item.timestamp || item.tanggal;
+      const effectiveSelesai = formatOnlyDate(item.waktuSelesai || item.timestamp || item.tanggal);
       if (isSelesai) {
         waktuSelesaiDisplay = `<b style="color: #15803D;"><i class="bi bi-check2-circle me-1"></i>${escapeHtml(effectiveSelesai || "Sudah Selesai")}</b>`;
       } else if (isDitunda) {
@@ -2249,7 +2363,7 @@
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9pt;">
             <tr>
               <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal Lapor / Temuan</td>
-              <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 600;">${escapeHtml(item.tanggal)}</td>
+              <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 600;">${escapeHtml(formatOnlyDate(item.tanggal))}</td>
               <td style="width: 20%; padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Petugas Pelaksana</td>
               <td style="width: 30%; padding: 6px 8px; border: 1px solid #CBD5E1; font-weight: 700; color: #1E3A8A;">${escapeHtml(item.petugas || '-')}</td>
             </tr>
@@ -2271,11 +2385,11 @@
             </tr>
             <!-- BARIS RIWAYAT WAKTU: ON PROGRESS & SELESAI / TUNDA -->
               <tr>
-                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu On Progress</td>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal On Progress</td>
                 <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
                   ${waktuMulaiDisplay}
                 </td>
-                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Waktu Selesai / Tunda</td>
+                <td style="padding: 6px 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-weight: 700;">Tanggal Selesai / Tunda</td>
                 <td style="padding: 6px 8px; border: 1px solid #CBD5E1;">
                   ${waktuSelesaiDisplay}
                 </td>
@@ -2598,10 +2712,10 @@
           statusBorder = "#94A3B8";
         }
 
-        const effMulai = item.waktuMulai || (stLow.indexOf("progress") !== -1 ? (item.timestamp || item.tanggal) : "");
-        const effSelesai = item.waktuSelesai || ((stLow.indexOf("selesai") !== -1 || stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) ? (item.timestamp || item.tanggal) : "");
+        const effMulai = formatOnlyDate(item.waktuMulai || (stLow.indexOf("progress") !== -1 ? (item.timestamp || item.tanggal) : ""));
+        const effSelesai = formatOnlyDate(item.waktuSelesai || ((stLow.indexOf("selesai") !== -1 || stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1) ? (item.timestamp || item.tanggal) : ""));
 
-        let timelineCellHtml = `<div><b style="color: #0F172A;">Lapor:</b> <span style="white-space: nowrap;">${escapeHtml(item.tanggal)}</span></div>`;
+        let timelineCellHtml = `<div><b style="color: #0F172A;">Lapor:</b> <span style="white-space: nowrap;">${escapeHtml(formatOnlyDate(item.tanggal))}</span></div>`;
         if (effMulai) {
           timelineCellHtml += `<div style="margin-top: 2px; color: #92400E;"><b style="color: #78350F;">Mulai:</b> <span style="white-space: nowrap;">${escapeHtml(effMulai)}</span></div>`;
         }
@@ -2794,7 +2908,7 @@
             <thead>
               <tr style="background-color: #1E3A8A !important; color: #FFFFFF !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 3%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">No</th>
-                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 12%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal & Timeline Waktu</th>
+                <th style="padding: 7px 4px; border: 1px solid #1E3A8A; width: 12%; text-align: center; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tanggal & Timeline</th>
                 <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 15%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Objek & Lokasi</th>
                 <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Temuan Masalah</th>
                 <th style="padding: 7px 6px; border: 1px solid #1E3A8A; width: 17%; background-color: #1E3A8A !important; color: #FFFFFF !important;">Tindakan Teknis</th>
@@ -3396,24 +3510,22 @@
     function resetWaktuSelesaiNow() {
       const inp = document.getElementById("updateWaktuSelesaiInput");
       if (inp) {
-        const nowStr = formatForDateTimeLocal(new Date());
-        inp.value = nowStr;
-        inp.max = nowStr;
+        const todayStr = new Date().toISOString().split("T")[0];
+        inp.value = todayStr;
+        inp.max = todayStr;
       }
     }
 
     function validateWaktuSelesaiManual(inputEl) {
       if (!inputEl || !inputEl.value) return;
-      const dInput = new Date(inputEl.value);
-      const dNow = new Date();
-      // Validasi tegas: tidak boleh melebihi tanggal dan jam aktif laptop/HP saat ini
-      if (dInput.getTime() > dNow.getTime() + 60000) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      if (inputEl.value > todayStr) {
         Swal.fire({
           icon: "warning",
-          title: "Waktu Tidak Valid",
-          text: "Tanggal & waktu selesai tidak boleh melebihi tanggal dan jam aktif laptop atau HP Anda saat ini!"
+          title: "Tanggal Tidak Valid",
+          text: "Tanggal selesai/tunda tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
         });
-        inputEl.value = formatForDateTimeLocal(new Date());
+        inputEl.value = todayStr;
       }
     }
 
@@ -3436,13 +3548,13 @@
           cWaktu.classList.remove("d-none");
           cWaktu.style.setProperty("border-left", "3.5px solid #16A34A", "important");
           if (lblWaktu) {
-            lblWaktu.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal & Waktu Selesai (Manual):';
+            lblWaktu.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai:';
           }
         } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
           cWaktu.classList.remove("d-none");
           cWaktu.style.setProperty("border-left", "3.5px solid #64748B", "important");
           if (lblWaktu) {
-            lblWaktu.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal & Waktu Penundaan (Manual):';
+            lblWaktu.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal Penundaan:';
           }
         } else {
           cWaktu.classList.add("d-none");
@@ -3873,6 +3985,9 @@
         restoreSubmitButton();
 
         if (res && res.status === "success") {
+          // Segera bersihkan form isian agar pengguna tidak bingung
+          resetChecklistForm();
+
           Swal.fire({
             icon: "success",
             title: "Laporan Berhasil Disimpan!",
@@ -3916,13 +4031,63 @@
     }
 
     function resetChecklistForm() {
+      // 1. Reset form DOM native
+      const form = document.getElementById("checklistForm");
+      if (form) form.reset();
+
+      // 2. Bersihkan nilai text field & textarea secara eksplisit
+      const fieldsToClear = [
+        "inputObjekLokasi", "inputKodeAset", "inputTemuan", "inputTindakan",
+        "inputCatatan", "inputCatatanPimpinan", "inputPetugasManual"
+      ];
+      fieldsToClear.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+
+      // 3. Reset Tanggal ke hari ini
+      const tglEl = document.getElementById("inputTanggal");
+      if (tglEl) {
+        tglEl.value = new Date().toISOString().split("T")[0];
+      }
+
+      // 4. Reset Kategori ke Sarana
+      const katSarana = document.getElementById("katSarana");
+      if (katSarana) {
+        katSarana.checked = true;
+        changeKategoriMode('Sarana');
+      }
+
+      // 5. Reset Status Radio ke Perlu Tindak Lanjut
+      const stTindak = document.getElementById("stTindak");
+      if (stTindak) {
+        stTindak.checked = true;
+        toggleInputAlasanTunda();
+      }
+
+      // 6. Reset Petugas
+      if (document.getElementById("inputPetugasManual")) {
+        document.getElementById("inputPetugasManual").classList.add("d-none");
+      }
+      if (document.getElementById("inputPetugasSelect")) {
+        document.getElementById("inputPetugasSelect").classList.remove("d-none");
+      }
+      populateUserDropdown();
+
+      // 7. Bersihkan galeri foto sebelum & sesudah
       listFotoSebelum = [];
       listFotoSesudah = [];
       base64FotoSebelum = "";
       base64FotoSesudah = "";
       renderPhotoList('sebelum');
       renderPhotoList('sesudah');
-      populateUserDropdown();
+
+      // 8. Bersihkan input file hidden
+      const fileInputs = ["fileFotoSebelumCam", "fileFotoSebelumGal", "fileFotoSesudahCam", "fileFotoSesudahGal"];
+      fileInputs.forEach(id => {
+        const fEl = document.getElementById(id);
+        if (fEl) fEl.value = "";
+      });
     }
 
     // ==========================================
@@ -4211,6 +4376,139 @@
     }
 
     // ==========================================
+    // EDIT / KOREKSI DATA LAPORAN (KHUSUS ADMIN)
+    // ==========================================
+    function openEditChecklistModal(id) {
+      const isAdmin = currentUser && currentUser.role && 
+        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      if (!isAdmin) {
+        Swal.fire("Akses Ditolak", "Fitur edit data hanya dapat diakses oleh Administrator atau Pengawas.", "warning");
+        return;
+      }
+
+      const item = globalItemsCache[id] || (currentHistoryData || []).find(x => x.id === id);
+      if (!item) {
+        Swal.fire("Peringatan", "Data laporan tidak ditemukan.", "warning");
+        return;
+      }
+
+      // Tutup modal detail jika sedang terbuka
+      const modalDetailEl = document.getElementById("modalDetail");
+      const detailInst = bootstrap.Modal.getInstance(modalDetailEl);
+      if (detailInst) detailInst.hide();
+
+      document.getElementById("editChecklistId").value = item.id;
+      document.getElementById("modalEditTitle").innerText = `Edit / Koreksi Laporan: ${item.id}`;
+      
+      // Format tanggal ISO (YYYY-MM-DD)
+      let tglIso = "";
+      if (item.tanggal || item.timestamp) {
+        const rawTgl = String(item.tanggal || item.timestamp).trim().split(" ")[0].replace("T", " ");
+        const parts = rawTgl.split("-");
+        if (parts.length === 3) tglIso = rawTgl;
+      }
+      document.getElementById("editChecklistTanggal").value = tglIso || new Date().toISOString().split("T")[0];
+      document.getElementById("editChecklistKategori").value = item.kategori || "Sarana";
+      document.getElementById("editChecklistObjek").value = item.objekLokasi || "";
+      document.getElementById("editChecklistKodeAset").value = item.kodeAset || "";
+
+      // Populate Petugas dropdown
+      const selPet = document.getElementById("editChecklistPetugas");
+      selPet.innerHTML = '<option value="">-- Pilih Petugas Pelaksana --</option>';
+      const currentPetugas = (item.petugas || "").trim();
+      let matchedPetugas = false;
+
+      if (Array.isArray(masterUsers)) {
+        masterUsers.forEach(u => {
+          const opt = document.createElement("option");
+          opt.value = u.nama;
+          opt.textContent = `${u.nama} (${u.role || 'Petugas'})`;
+          if (u.nama.toLowerCase() === currentPetugas.toLowerCase()) {
+            opt.selected = true;
+            matchedPetugas = true;
+          }
+          selPet.appendChild(opt);
+        });
+      }
+
+      if (currentPetugas && !matchedPetugas) {
+        const opt = document.createElement("option");
+        opt.value = currentPetugas;
+        opt.textContent = `${currentPetugas} (Custom / Lapangan)`;
+        opt.selected = true;
+        selPet.appendChild(opt);
+      }
+
+      document.getElementById("editChecklistStatus").value = item.status || "Perlu Tindak Lanjut";
+      document.getElementById("editChecklistTemuan").value = item.temuan || "";
+      document.getElementById("editChecklistTindakan").value = item.tindakan || "";
+      document.getElementById("editChecklistCatatan").value = item.catatan || "";
+
+      const editModal = new bootstrap.Modal(document.getElementById("modalEditChecklist"));
+      editModal.show();
+    }
+
+    function handleSaveEditChecklist(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnSaveEditChecklist");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+      }
+
+      const payload = {
+        id: document.getElementById("editChecklistId").value,
+        tanggal: document.getElementById("editChecklistTanggal").value,
+        kategori: document.getElementById("editChecklistKategori").value,
+        objekLokasi: document.getElementById("editChecklistObjek").value.trim(),
+        kodeAset: document.getElementById("editChecklistKodeAset").value.trim(),
+        petugas: document.getElementById("editChecklistPetugas").value.trim(),
+        status: document.getElementById("editChecklistStatus").value,
+        temuan: document.getElementById("editChecklistTemuan").value.trim(),
+        tindakan: document.getElementById("editChecklistTindakan").value.trim(),
+        catatan: document.getElementById("editChecklistCatatan").value.trim()
+      };
+
+      showLoading("Menyimpan koreksi laporan...", "Memperbarui database Google Sheets...");
+      runBackend("updateChecklistDetails", { payload: payload, requestingUser: currentUser }, function(res) {
+        hideLoading();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+
+        if (res && res.status === "success") {
+          const editModalEl = document.getElementById("modalEditChecklist");
+          const editInst = bootstrap.Modal.getInstance(editModalEl);
+          if (editInst) editInst.hide();
+
+          Swal.fire({
+            icon: "success",
+            title: "Data Berhasil Dikoreksi!",
+            text: res.message || "Data laporan telah diperbarui di sistem.",
+            confirmButtonColor: "#1D4ED8"
+          });
+          loadHistory();
+          loadDashboard();
+        } else {
+          Swal.fire("Gagal", (res && res.message) || "Gagal mengoreksi data laporan.", "error");
+        }
+      }, function(err) {
+        hideLoading();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+        if (isNetworkError(err)) {
+          showNetworkErrorAlert();
+        } else {
+          Swal.fire("Error", err.message || err.toString(), "error");
+        }
+      });
+    }
+
+    // ==========================================
     // HARD DELETE KHUSUS ADMINISTRATOR / PENGAWAS
     // ==========================================
     function confirmDeleteChecklist(id, objekLokasi) {
@@ -4403,7 +4701,7 @@
 
         html += `
           <tr>
-            <td class="small fw-semibold text-secondary">${escapeHtml(item.tanggal)}</td>
+            <td class="small fw-semibold text-secondary">${escapeHtml(formatOnlyDate(item.tanggal))}</td>
             <td><span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td>
             <td>
               <div class="fw-semibold text-dark">${escapeHtml(item.objekLokasi)}</div>
@@ -4422,6 +4720,9 @@
                 <i class="bi bi-eye"></i> Detail
               </button>
               ${isAdmin ? `
+                <button class="btn btn-sm btn-outline-warning ms-1" onclick="openEditChecklistModal('${item.id}')" title="Edit / Koreksi Data Laporan (Khusus Admin)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-danger ms-1" onclick="confirmDeleteChecklist('${item.id}', '${escapeHtml(item.objekLokasi)}')" title="Hapus Permanen (Khusus Admin)">
                   <i class="bi bi-trash3-fill"></i>
                 </button>
@@ -4699,20 +5000,20 @@
                 </div>
               </div>
 
-              <!-- EDIT MANUAL TANGGAL SELESAI / TUNDA (BATAS MAKSIMAL: WAKTU AKTIF HP / LAPTOP) -->
+              <!-- EDIT MANUAL TANGGAL SELESAI / TUNDA (HANYA TANGGAL, MAKSIMAL: HARI INI) -->
               <div id="containerWaktuSelesaiManual" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <label class="form-label small fw-bold text-dark mb-0" id="labelWaktuSelesaiManual">
-                    <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal & Waktu Selesai (Manual):
+                    <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai:
                   </label>
-                  <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuSelesaiNow()" title="Kembalikan ke tanggal dan jam aktif laptop/HP saat ini">
-                    <i class="bi bi-clock-history me-1"></i>Waktu Sekarang
+                  <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuSelesaiNow()" title="Pilih tanggal hari ini">
+                    <i class="bi bi-calendar-check me-1"></i>Hari Ini
                   </button>
                 </div>
-                <input type="datetime-local" id="updateWaktuSelesaiInput" class="form-control form-control-sm" onchange="validateWaktuSelesaiManual(this)">
+                <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" onchange="validateWaktuSelesaiManual(this)">
                 <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
-                  <span><i class="bi bi-info-circle me-1"></i>Bisa diedit jika teknisi lupa klik saat beres.</span>
-                  <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Waktu Sekarang</span>
+                  <span><i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi lupa input tanggal selesai.</span>
+                  <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Hari Ini</span>
                 </div>
               </div>
               <div class="mb-3">
@@ -4742,15 +5043,15 @@
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <table class="table table-sm table-borderless">
-              <tr><td class="text-secondary" style="width: 38%;">Tanggal Lapor</td><td>: <b>${escapeHtml(item.tanggal)}</b></td></tr>
+              <tr><td class="text-secondary" style="width: 38%;">Tanggal Lapor</td><td>: <b>${escapeHtml(formatOnlyDate(item.tanggal))}</b></td></tr>
               <tr><td class="text-secondary">Kategori</td><td>: <span class="badge bg-light text-dark border">${escapeHtml(item.kategori)}</span></td></tr>
               <tr><td class="text-secondary">Objek & Lokasi</td><td>: <b>${escapeHtml(item.objekLokasi)}</b></td></tr>
               <tr><td class="text-secondary">Kode Aset</td><td>: ${escapeHtml(item.kodeAset || '-')}</td></tr>
               <tr><td class="text-secondary">Petugas</td><td>: ${escapeHtml(item.petugas || '-')}</td></tr>
               <tr><td class="text-secondary">Status</td><td>: <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span></td></tr>
-              ${(item.waktuMulai || st.indexOf('progress') !== -1) ? `<tr><td class="text-secondary">Mulai Pengerjaan</td><td>: <span class="badge bg-warning bg-opacity-10 text-dark border border-warning">${escapeHtml(item.waktuMulai || (item.timestamp || item.tanggal))}</span></td></tr>` : ''}
-              ${st.indexOf('selesai') !== -1 ? `<tr><td class="text-secondary">Waktu Tuntas/Tutup</td><td>: <span class="badge bg-success bg-opacity-10 text-success border border-success">${escapeHtml(item.waktuSelesai || item.timestamp || item.tanggal || "Sudah Selesai")}</span></td></tr>` : ''}
-              ${(st.indexOf('tunda') !== -1 || st.indexOf('tidak dikerjakan') !== -1) ? `<tr><td class="text-secondary">Waktu Penundaan</td><td>: <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">${escapeHtml(item.waktuSelesai || item.timestamp || item.tanggal || "-")}</span></td></tr>` : ''}
+              ${(item.waktuMulai || st.indexOf('progress') !== -1) ? `<tr><td class="text-secondary">Tanggal Mulai</td><td>: <span class="badge bg-warning bg-opacity-10 text-dark border border-warning font-monospace">${escapeHtml(formatOnlyDate(item.waktuMulai || (item.timestamp || item.tanggal)))}</span></td></tr>` : ''}
+              ${st.indexOf('selesai') !== -1 ? `<tr><td class="text-secondary">Tanggal Selesai</td><td>: <span class="badge bg-success bg-opacity-10 text-success border border-success font-monospace">${escapeHtml(formatOnlyDate(item.waktuSelesai || item.timestamp || item.tanggal || "Sudah Selesai"))}</span></td></tr>` : ''}
+              ${(st.indexOf('tunda') !== -1 || st.indexOf('tidak dikerjakan') !== -1) ? `<tr><td class="text-secondary">Tanggal Penundaan</td><td>: <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary font-monospace">${escapeHtml(formatOnlyDate(item.waktuSelesai || item.timestamp || item.tanggal || "-"))}</span></td></tr>` : ''}
               ${(() => {
                 if (st.indexOf('selesai') !== -1) {
                   let dRaw = String(item.durasi || item.durasiPenanganan || "");
@@ -4826,9 +5127,14 @@
             <div class="text-danger small fw-semibold">
               <i class="bi bi-shield-lock-fill me-1"></i> Area Kendali Admin:
             </div>
-            <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="confirmDeleteChecklist('${item.id}', '${escapeHtml(item.objekLokasi)}')">
-              <i class="bi bi-trash3-fill me-1"></i> Hapus Permanen Laporan Ini
-            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-warning btn-sm px-3 fw-semibold text-dark shadow-sm" onclick="openEditChecklistModal('${item.id}')">
+                <i class="bi bi-pencil-square me-1"></i> Edit / Koreksi Laporan
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="confirmDeleteChecklist('${item.id}', '${escapeHtml(item.objekLokasi)}')">
+                <i class="bi bi-trash3-fill me-1"></i> Hapus Permanen
+              </button>
+            </div>
           </div>
         ` : ''}
       `;
@@ -4839,17 +5145,15 @@
       if (document.getElementById("containerUpdateSesudahList")) {
         renderPhotoList('update_sesudah');
       }
-      // Inisialisasi Waktu Selesai/Tunda Manual dengan Waktu Lokal Laptop/HP
+      // Inisialisasi Tanggal Selesai/Tunda Manual (Hanya Tanggal)
       setTimeout(() => {
         const wsInp = document.getElementById("updateWaktuSelesaiInput");
         if (wsInp) {
-          const nowStr = formatForDateTimeLocal(new Date());
-          wsInp.value = nowStr;
-          wsInp.max = nowStr;
-          if (item.tanggal || item.timestamp) {
-            const minStr = formatForDateTimeLocal(new Date(String(item.tanggal || item.timestamp).replace(" ", "T")));
-            if (minStr) wsInp.min = minStr;
-          }
+          const todayStr = new Date().toISOString().split("T")[0];
+          wsInp.value = todayStr;
+          wsInp.max = todayStr;
+          const minDate = formatOnlyDate(item.tanggal || item.timestamp);
+          if (minDate) wsInp.min = minDate;
         }
       }, 50);
     }
@@ -4885,22 +5189,20 @@
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
       const waktuSelesaiInput = document.getElementById("updateWaktuSelesaiInput") ? document.getElementById("updateWaktuSelesaiInput").value : "";
 
-      // Validasi ketat Tanggal & Waktu Selesai / Tunda Manual
+      // Validasi Tanggal Selesai / Tunda Manual (Hanya Tanggal, Tanpa Jam)
       if (newStatus === "Selesai" || newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
         if (!waktuSelesaiInput) {
-          Swal.fire("Peringatan", "Silakan tentukan tanggal & waktu selesai/tunda pekerjaan.", "warning");
+          Swal.fire("Peringatan", "Silakan tentukan tanggal selesai/tunda pekerjaan.", "warning");
           restoreUpdateBtn();
           return;
         }
 
-        const dInput = new Date(waktuSelesaiInput);
-        const dNow = new Date();
-        // Maksimal waktu: tidak boleh melebihi tanggal/jam aktif laptop atau HP saat ini
-        if (dInput.getTime() > dNow.getTime() + 60000) {
+        const todayStr = new Date().toISOString().split("T")[0];
+        if (waktuSelesaiInput > todayStr) {
           Swal.fire({
             icon: "error",
-            title: "Waktu Tidak Valid",
-            text: "Tanggal & waktu selesai tidak boleh melebihi tanggal dan jam aktif laptop atau HP Anda saat ini (tidak boleh tanggal masa depan)!"
+            title: "Tanggal Tidak Valid",
+            text: "Tanggal selesai tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
           });
           restoreUpdateBtn();
           return;
@@ -4908,13 +5210,13 @@
 
         // Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat
         const currentItem = currentDetailItemForPrint || (currentHistoryData || []).find(x => x.id === id);
-        if (currentItem && (currentItem.tanggal || currentItem.timestamp)) {
-          const dLapor = new Date(String(currentItem.tanggal || currentItem.timestamp).replace(" ", "T"));
-          if (!isNaN(dLapor.getTime()) && dInput.getTime() < dLapor.getTime() - 60000) {
+        if (currentItem) {
+          const dLaporStr = formatOnlyDate(currentItem.tanggal || currentItem.timestamp);
+          if (dLaporStr && waktuSelesaiInput < dLaporStr) {
             Swal.fire({
               icon: "warning",
-              title: "Waktu Terlalu Awal",
-              text: "Tanggal & waktu selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + currentItem.tanggal + ")!"
+              title: "Tanggal Terlalu Awal",
+              text: "Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + dLaporStr + ")!"
             });
             restoreUpdateBtn();
             return;
@@ -4922,7 +5224,7 @@
         }
       }
 
-      const formattedWaktuSelesai = waktuSelesaiInput ? waktuSelesaiInput.replace("T", " ") + (waktuSelesaiInput.split(":").length === 2 ? ":00" : "") : "";
+      const formattedWaktuSelesai = waktuSelesaiInput ? waktuSelesaiInput.split("T")[0].split(" ")[0] : "";
 
       showLoading("Menyimpan pembaruan status...", "Mengunggah data ke Google Sheets...");
       runBackend("updateChecklistStatus", {
