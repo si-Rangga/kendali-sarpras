@@ -1993,7 +1993,11 @@
           return res.json();
         })
         .then(function(result) {
-          onSuccess(result);
+          try {
+            onSuccess(result);
+          } catch(eSuccess) {
+            console.error("Kesalahan saat memproses UI onSuccess:", eSuccess);
+          }
         })
         .catch(function(err) {
           clearTimeout(timeoutId);
@@ -3312,9 +3316,9 @@
       showLoading("Memuat data aplikasi...");
       runBackend("getInitialData", { requestingUser: currentUser }, function(res) {
         hideLoading();
-        if (res && res.status === "success") {
-          masterAsets = res.asets || [];
-          masterUsers = res.users || [];
+        if (res && (res.status === "success" || res.asetList || res.userList)) {
+          masterAsets = Array.isArray(res.asets) ? res.asets : (Array.isArray(res.asetList) ? res.asetList : []);
+          masterUsers = Array.isArray(res.users) ? res.users : (Array.isArray(res.userList) ? res.userList : []);
           populateAsetDropdown();
           renderPhotoList('sebelum');
           renderPhotoList('sesudah');
@@ -3419,10 +3423,10 @@
       select.innerHTML = '<option value="semua">Semua Petugas</option>';
       
       const setPetugas = new Set();
-      (masterUsers || []).forEach(u => {
+      (Array.isArray(masterUsers) ? masterUsers : []).forEach(u => {
         if (u && u.nama) setPetugas.add(u.nama.trim());
       });
-      (currentHistoryData || []).forEach(item => {
+      (Array.isArray(currentHistoryData) ? currentHistoryData : []).forEach(item => {
         if (item && item.petugas) setPetugas.add(item.petugas.trim());
       });
 
@@ -4205,20 +4209,39 @@
         hideLoading();
         if (Array.isArray(data)) {
           currentHistoryData = data;
+        } else if (data && Array.isArray(data.data)) {
+          currentHistoryData = data.data;
         } else if (data && data.status === "error") {
-          Swal.fire("Pemberitahuan", data.message || "Gagal memuat data riwayat.", "warning");
+          console.warn("Pemberitahuan server riwayat:", data.message);
           currentHistoryData = [];
         } else {
           currentHistoryData = [];
         }
-        currentHistoryData.forEach(item => {
-          if (item && item.id) globalItemsCache[item.id] = item;
-        });
-        populatePetugasFilter();
-        filterHistoryLocal();
+
+        try {
+          (Array.isArray(currentHistoryData) ? currentHistoryData : []).forEach(item => {
+            if (item && item.id) globalItemsCache[item.id] = item;
+          });
+        } catch(e) {
+          console.warn("Gagal update cache riwayat:", e);
+        }
+
+        try {
+          populatePetugasFilter();
+        } catch(e) {
+          console.warn("Gagal isi filter petugas:", e);
+        }
+
+        try {
+          filterHistoryLocal();
+        } catch(e) {
+          console.warn("Gagal filter lokal riwayat:", e);
+        }
       }, function(err) {
         hideLoading();
-        Swal.fire("Error", err.toString(), "error");
+        console.warn("Kendala memuat riwayat:", err);
+        currentHistoryData = [];
+        filterHistoryLocal();
       });
     }
 
@@ -4291,7 +4314,7 @@
         petugas = (isPetugasFilterActive && document.getElementById("filterPetugas") ? document.getElementById("filterPetugas").value : "semua").toLowerCase().trim();
       }
 
-      const filtered = (currentHistoryData || []).filter(item => {
+      const filtered = (Array.isArray(currentHistoryData) ? currentHistoryData : []).filter(item => {
         // 1. ISOLASI PETUGAS LAPANGAN:
         if (!isAdmin && currentUser && currentUser.nama) {
           const itemPet = (item.petugas || "").toLowerCase().trim();
@@ -4357,7 +4380,7 @@
       const totalValEl = document.getElementById("filterTotalVal");
       if (countValEl && totalValEl) {
         countValEl.innerText = filtered.length;
-        totalValEl.innerText = (currentHistoryData || []).length;
+        totalValEl.innerText = (Array.isArray(currentHistoryData) ? currentHistoryData.length : 0);
       }
 
       renderHistoryTable(filtered);
@@ -4386,7 +4409,7 @@
         return;
       }
 
-      const item = globalItemsCache[id] || (currentHistoryData || []).find(x => x.id === id);
+      const item = globalItemsCache[id] || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
       if (!item) {
         Swal.fire("Peringatan", "Data laporan tidak ditemukan.", "warning");
         return;
@@ -4880,7 +4903,7 @@
     function showDetailModal(id) {
       const isAdmin = currentUser && currentUser.role && 
         (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
-      const item = globalItemsCache[id] || (currentHistoryData || []).find(x => x.id === id);
+      const item = globalItemsCache[id] || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
       if (!item) {
         console.warn("Item tidak ditemukan:", id);
         return;
@@ -5209,7 +5232,7 @@
         }
 
         // Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat
-        const currentItem = currentDetailItemForPrint || (currentHistoryData || []).find(x => x.id === id);
+        const currentItem = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
         if (currentItem) {
           const dLaporStr = formatOnlyDate(currentItem.tanggal || currentItem.timestamp);
           if (dLaporStr && waktuSelesaiInput < dLaporStr) {
