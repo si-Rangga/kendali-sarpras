@@ -1578,8 +1578,8 @@
 
   <!-- MODAL EDIT / KOREKSI LAPORAN (KHUSUS ADMINISTRATOR / PENGAWAS) -->
   <div class="modal fade" id="modalEditChecklist" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content shadow">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form class="modal-content shadow" onsubmit="handleSaveEditChecklist(event)">
         <div class="modal-header bg-warning bg-opacity-10 border-bottom">
           <div class="d-flex align-items-center gap-2">
             <span class="badge bg-warning text-dark"><i class="bi bi-shield-lock-fill me-1"></i>Khusus Admin</span>
@@ -1587,95 +1587,141 @@
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <form onsubmit="handleSaveEditChecklist(event)">
-          <div class="modal-body p-3 p-md-4">
-            <input type="hidden" id="editChecklistId">
+        <div class="modal-body p-3 p-md-4" style="max-height: calc(85vh - 130px); overflow-y: auto;">
+          <input type="hidden" id="editChecklistId">
 
-            <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
-              <i class="bi bi-info-circle-fill me-2 fs-5 flex-shrink-0"></i>
-              <div>Fitur koreksi data ini hanya dapat diakses oleh Administrator/Pengawas untuk memperbaiki kesalahan ketik, tanggal, objek lokasi, atau penugasan petugas di lapangan.</div>
+          <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
+            <i class="bi bi-info-circle-fill me-2 fs-5 flex-shrink-0"></i>
+            <div>Fitur koreksi data ini hanya dapat diakses oleh Administrator/Pengawas untuk memperbaiki kesalahan ketik, tanggal, objek lokasi, foto, atau penugasan petugas di lapangan.</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Tanggal Lapor / Temuan</label>
+              <input type="date" id="editChecklistTanggal" class="form-control" required>
             </div>
-
-            <div class="row g-3 mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Tanggal Lapor / Temuan</label>
-                <input type="date" id="editChecklistTanggal" class="form-control" required>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Kategori Pekerjaan</label>
-                <select id="editChecklistKategori" class="form-select" required>
-                  <option value="Sarana">Sarana (AC, Mesin, Panel)</option>
-                  <option value="Prasarana">Prasarana (Gedung, Saluran)</option>
-                  <option value="Pemantauan Proyek">Pemantauan Proyek (Gangguan Fisik)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-              <div class="col-12 col-md-7">
-                <label class="form-label small fw-semibold text-secondary">Objek & Lokasi (Identitas Alias)</label>
-                <input type="text" id="editChecklistObjek" class="form-control" required placeholder="Contoh: AC Ruang Rapat Lt. 2">
-              </div>
-              <div class="col-12 col-md-5">
-                <label class="form-label small fw-semibold text-secondary">Kode / No. Seri Aset</label>
-                <input type="text" id="editChecklistKodeAset" class="form-control" placeholder="Opsional / Contoh: AC-01">
-              </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Petugas Pelaksana</label>
-                <select id="editChecklistPetugas" class="form-select">
-                  <!-- Populated from masterUsers -->
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Status Pengerjaan</label>
-                <select id="editChecklistStatus" class="form-select">
-                  <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut</option>
-                  <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
-                  <option value="Selesai">Selesai (Tuntas Beres)</option>
-                  <option value="Ditunda / Tidak Dikerjakan">Ditunda / Tidak Dikerjakan</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Tanggal Mulai Pengawasan / Pengerjaan</label>
-                <input type="date" id="editChecklistWaktuMulai" class="form-control">
-                <div class="form-text" style="font-size: 0.72rem;">Bisa dikosongkan jika pekerjaan belum mulai/on progress.</div>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Tanggal Selesai Pekerjaan</label>
-                <input type="date" id="editChecklistWaktuSelesai" class="form-control">
-                <div class="form-text" style="font-size: 0.72rem;">Diisi jika status sudah Selesai atau Ditunda.</div>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold text-secondary">Temuan Masalah di Lokasi</label>
-              <textarea id="editChecklistTemuan" class="form-control" rows="2" required placeholder="Rincian masalah fisik di lapangan..."></textarea>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold text-secondary">Tindakan Teknis / Penanganan</label>
-              <textarea id="editChecklistTindakan" class="form-control" rows="2" placeholder="Tindakan perbaikan atau langkah yang diambil..."></textarea>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold text-secondary">Catatan Proyek / Vendor / Arahan Pimpinan</label>
-              <textarea id="editChecklistCatatan" class="form-control" rows="2" placeholder="Catatan tambahan, disposisi, atau keterangan penundaan..."></textarea>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Kategori Pekerjaan</label>
+              <select id="editChecklistKategori" class="form-select" required>
+                <option value="Sarana">Sarana (AC, Mesin, Panel)</option>
+                <option value="Prasarana">Prasarana (Gedung, Saluran)</option>
+                <option value="Pemantauan Proyek">Pemantauan Proyek (Gangguan Fisik)</option>
+              </select>
             </div>
           </div>
-          <div class="modal-footer bg-light">
-            <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold" id="btnSaveEditChecklist">
-              <i class="bi bi-save2-fill me-1"></i> Simpan Perubahan Data
-            </button>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-7">
+              <label class="form-label small fw-semibold text-secondary">Objek & Lokasi (Identitas Alias)</label>
+              <input type="text" id="editChecklistObjek" class="form-control" required placeholder="Contoh: AC Ruang Rapat Lt. 2">
+            </div>
+            <div class="col-12 col-md-5">
+              <label class="form-label small fw-semibold text-secondary">Kode / No. Seri Aset</label>
+              <input type="text" id="editChecklistKodeAset" class="form-control" placeholder="Opsional / Contoh: AC-01">
+            </div>
           </div>
-        </form>
-      </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Petugas Pelaksana</label>
+              <select id="editChecklistPetugas" class="form-select">
+                <!-- Populated from masterUsers -->
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Status Pengerjaan</label>
+              <select id="editChecklistStatus" class="form-select">
+                <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut</option>
+                <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
+                <option value="Selesai">Selesai (Tuntas Beres)</option>
+                <option value="Ditunda / Tidak Dikerjakan">Ditunda / Tidak Dikerjakan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Tanggal Mulai Pengawasan / Pengerjaan</label>
+              <input type="date" id="editChecklistWaktuMulai" class="form-control">
+              <div class="form-text" style="font-size: 0.72rem;">Bisa dikosongkan jika pekerjaan belum mulai/on progress.</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Tanggal Selesai / Ditunda</label>
+              <input type="date" id="editChecklistWaktuSelesai" class="form-control">
+              <div class="form-text" style="font-size: 0.72rem;">Diisi jika status sudah Selesai atau Ditunda.</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Temuan Masalah di Lokasi</label>
+            <textarea id="editChecklistTemuan" class="form-control" rows="2" required placeholder="Rincian masalah fisik di lapangan..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Tindakan Teknis / Penanganan</label>
+            <textarea id="editChecklistTindakan" class="form-control" rows="2" placeholder="Tindakan perbaikan atau langkah yang diambil..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Catatan Proyek / Vendor / Arahan Pimpinan</label>
+            <textarea id="editChecklistCatatan" class="form-control" rows="2" placeholder="Catatan tambahan, disposisi, atau keterangan penundaan..."></textarea>
+          </div>
+
+          <!-- KOREKSI & KELOLA FOTO LAPANGAN (SEBELUM & SESUDAH) -->
+          <div class="mb-2 pt-3 border-top">
+            <label class="form-label small fw-bold text-dark mb-2">
+              <i class="bi bi-images text-primary me-1"></i> Edit & Koreksi Foto Lapangan (Maksimal 3 Foto / Kategori)
+            </label>
+
+            <div class="row g-3">
+              <!-- FOTO SEBELUM -->
+              <div class="col-12 col-md-6">
+                <div class="p-3 border rounded-3 bg-light h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-camera me-1 text-primary"></i> Foto Sebelum</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" id="badgeEditCountSebelum">0 / 3 Foto</span>
+                  </div>
+
+                  <div id="containerEditFotoSebelumList" class="mb-2">
+                    <!-- Rendered dynamically -->
+                  </div>
+
+                  <button type="button" class="btn btn-outline-primary btn-sm w-100 py-1" onclick="triggerEditPhotoUpload('sebelum')">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Foto Sebelum
+                  </button>
+                  <input type="file" id="fileEditFotoSebelum" accept="image/*" multiple class="d-none" onchange="handleEditPhotoSelected(this, 'sebelum')">
+                </div>
+              </div>
+
+              <!-- FOTO SESUDAH -->
+              <div class="col-12 col-md-6">
+                <div class="p-3 border rounded-3 bg-light h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-camera-fill me-1 text-success"></i> Foto Sesudah</span>
+                    <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeEditCountSesudah">0 / 3 Foto</span>
+                  </div>
+
+                  <div id="containerEditFotoSesudahList" class="mb-2">
+                    <!-- Rendered dynamically -->
+                  </div>
+
+                  <button type="button" class="btn btn-outline-success btn-sm w-100 py-1" onclick="triggerEditPhotoUpload('sesudah')">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Foto Sesudah
+                  </button>
+                  <input type="file" id="fileEditFotoSesudah" accept="image/*" multiple class="d-none" onchange="handleEditPhotoSelected(this, 'sesudah')">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer bg-light border-top sticky-bottom">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold" id="btnSaveEditChecklist">
+            <i class="bi bi-save2-fill me-1"></i> Simpan Perubahan Data
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -3608,22 +3654,32 @@ function formatDurasiPenanganan(item) {
     function validateWaktuSelesaiManual(inputEl) {
       if (!inputEl || !inputEl.value) return;
       const todayStr = new Date().toISOString().split("T")[0];
+      const selStatus = document.getElementById("updateStatusSelect") ? document.getElementById("updateStatusSelect").value : "";
+      const isTunda = selStatus.indexOf("Ditunda") !== -1 || selStatus.indexOf("Tidak Dikerjakan") !== -1;
+
+      // 1. Batas maksimal tidak boleh melebihi tanggal hari ini
       if (inputEl.value > todayStr) {
         Swal.fire({
           icon: "warning",
           title: "Tanggal Tidak Valid",
-          text: "Tanggal selesai/tunda tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
+          text: (isTunda ? "Tanggal penundaan" : "Tanggal selesai") + " tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
         });
         inputEl.value = todayStr;
+        return;
       }
-      const mulInp = document.getElementById("updateWaktuMulaiInput");
-      if (mulInp && mulInp.value && inputEl.value < mulInp.value) {
-        Swal.fire({
-          icon: "warning",
-          title: "Urutan Tanggal Terbalik",
-          text: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai pengerjaan (" + mulInp.value + ")!"
-        });
-        inputEl.value = mulInp.value;
+
+      // 2. KHUSUS STATUS SELESAI: periksa urutan tanggal selesai vs mulai pengerjaan
+      // Pada menu Ditunda, jangan pernah bandingkan atau tampilkan notifikasi urutan terbalik
+      if (!isTunda) {
+        const mulInp = document.getElementById("updateWaktuMulaiInput");
+        if (mulInp && mulInp.value && inputEl.value < mulInp.value) {
+          Swal.fire({
+            icon: "warning",
+            title: "Urutan Tanggal Terbalik",
+            text: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai pengerjaan (" + mulInp.value + ")!"
+          });
+          inputEl.value = mulInp.value;
+        }
       }
     }
 
@@ -3643,6 +3699,9 @@ function formatDurasiPenanganan(item) {
       const cSelesai = document.getElementById("containerWaktuSelesaiManual");
       const lblMulai = document.getElementById("labelWaktuMulaiManual");
       const lblSelesai = document.getElementById("labelWaktuSelesaiManual");
+      const helpSelesai = document.getElementById("helpWaktuSelesaiManual");
+      const wsInp = document.getElementById("updateWaktuSelesaiInput");
+      const wmInp = document.getElementById("updateWaktuMulaiInput");
 
       if (val === "Selesai") {
         if (cMulai) cMulai.classList.remove("d-none");
@@ -3652,17 +3711,29 @@ function formatDurasiPenanganan(item) {
           if (lblSelesai) {
             lblSelesai.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai Pekerjaan:';
           }
+          if (helpSelesai) {
+            helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.';
+          }
         }
       } else if (val === "On Progress") {
         if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) cSelesai.classList.add("d-none");
       } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
-        if (cMulai) cMulai.classList.add("d-none");
+        if (cMulai) {
+          cMulai.classList.add("d-none");
+          if (wmInp) wmInp.value = ""; // Pastikan dikosongkan agar tidak menghalangi pilihan tanggal tunda
+        }
         if (cSelesai) {
           cSelesai.classList.remove("d-none");
           cSelesai.style.setProperty("border-left", "3.5px solid #64748B", "important");
           if (lblSelesai) {
             lblSelesai.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal Penundaan:';
+          }
+          if (helpSelesai) {
+            helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Tanggal kapan penundaan diarahkan (fleksibel, bisa sebelum hari ini).';
+          }
+          if (wsInp) {
+            wsInp.removeAttribute("min"); // Fleksibel tanpa batas bawah
           }
         }
       } else {
@@ -4531,7 +4602,109 @@ function formatDurasiPenanganan(item) {
     // ==========================================
     // EDIT / KOREKSI DATA LAPORAN (KHUSUS ADMIN)
     // ==========================================
-    function openEditChecklistModal(id) {
+        let listEditFotoSebelum = [];
+    let listEditFotoSesudah = [];
+
+    function renderEditPhotoList(kategori) {
+      const isSblm = kategori === 'sebelum';
+      const list = isSblm ? listEditFotoSebelum : listEditFotoSesudah;
+      const container = document.getElementById(isSblm ? "containerEditFotoSebelumList" : "containerEditFotoSesudahList");
+      const badge = document.getElementById(isSblm ? "badgeEditCountSebelum" : "badgeEditCountSesudah");
+      
+      if (badge) {
+        badge.innerText = `${list.length} / 3 Foto`;
+      }
+      if (!container) return;
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="text-muted text-center py-2 small fst-italic border rounded-2 bg-white"><i class="bi bi-image me-1"></i>Belum ada foto ${isSblm ? 'sebelum' : 'sesudah'}.</div>`;
+        return;
+      }
+
+      let html = '<div class="d-flex flex-wrap gap-2">';
+      list.forEach((f, idx) => {
+        const src = f.base64 || f.thumb || (f.id ? "https://lh3.googleusercontent.com/d/" + f.id : "");
+        html += `
+          <div class="position-relative border rounded-2 bg-white p-1 shadow-sm" style="width: 70px; height: 70px;">
+            <img src="${escapeHtml(src)}" class="w-100 h-100 rounded-1" style="object-fit: cover;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'70\' height=\'70\' fill=\'%23ccc\'><rect width=\'70\' height=\'70\' fill=\'%23f0f0f0\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'10\'>Foto</text></svg>'">
+            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 rounded-circle shadow" style="width: 20px; height: 20px; transform: translate(30%, -30%); line-height: 1;" onclick="removeEditPhoto('${kategori}', ${idx})" title="Hapus foto ini">
+              <i class="bi bi-x small"></i>
+            </button>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function removeEditPhoto(kategori, index) {
+      if (kategori === 'sebelum') {
+        listEditFotoSebelum.splice(index, 1);
+        renderEditPhotoList('sebelum');
+      } else {
+        listEditFotoSesudah.splice(index, 1);
+        renderEditPhotoList('sesudah');
+      }
+    }
+
+    function triggerEditPhotoUpload(kategori) {
+      const list = kategori === 'sebelum' ? listEditFotoSebelum : listEditFotoSesudah;
+      if (list.length >= 3) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Maksimal 3 foto untuk kategori ini sudah terpenuhi. Hapus foto yang ada terlebih dahulu jika ingin mengganti.',
+          confirmButtonColor: '#1D4ED8'
+        });
+        return;
+      }
+      const inp = document.getElementById(kategori === 'sebelum' ? "fileEditFotoSebelum" : "fileEditFotoSesudah");
+      if (inp) {
+        inp.value = "";
+        inp.click();
+      }
+    }
+
+    function handleEditPhotoSelected(fileInput, kategori) {
+      const files = fileInput.files;
+      if (!files || files.length === 0) return;
+      const targetList = kategori === 'sebelum' ? listEditFotoSebelum : listEditFotoSesudah;
+      const remainingSlots = 3 - targetList.length;
+
+      if (remainingSlots <= 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Maksimal 3 foto untuk kategori ini sudah terpenuhi.',
+          confirmButtonColor: '#1D4ED8'
+        });
+        fileInput.value = "";
+        return;
+      }
+
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      let processedCount = 0;
+      showLoading("Mengompres Foto...", "Menyiapkan foto berkualitas ringan...");
+
+      filesToProcess.forEach(file => {
+        compressImage(file, function(base64) {
+          if (targetList.length < 3) {
+            targetList.push({
+              base64: base64,
+              thumb: base64
+            });
+          }
+          processedCount++;
+          if (processedCount === filesToProcess.length) {
+            hideLoading();
+            renderEditPhotoList(kategori);
+            fileInput.value = "";
+          }
+        });
+      });
+    }
+
+function openEditChecklistModal(id) {
       const isAdmin = currentUser && currentUser.role && 
         (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
       if (!isAdmin) {
@@ -4603,6 +4776,36 @@ function formatDurasiPenanganan(item) {
       document.getElementById("editChecklistTindakan").value = item.tindakan || "";
       document.getElementById("editChecklistCatatan").value = item.catatan || "";
 
+      // Inisialisasi daftar foto untuk diedit
+      const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
+      const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
+      const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
+
+      const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+      const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : (item.fotoSesudah && item.fotoSesudah.indexOf("http") === 0 ? item.fotoSesudah : ""));
+      const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
+
+      listEditFotoSebelum = sblmList.map(f => {
+        const fid = f.id || extractGoogleDriveFileId(f.thumb || f.thumbUrl || f.url || (typeof f === 'string' ? f : ""));
+        return {
+          id: fid,
+          thumb: f.thumb || f.thumbUrl || f.url || (fid ? "https://lh3.googleusercontent.com/d/" + fid : ""),
+          base64: f.base64 || ""
+        };
+      }).filter(f => f.id || f.base64 || f.thumb);
+
+      listEditFotoSesudah = ssdhList.map(f => {
+        const fid = f.id || extractGoogleDriveFileId(f.thumb || f.thumbUrl || f.url || (typeof f === 'string' ? f : ""));
+        return {
+          id: fid,
+          thumb: f.thumb || f.thumbUrl || f.url || (fid ? "https://lh3.googleusercontent.com/d/" + fid : ""),
+          base64: f.base64 || ""
+        };
+      }).filter(f => f.id || f.base64 || f.thumb);
+
+      renderEditPhotoList('sebelum');
+      renderEditPhotoList('sesudah');
+
       const editModal = new bootstrap.Modal(document.getElementById("modalEditChecklist"));
       editModal.show();
     }
@@ -4628,7 +4831,9 @@ function formatDurasiPenanganan(item) {
         waktuSelesai: document.getElementById("editChecklistWaktuSelesai") ? document.getElementById("editChecklistWaktuSelesai").value : "",
         temuan: document.getElementById("editChecklistTemuan").value.trim(),
         tindakan: document.getElementById("editChecklistTindakan").value.trim(),
-        catatan: document.getElementById("editChecklistCatatan").value.trim()
+        catatan: document.getElementById("editChecklistCatatan").value.trim(),
+        fotoSebelumList: listEditFotoSebelum,
+        fotoSesudahList: listEditFotoSesudah
       };
 
       showLoading("Menyimpan koreksi laporan...", "Memperbarui database Google Sheets...");
@@ -5187,7 +5392,7 @@ function formatDurasiPenanganan(item) {
                 </div>
                 <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" onchange="validateWaktuSelesaiManual(this)">
                 <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
-                  <span><i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.</span>
+                  <span id="helpWaktuSelesaiManual"><i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.</span>
                   <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Hari Ini</span>
                 </div>
               </div>
@@ -5372,8 +5577,11 @@ function formatDurasiPenanganan(item) {
 
       // Validasi Tanggal Selesai / Tunda Manual (Hanya Tanggal, Tanpa Jam)
       if (newStatus === "Selesai" || newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
+        const isTundaStatus = newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1;
+        const istilahTgl = isTundaStatus ? "tanggal penundaan" : "tanggal selesai";
+
         if (!waktuSelesaiInput) {
-          Swal.fire("Peringatan", "Silakan tentukan tanggal selesai/tunda pekerjaan.", "warning");
+          Swal.fire("Peringatan", "Silakan tentukan " + istilahTgl + " pekerjaan.", "warning");
           restoreUpdateBtn();
           return;
         }
@@ -5383,24 +5591,26 @@ function formatDurasiPenanganan(item) {
           Swal.fire({
             icon: "error",
             title: "Tanggal Tidak Valid",
-            text: "Tanggal selesai tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
+            text: (isTundaStatus ? "Tanggal penundaan" : "Tanggal selesai") + " tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
           });
           restoreUpdateBtn();
           return;
         }
 
-        // Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat
-        const currentItem = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
-        if (currentItem) {
-          const dLaporStr = formatOnlyDate(currentItem.tanggal || currentItem.timestamp);
-          if (dLaporStr && waktuSelesaiInput < dLaporStr) {
-            Swal.fire({
-              icon: "warning",
-              title: "Tanggal Terlalu Awal",
-              text: "Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + dLaporStr + ")!"
-            });
-            restoreUpdateBtn();
-            return;
+        // Pengecekan terhadap tanggal lapor (Hanya untuk status Selesai agar penundaan fleksibel tanpa notif janggal)
+        if (!isTundaStatus) {
+          const currentItem = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
+          if (currentItem) {
+            const dLaporStr = formatOnlyDate(currentItem.tanggal || currentItem.timestamp);
+            if (dLaporStr && waktuSelesaiInput < dLaporStr) {
+              Swal.fire({
+                icon: "warning",
+                title: "Tanggal Terlalu Awal",
+                text: "Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + dLaporStr + ")!"
+              });
+              restoreUpdateBtn();
+              return;
+            }
           }
         }
       }
