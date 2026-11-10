@@ -1849,8 +1849,8 @@
       const objek = (document.getElementById("inputObjekLokasi")?.value || "").trim();
       const temuan = (document.getElementById("inputTemuan")?.value || "").trim();
       const tindakan = (document.getElementById("inputTindakan")?.value || "").trim();
-      const hasPhotos = (Array.isArray(fotoSebelumArray) && fotoSebelumArray.length > 0) || 
-                        (Array.isArray(fotoSesudahArray) && fotoSesudahArray.length > 0);
+      const hasPhotos = (Array.isArray(listFotoSebelum) && listFotoSebelum.length > 0) || 
+                        (Array.isArray(listFotoSesudah) && listFotoSesudah.length > 0);
       return Boolean(objek || temuan || tindakan || hasPhotos);
     }
 
@@ -3497,16 +3497,19 @@ function formatDurasiPenanganan(item) {
 
     function populateUserDropdown() {
       const select = document.getElementById("inputPetugasSelect");
+      if (!select) return; // Guard agar aman saat petugas lapangan login dengan inputPetugasDirect
       select.innerHTML = '<option value="">-- Pilih Petugas Terdaftar --</option>';
-      masterUsers.forEach(u => {
-        const opt = document.createElement("option");
-        opt.value = u.nama;
-        opt.text = `${u.nama} (${u.role})`;
-        if (currentUser && u.nama === currentUser.nama) {
-          opt.selected = true;
-        }
-        select.appendChild(opt);
-      });
+      if (Array.isArray(masterUsers)) {
+        masterUsers.forEach(u => {
+          const opt = document.createElement("option");
+          opt.value = u.nama;
+          opt.text = `${u.nama} (${u.role || 'Petugas'})`;
+          if (currentUser && u.nama === currentUser.nama) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+      }
     }
 
     function handlePetugasChange(elem) {
@@ -4137,63 +4140,88 @@ function formatDurasiPenanganan(item) {
     }
 
     function resetChecklistForm() {
-      // 1. Reset form DOM native
-      const form = document.getElementById("checklistForm");
-      if (form) form.reset();
+      try {
+        // 1. Reset form DOM native
+        const form = document.getElementById("checklistForm");
+        if (form) form.reset();
 
-      // 2. Bersihkan nilai text field & textarea secara eksplisit
-      const fieldsToClear = [
-        "inputObjekLokasi", "inputKodeAset", "inputTemuan", "inputTindakan",
-        "inputCatatan", "inputCatatanPimpinan", "inputPetugasManual"
-      ];
-      fieldsToClear.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = "";
-      });
+        // 2. Bersihkan nilai seluruh text field & textarea secara eksplisit
+        const fieldsToClear = [
+          "inputObjekLokasi", "inputKodeAset", "inputTemuan", "inputTindakan",
+          "inputCatatan", "inputCatatanPimpinan", "inputPetugasManual"
+        ];
+        fieldsToClear.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
 
-      // 3. Reset Tanggal ke hari ini
-      const tglEl = document.getElementById("inputTanggal");
-      if (tglEl) {
-        tglEl.value = new Date().toISOString().split("T")[0];
+        // 3. Reset Tanggal ke hari ini
+        const tglEl = document.getElementById("inputTanggal");
+        if (tglEl) {
+          tglEl.value = new Date().toISOString().split("T")[0];
+        }
+
+        // 4. Reset Kategori ke Sarana
+        const katSarana = document.getElementById("katSarana");
+        if (katSarana) {
+          katSarana.checked = true;
+          changeKategoriMode('Sarana');
+        }
+
+        // 5. Reset Status Radio ke Perlu Tindak Lanjut (Gunakan id yang benar: statTindak)
+        const stTindak = document.getElementById("statTindak");
+        if (stTindak) {
+          stTindak.checked = true;
+        }
+        ["statProgress", "statSelesai", "statDitunda"].forEach(sId => {
+          const el = document.getElementById(sId);
+          if (el) el.checked = false;
+        });
+
+        // Sembunyikan dan bersihkan kontainer alasan tunda
+        const cTunda = document.getElementById("containerInputAlasanTunda");
+        if (cTunda) cTunda.classList.add("d-none");
+        const selTunda = document.getElementById("inputAlasanTundaSelect");
+        if (selTunda) selTunda.selectedIndex = 0;
+
+        // 6. Reset Petugas
+        if (document.getElementById("inputPetugasManual")) {
+          document.getElementById("inputPetugasManual").classList.add("d-none");
+        }
+        const petSel = document.getElementById("inputPetugasSelect");
+        if (petSel) {
+          petSel.classList.remove("d-none");
+          populateUserDropdown();
+        }
+
+        // 7. Bersihkan galeri foto sebelum & sesudah
+        listFotoSebelum = [];
+        listFotoSesudah = [];
+        base64FotoSebelum = "";
+        base64FotoSesudah = "";
+        renderPhotoList('sebelum');
+        renderPhotoList('sesudah');
+
+        const bSblm = document.getElementById("badgeCountSebelum");
+        if (bSblm) bSblm.innerText = "0 / 3 Foto";
+        const bSsdh = document.getElementById("badgeCountSesudah");
+        if (bSsdh) bSsdh.innerText = "0 / 3 Foto";
+
+        // 8. Bersihkan input file hidden
+        const fileInputs = ["fileFotoSebelumCam", "fileFotoSebelumGal", "fileFotoSesudahCam", "fileFotoSesudahGal"];
+        fileInputs.forEach(id => {
+          const fEl = document.getElementById(id);
+          if (fEl) fEl.value = "";
+        });
+
+        // 9. Reset hint teks objek
+        const hintObjek = document.getElementById("hintObjek");
+        if (hintObjek) {
+          hintObjek.innerText = "Pilih dari Master atau ketik langsung";
+        }
+      } catch(err) {
+        console.error("Error in resetChecklistForm:", err);
       }
-
-      // 4. Reset Kategori ke Sarana
-      const katSarana = document.getElementById("katSarana");
-      if (katSarana) {
-        katSarana.checked = true;
-        changeKategoriMode('Sarana');
-      }
-
-      // 5. Reset Status Radio ke Perlu Tindak Lanjut
-      const stTindak = document.getElementById("stTindak");
-      if (stTindak) {
-        stTindak.checked = true;
-        toggleInputAlasanTunda();
-      }
-
-      // 6. Reset Petugas
-      if (document.getElementById("inputPetugasManual")) {
-        document.getElementById("inputPetugasManual").classList.add("d-none");
-      }
-      if (document.getElementById("inputPetugasSelect")) {
-        document.getElementById("inputPetugasSelect").classList.remove("d-none");
-      }
-      populateUserDropdown();
-
-      // 7. Bersihkan galeri foto sebelum & sesudah
-      listFotoSebelum = [];
-      listFotoSesudah = [];
-      base64FotoSebelum = "";
-      base64FotoSesudah = "";
-      renderPhotoList('sebelum');
-      renderPhotoList('sesudah');
-
-      // 8. Bersihkan input file hidden
-      const fileInputs = ["fileFotoSebelumCam", "fileFotoSebelumGal", "fileFotoSesudahCam", "fileFotoSesudahGal"];
-      fileInputs.forEach(id => {
-        const fEl = document.getElementById(id);
-        if (fEl) fEl.value = "";
-      });
     }
 
     // ==========================================
@@ -5397,6 +5425,17 @@ function formatDurasiPenanganan(item) {
         hideLoading();
         restoreUpdateBtn();
         if (res && res.status === "success") {
+          // Bersihkan seluruh isian update status dan foto sesudah
+          const actInp = document.getElementById("updateTindakanInput");
+          if (actInp) actInp.value = "";
+          const catPimp = document.getElementById("updateCatatanPimpinanInput");
+          if (catPimp) catPimp.value = "";
+          listUpdateFotoSesudah = [];
+          const fCam = document.getElementById("fileUpdateSesudahCam");
+          if (fCam) fCam.value = "";
+          const fGal = document.getElementById("fileUpdateSesudahGal");
+          if (fGal) fGal.value = "";
+
           bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
           Swal.fire("Berhasil", res.message || "Status pengerjaan berhasil diperbarui!", "success");
           loadHistory();
@@ -5458,6 +5497,12 @@ function formatDurasiPenanganan(item) {
           masterAsets.push(res.aset);
           renderMasterAsetTable();
           populateAsetDropdown();
+          
+          // Kosongkan form tambah aset
+          if (document.getElementById("newAsetKode")) document.getElementById("newAsetKode").value = "";
+          if (document.getElementById("newAsetNama")) document.getElementById("newAsetNama").value = "";
+          if (document.getElementById("newAsetLokasi")) document.getElementById("newAsetLokasi").value = "";
+
           bootstrap.Modal.getInstance(document.getElementById("modalTambahAset")).hide();
           Swal.fire("Sukses", res.message, "success");
         } else {
