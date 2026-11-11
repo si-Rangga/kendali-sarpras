@@ -3708,6 +3708,19 @@ function formatDurasiPenanganan(item) {
     }
 
     function onUpdateStatusChange(val) {
+      const hint = document.getElementById("hintSelectStatusEmpty");
+      const dyn = document.getElementById("containerDynamicStatusFields");
+      
+      // Jika belum memilih status (nilai kosong), sembunyikan semua form bawahnya
+      if (!val) {
+        if (hint) hint.classList.remove("d-none");
+        if (dyn) dyn.classList.add("d-none");
+        return;
+      }
+
+      if (hint) hint.classList.add("d-none");
+      if (dyn) dyn.classList.remove("d-none");
+
       // 1. Kontrol Tampilan Alasan Tunda
       const cTunda = document.getElementById("containerAlasanTunda");
       if (cTunda) {
@@ -5447,14 +5460,22 @@ function openEditChecklistModal(id) {
             <h6 class="fw-bold text-primary mb-2"><i class="bi bi-pencil-square me-1"></i> Perbarui Status Pekerjaan</h6>
             <form onsubmit="handleUpdateStatus(event, '${item.id}')">
               <div class="mb-3">
-                <label class="form-label small fw-semibold">Ubah Status Menjadi</label>
-                <select id="updateStatusSelect" class="form-select modern-dropdown" onchange="onUpdateStatusChange(this.value)">
-                  <option value="Perlu Tindak Lanjut">🔴 Perlu Tindak Lanjut (Eskalasi Vendor/MK)</option>
-                  <option value="On Progress">🟡 On Progress (Sedang Dikerjakan)</option>
-                  <option value="Selesai" selected>🟢 Selesai (Tuntas Beres)</option>
+                <label class="form-label small fw-bold text-dark"><i class="bi bi-arrow-repeat me-1 text-primary"></i>Ubah Status Menjadi:</label>
+                <select id="updateStatusSelect" class="form-select modern-dropdown fw-bold border-2 border-primary" onchange="onUpdateStatusChange(this.value)">
+                  <option value="" selected disabled>-- Pilih Status Baru di Sini --</option>
+                  <option value="On Progress">🟡 On Progress (Mulai Dikerjakan)</option>
+                  <option value="Selesai">🟢 Selesai (Pekerjaan Tuntas Beres)</option>
                   <option value="Ditunda / Tidak Dikerjakan">⚪ Ditunda / Tidak Dikerjakan (Arahan Pimpinan)</option>
                 </select>
               </div>
+
+              <!-- Petunjuk saat belum memilih status -->
+              <div id="hintSelectStatusEmpty" class="p-3 bg-white border border-dashed rounded-3 text-center text-muted small my-2">
+                <i class="bi bi-hand-index-thumb me-1 text-primary"></i>Silakan tentukan status baru pada dropdown di atas untuk membuka formulir.
+              </div>
+
+              <!-- Kontainer Form Dinamis (Tersembunyi sampai status dipilih) -->
+              <div id="containerDynamicStatusFields" class="d-none">
               <div id="containerAlasanTunda" class="d-none mb-3 p-3 border rounded-3 bg-warning bg-opacity-10">
                 <div class="d-flex align-items-center mb-2 text-dark">
                   <i class="bi bi-pause-circle-fill text-warning fs-5 me-2"></i>
@@ -5623,9 +5644,10 @@ function openEditChecklistModal(id) {
                 <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
               </div>
 
-              <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold">
+              <button type="submit" id="btnSubmitUpdateStatus" class="btn btn-sm btn-success w-100 py-2 fw-semibold shadow-sm">
                 <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
               </button>
+              </div><!-- /containerDynamicStatusFields -->
             </form>
           </div>
         `;
@@ -5756,7 +5778,8 @@ function openEditChecklistModal(id) {
 
         const selSt = document.getElementById("updateStatusSelect");
         if (selSt) {
-          onUpdateStatusChange(selSt.value);
+          selSt.value = ""; // Pastikan selalu kosong / placeholder saat modal baru dibuka
+          onUpdateStatusChange("");
         }
       }, 50);
     }
@@ -5787,6 +5810,16 @@ function openEditChecklistModal(id) {
       }
 
       const newStatus = document.getElementById("updateStatusSelect").value;
+      if (!newStatus) {
+        Swal.fire({
+          icon: "warning",
+          title: "Pilih Status Baru",
+          text: "Silakan pilih status baru terlebih dahulu pada menu dropdown.",
+          confirmButtonColor: "#1D4ED8"
+        });
+        restoreUpdateBtn();
+        return;
+      }
       const tindakan = document.getElementById("updateTindakanInput").value;
       const alasanTunda = document.getElementById("updateAlasanTundaSelect") ? document.getElementById("updateAlasanTundaSelect").value : "";
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
