@@ -584,7 +584,13 @@
     /* CETAK DOKUMEN KERJA / PDF STYLING */
     /* ========================================== */
     #printableReportContainer {
-      display: none;
+      position: fixed !important;
+      left: -99999px !important;
+      top: 0 !important;
+      width: 800px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      z-index: -9999 !important;
     }
 
     @media print {
@@ -635,7 +641,11 @@
       }
       #printableReportContainer {
         display: block !important;
-        position: relative !important;
+        position: static !important;
+        left: 0 !important;
+        top: 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
         z-index: 999999 !important;
         width: 100% !important;
         margin: 0 !important;
@@ -2415,29 +2425,6 @@ function formatDurasiPenanganan(item) {
         ? item.fotoProgressList
         : (progUrl ? [{ thumb: progUrl, id: progId }] : []);
 
-      const hasProgress = progList && progList.length > 0;
-      const hasSesudah = ssdhList && ssdhList.length > 0;
-      const is3Cols = hasProgress && hasSesudah;
-
-      function renderPrintImgBlock(fList, labelPrefix, emptyText) {
-        if (!fList || fList.length === 0) {
-          return `<div style="color: #94A3B8; font-size: 8.5pt; font-style: italic; padding: 20px 6px;">(${emptyText})</div>`;
-        }
-        const maxH = is3Cols ? (fList.length === 1 ? "165px" : "95px") : (fList.length === 1 ? "195px" : "125px");
-        return '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
-          fList.map((f, i) => {
-            const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
-            return `<div style="text-align:center; flex:1; min-width:70px; max-width:${fList.length === 1 ? '100%' : '50%'};">
-              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="${labelPrefix} #${i+1}">
-              ${fList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
-            </div>`;
-          }).join("") + '</div>';
-      }
-
-      const sblmImgTag = renderPrintImgBlock(sblmList, "Foto Sebelum", "Tidak ada foto fisik sebelum pengerjaan");
-      const progImgTag = renderPrintImgBlock(progList, "Foto Progress", isSelesai ? "Tanpa foto progres (langsung diselesaikan)" : "Belum ada foto saat pengerjaan");
-      const ssdhImgTag = renderPrintImgBlock(ssdhList, "Foto Sesudah", isProgress ? "Pekerjaan sedang berlangsung (belum selesai)" : "Belum ada foto fisik perbaikan sesudah");
-
       const stLow = (item.status || "").toLowerCase();
       const isSelesai = stLow.indexOf("selesai") !== -1;
       const isDitunda = stLow.indexOf("tunda") !== -1 || stLow.indexOf("tidak dikerjakan") !== -1;
@@ -2455,6 +2442,25 @@ function formatDurasiPenanganan(item) {
         statusColor = "#475569";
         statusBg = "#F1F5F9";
       }
+
+      function renderPrintImgBlock(fList, labelPrefix, emptyText) {
+        if (!fList || fList.length === 0) {
+          return `<div style="color: #94A3B8; font-size: 8.5pt; font-style: italic; padding: 20px 6px;">(${emptyText})</div>`;
+        }
+        const maxH = fList.length === 1 ? "160px" : "85px";
+        return '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
+          fList.map((f, i) => {
+            const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
+            return `<div style="text-align:center; flex:1; min-width:70px; max-width:${fList.length === 1 ? '100%' : '50%'};">
+              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="${labelPrefix} #${i+1}">
+              ${fList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
+            </div>`;
+          }).join("") + '</div>';
+      }
+
+      const sblmImgTag = renderPrintImgBlock(sblmList, "Foto Sebelum", "Tidak ada foto fisik sebelum pengerjaan");
+      const progImgTag = renderPrintImgBlock(progList, "Foto Progress", isSelesai ? "Tanpa foto progres (langsung diselesaikan)" : "Belum ada foto saat pengerjaan");
+      const ssdhImgTag = renderPrintImgBlock(ssdhList, "Foto Sesudah", isProgress ? "Pekerjaan sedang berlangsung (belum selesai)" : "Belum ada foto fisik perbaikan sesudah");
 
       // 1. Tentukan Tanggal On Progress (Hanya Tanggal, Tanpa Jam)
       let waktuMulaiDisplay = "";
@@ -2719,19 +2725,34 @@ function formatDurasiPenanganan(item) {
       const originalDocTitle = document.title;
       document.title = uniquePdfTitle;
 
+      let hasTriggeredPrint = false;
+
       function triggerPrintDialog() {
+        if (hasTriggeredPrint) return;
+        hasTriggeredPrint = true;
+        if (typeof safetyTimer !== "undefined" && safetyTimer) clearTimeout(safetyTimer);
+
         hideLoading();
         // Sembunyikan backdrop modal hitam (.modal-backdrop) & sweetalert agar preview print putih bersih
         const darkBackdrops = document.querySelectorAll(".modal-backdrop, .swal2-container, .loading-overlay");
         darkBackdrops.forEach(el => el.style.setProperty("display", "none", "important"));
 
-        window.print();
+        try {
+          window.print();
+        } catch (e) {
+          console.warn("Print error:", e);
+        }
 
         setTimeout(function() {
           document.title = originalDocTitle;
           darkBackdrops.forEach(el => el.style.removeProperty("display"));
-        }, 1200);
-      }  if (total === 0) {
+        }, 1500);
+      }
+
+      // Hard safety timeout: jika gambar lambat atau macet, print tetap terbuka maksimal dalam 2 detik!
+      const safetyTimer = setTimeout(triggerPrintDialog, 2000);
+
+      if (total === 0) {
         triggerPrintDialog();
       } else {
         imgs.forEach(function(img) {
@@ -3131,19 +3152,34 @@ function formatDurasiPenanganan(item) {
       const originalDocTitle = document.title;
       document.title = uniquePdfTitle;
 
+      let hasTriggeredPrint = false;
+
       function triggerPrintDialog() {
+        if (hasTriggeredPrint) return;
+        hasTriggeredPrint = true;
+        if (typeof safetyTimer !== "undefined" && safetyTimer) clearTimeout(safetyTimer);
+
         hideLoading();
         // Sembunyikan backdrop modal hitam (.modal-backdrop) & sweetalert agar preview print putih bersih
         const darkBackdrops = document.querySelectorAll(".modal-backdrop, .swal2-container, .loading-overlay");
         darkBackdrops.forEach(el => el.style.setProperty("display", "none", "important"));
 
-        window.print();
+        try {
+          window.print();
+        } catch (e) {
+          console.warn("Print error:", e);
+        }
 
         setTimeout(function() {
           document.title = originalDocTitle;
           darkBackdrops.forEach(el => el.style.removeProperty("display"));
-        }, 1200);
-      }  if (total === 0) {
+        }, 1500);
+      }
+
+      // Hard safety timeout: maksimal 3.5 detik untuk rekap data riwayat
+      const safetyTimer = setTimeout(triggerPrintDialog, 3500);
+
+      if (total === 0) {
         triggerPrintDialog();
       } else {
         imgs.forEach(function(img) {
@@ -6016,6 +6052,11 @@ function openEditChecklistModal(id) {
           if (fCam) fCam.value = "";
           const fGal = document.getElementById("fileUpdateSesudahGal");
           if (fGal) fGal.value = "";
+          listUpdateFotoProgress = [];
+          const fCamP = document.getElementById("fileUpdateProgressCam");
+          if (fCamP) fCamP.value = "";
+          const fGalP = document.getElementById("fileUpdateProgressGal");
+          if (fGalP) fGalP.value = "";
 
           bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
           Swal.fire("Berhasil", res.message || "Status pengerjaan berhasil diperbarui!", "success");
