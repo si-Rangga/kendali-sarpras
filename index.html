@@ -5,6 +5,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Aplikasi Kendali Sarana & Prasarana</title>
+  <!-- Anti-Cache Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1123,11 +1127,11 @@
                     </div>
 
                     <div class="row g-3">
-                      <!-- FOTO SEBELUM (MAKS 3 FOTO) -->
-                      <div class="col-12 col-md-6">
+                      <!-- FOTO SEBELUM (MAKS 3 FOTO - SELALU MUNCUL DI LAPORAN AWAL) -->
+                      <div class="col-12" id="colInputFotoSebelum">
                         <div class="p-3 border rounded-3 bg-white shadow-sm h-100">
                           <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold small text-dark"><i class="bi bi-camera me-1 text-primary"></i> Foto Sebelum</span>
+                            <span class="fw-bold small text-dark"><i class="bi bi-camera me-1 text-primary"></i> Foto Sebelum (Kondisi Awal / Rusak)</span>
                             <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" id="badgeCountSebelum">0 / 3 Foto</span>
                           </div>
                           
@@ -1142,8 +1146,8 @@
                         </div>
                       </div>
 
-                      <!-- FOTO SESUDAH (MAKS 3 FOTO) -->
-                      <div class="col-12 col-md-6">
+                      <!-- FOTO SESUDAH (MAKS 3 FOTO - HANYA MUNCUL JIKA STATUS SELESAI) -->
+                      <div class="col-12 col-md-6 d-none" id="colInputFotoSesudah">
                         <div class="p-3 border rounded-3 bg-white shadow-sm h-100">
                           <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="fw-bold small text-dark"><i class="bi bi-camera-fill me-1 text-success"></i> Foto Sesudah</span>
@@ -3723,6 +3727,13 @@ function formatDurasiPenanganan(item) {
       const wsInp = document.getElementById("updateWaktuSelesaiInput");
       const wmInp = document.getElementById("updateWaktuMulaiInput");
 
+      // Kontainer Foto Acuan & Form Upload Foto
+      const cPrevSblm = document.getElementById("containerPreviewFotoSebelum");
+      const cPrevRiwayat = document.getElementById("containerPreviewFotoRiwayat");
+      const sProg = document.getElementById("sectionFotoProgressUpdate");
+      const sSsdh = document.getElementById("sectionFotoSesudahUpdate");
+      const lblTind = document.getElementById("labelUpdateTindakan");
+
       if (val === "Selesai") {
         if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) {
@@ -3735,13 +3746,25 @@ function formatDurasiPenanganan(item) {
             helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.';
           }
         }
+        // Tampilkan riwayat foto sebelumnya (Sebelum + Progress) dan upload Foto Sesudah
+        if (cPrevRiwayat) cPrevRiwayat.classList.remove("d-none");
+        if (sSsdh) sSsdh.classList.remove("d-none");
+        if (cPrevSblm) cPrevSblm.classList.add("d-none");
+        if (sProg) sProg.classList.add("d-none");
+        if (lblTind) lblTind.innerText = "Tindakan Penyelesaian / Perbaikan:";
       } else if (val === "On Progress") {
         if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) cSelesai.classList.add("d-none");
+        // Tampilkan acuan foto sebelum (titik rusak) dan upload Foto On Progress
+        if (cPrevSblm) cPrevSblm.classList.remove("d-none");
+        if (sProg) sProg.classList.remove("d-none");
+        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
+        if (sSsdh) sSsdh.classList.add("d-none");
+        if (lblTind) lblTind.innerText = "Tindakan yang Sedang Dikerjakan:";
       } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
         if (cMulai) {
           cMulai.classList.add("d-none");
-          if (wmInp) wmInp.value = ""; // Pastikan dikosongkan agar tidak menghalangi pilihan tanggal tunda
+          if (wmInp) wmInp.value = "";
         }
         if (cSelesai) {
           cSelesai.classList.remove("d-none");
@@ -3753,12 +3776,24 @@ function formatDurasiPenanganan(item) {
             helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Tanggal kapan penundaan diarahkan (fleksibel, bisa sebelum hari ini).';
           }
           if (wsInp) {
-            wsInp.removeAttribute("min"); // Fleksibel tanpa batas bawah
+            wsInp.removeAttribute("min");
           }
         }
+        // Sembunyikan semua foto saat ditunda
+        if (cPrevSblm) cPrevSblm.classList.add("d-none");
+        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
+        if (sProg) sProg.classList.add("d-none");
+        if (sSsdh) sSsdh.classList.add("d-none");
+        if (lblTind) lblTind.innerText = "Catatan Arahan Penundaan:";
       } else {
-        if (cMulai) cMulai.classList.add("d-none");
+        // Perlu Tindak Lanjut
+        if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) cSelesai.classList.add("d-none");
+        if (cPrevSblm) cPrevSblm.classList.remove("d-none");
+        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
+        if (sProg) sProg.classList.add("d-none");
+        if (sSsdh) sSsdh.classList.add("d-none");
+        if (lblTind) lblTind.innerText = "Catatan Eskalasi / Arahan:";
       }
     }
 
@@ -3768,11 +3803,25 @@ function formatDurasiPenanganan(item) {
 
     function toggleInputAlasanTunda(val) {
       const c = document.getElementById("containerInputAlasanTunda");
-      if (!c) return;
-      if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
-        c.classList.remove("d-none");
-      } else {
-        c.classList.add("d-none");
+      if (c) {
+        if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+          c.classList.remove("d-none");
+        } else {
+          c.classList.add("d-none");
+        }
+      }
+
+      // Kontrol dinamis foto sesudah di Form Input Laporan Baru
+      const colSblm = document.getElementById("colInputFotoSebelum");
+      const colSsdh = document.getElementById("colInputFotoSesudah");
+      if (colSsdh && colSblm) {
+        if (val === "Selesai") {
+          colSsdh.classList.remove("d-none");
+          colSblm.className = "col-12 col-md-6";
+        } else {
+          colSsdh.classList.add("d-none");
+          colSblm.className = "col-12";
+        }
       }
     }
 
@@ -4016,6 +4065,17 @@ function formatDurasiPenanganan(item) {
       // update_progress: no legacy compat needed
 
       if (count === 0) {
+        if (kategori === 'update_sesudah' || kategori === 'update_progress') {
+          // Tampilan bersih dan simpel untuk form update status (tanpa kotak/tombol ganda)
+          const isProg = kategori === 'update_progress';
+          container.innerHTML = `
+            <div class="text-center py-2 px-3 text-muted small fst-italic border rounded-2 bg-white mb-2" style="border-style: dashed !important;">
+              <i class="bi bi-camera me-1 ${isProg ? 'text-warning' : 'text-success'}"></i>Belum ada foto ${isProg ? 'saat pengerjaan' : 'sesudah perbaikan'} dilampirkan.
+            </div>
+          `;
+          return;
+        }
+
         container.innerHTML = `
           <div class="photo-camera-card text-center p-3" onclick="promptChoosePhotoSource('${kategori}')" title="Ketuk untuk memilih Kamera atau Galeri" style="cursor: pointer; border: 2px dashed #94A3B8; border-radius: 12px; background: #F8FAFC;">
             <div class="camera-circle-icon mx-auto mb-2" style="width: 44px; height: 44px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #1E293B;">
@@ -5463,40 +5523,107 @@ function openEditChecklistModal(id) {
                 </div>
               </div>
               <div class="mb-3">
-                <label class="form-label small fw-semibold">Tindakan Penyelesaian / Tambahan</label>
-                <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Filter sudah dicuci bersih, AC dingin normal">
+                <label class="form-label small fw-semibold" id="labelUpdateTindakan">Tindakan Penyelesaian / Tambahan</label>
+                <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Sedang diperbaiki / filter sudah dibersihkan">
               </div>
-              <div class="mb-3" id="sectionFotoProgressUpdate">
+
+              <!-- PREVIEW FOTO ACUAN SEBELUM (MUNCUL SAAT ON PROGRESS) -->
+              <div id="containerPreviewFotoSebelum" class="mb-3 p-2.5 border rounded-3 bg-white d-none" style="border-left: 3.5px solid #2563EB !important;">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <span class="small fw-bold text-dark"><i class="bi bi-camera me-1 text-primary"></i>Foto Temuan Awal Saat Laporan Dibuat (Sebelum):</span>
+                  <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold" style="font-size:0.7rem;">Acuan Perbaikan</span>
+                </div>
+                ${sblmList && sblmList.length > 0 ? `
+                  <div class="d-flex flex-wrap gap-2">
+                    ${sblmList.map((f, i) => `
+                      <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${i+1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Klik perbesar">
+                        <img src="${f.thumb}" class="rounded border shadow-sm" style="width:58px;height:58px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-info-circle me-1"></i>Periksa foto di atas untuk memastikan titik kerusakan yang perlu dikerjakan.</div>
+                ` : '<div class="text-muted small fst-italic">Tidak ada foto kondisi awal yang dilampirkan.</div>'}
+              </div>
+
+              <!-- PREVIEW RIWAYAT FOTO SEBELUM + PROGRESS (MUNCUL SAAT SELESAI) -->
+              <div id="containerPreviewFotoRiwayat" class="mb-3 p-2.5 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <span class="small fw-bold text-dark"><i class="bi bi-clock-history me-1 text-success"></i>Riwayat Dokumentasi Sebelumnya:</span>
+                  <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size:0.7rem;">Foto Pembanding</span>
+                </div>
+                <div class="d-flex flex-wrap gap-3">
+                  ${sblmList && sblmList.length > 0 ? `
+                    <div>
+                      <div class="small fw-semibold text-secondary mb-1" style="font-size:0.7rem;">1. Foto Sebelum (Awal):</div>
+                      <div class="d-flex gap-1">
+                        ${sblmList.map((f, i) => `
+                          <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${i+1}', '${f.full}')" title="Foto Sebelum #${i+1} (Klik perbesar)">
+                            <img src="${f.thumb}" class="rounded border shadow-sm" style="width:50px;height:50px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                  ${progList && progList.length > 0 ? `
+                    <div>
+                      <div class="small fw-semibold text-warning mb-1" style="font-size:0.7rem;">2. Foto Progress (Pengerjaan):</div>
+                      <div class="d-flex gap-1">
+                        ${progList.map((f, i) => `
+                          <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Progress #${i+1}', '${f.full}')" title="Foto Progress #${i+1} (Klik perbesar)">
+                            <img src="${f.thumb}" class="rounded border border-warning shadow-sm" style="width:50px;height:50px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                  ${(!sblmList || sblmList.length === 0) && (!progList || progList.length === 0) ? '<div class="text-muted small fst-italic">Belum ada foto sebelum maupun progress.</div>' : ''}
+                </div>
+                <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-info-circle me-1"></i>Bandingkan kondisi barang sebelum dikerjakan dengan hasil perbaikan di bawah.</div>
+              </div>
+
+              <!-- INPUT FOTO ON PROGRESS (MUNCUL SAAT ON PROGRESS) -->
+              <div class="mb-3 d-none" id="sectionFotoProgressUpdate">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-images me-1 text-warning"></i>Foto Saat Pengerjaan / On Progress (Maks. 3)</label>
+                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-camera-fill text-warning me-1"></i>Ambil / Lampirkan Foto Saat Pengerjaan (On Progress)</label>
                   <span class="badge bg-warning bg-opacity-10 text-warning fw-bold" id="badgeCountUpdateProgress">0 / 3 Foto</span>
                 </div>
                 <div id="containerUpdateProgressList" class="mb-2">
                   <!-- Multi-photo rendered dynamically -->
                 </div>
                 <div class="d-flex gap-2 mb-1">
-                  <button type="button" class="btn btn-outline-warning btn-sm flex-fill py-1" onclick="triggerPhotoCapture('update_progress', 'cam')">
-                    <i class="bi bi-camera me-1"></i>Kamera
+                  <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_progress', 'cam')">
+                    <i class="bi bi-camera-fill me-1"></i>Buka Kamera
                   </button>
-                  <button type="button" class="btn btn-outline-warning btn-sm flex-fill py-1" onclick="triggerPhotoCapture('update_progress', 'gal')">
-                    <i class="bi bi-images me-1"></i>Galeri
+                  <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_progress', 'gal')">
+                    <i class="bi bi-images me-1"></i>Pilih Galeri
                   </button>
                 </div>
                 <input type="file" id="fileUpdateProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
                 <input type="file" id="fileUpdateProgressGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
               </div>
-              <div class="mb-3">
+
+              <!-- INPUT FOTO SESUDAH (MUNCUL SAAT SELESAI) -->
+              <div class="mb-3" id="sectionFotoSesudahUpdate">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="form-label small fw-semibold mb-0">Lampirkan Foto Sesudah (Maks. 3 Foto)</label>
-                <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountUpdateSesudah">0 / 3 Foto</span>
+                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-camera-fill text-success me-1"></i>Ambil / Lampirkan Foto Sesudah (Hasil Akhir)</label>
+                  <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountUpdateSesudah">0 / 3 Foto</span>
+                </div>
+                <div id="containerUpdateSesudahList" class="mb-2">
+                  <!-- Multi-photo rendered dynamically -->
+                </div>
+                <div class="d-flex gap-2 mb-1">
+                  <button type="button" class="btn btn-success btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_sesudah', 'cam')">
+                    <i class="bi bi-camera-fill me-1"></i>Buka Kamera
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_sesudah', 'gal')">
+                    <i class="bi bi-images me-1"></i>Pilih Galeri
+                  </button>
+                </div>
+                <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
+                <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
               </div>
-              <div id="containerUpdateSesudahList" class="mb-2">
-                <!-- Multi-photo rendered dynamically -->
-              </div>
-              <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
-              <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
-            </div>
-            <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold">
+
+              <button type="submit" class="btn btn-sm btn-success w-100 py-2 fw-semibold">
                 <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
               </button>
             </form>
@@ -5599,8 +5726,12 @@ function openEditChecklistModal(id) {
       const modal = new bootstrap.Modal(document.getElementById("modalDetail"));
       modal.show();
       listUpdateFotoSesudah = [];
+      listUpdateFotoProgress = [];
       if (document.getElementById("containerUpdateSesudahList")) {
         renderPhotoList('update_sesudah');
+      }
+      if (document.getElementById("containerUpdateProgressList")) {
+        renderPhotoList('update_progress');
       }
       // Inisialisasi Tanggal Mulai & Tanggal Selesai Manual (Hanya Tanggal)
       setTimeout(() => {
