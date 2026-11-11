@@ -558,6 +558,21 @@
         font-size: 0.86rem !important;
         margin-bottom: 6px !important;
       }
+
+      /* Optimasi Responsif HP: Modal & Tabel */
+      .modal-dialog {
+        margin: 0.5rem !important;
+      }
+      .modal-body {
+        padding: 1rem 0.85rem !important;
+      }
+      #modalDetailBody .table td {
+        font-size: 0.82rem !important;
+        padding: 4px 2px !important;
+      }
+      .table-responsive {
+        -webkit-overflow-scrolling: touch;
+      }
     }
 
     @media (min-width: 769px) {
@@ -1567,7 +1582,7 @@
 
   <!-- MODAL DETAIL & UPDATE STATUS -->
   <div class="modal fade" id="modalDetail" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title fw-bold" id="modalDetailTitle">Detail Checklist</h5>
@@ -2384,42 +2399,44 @@ function formatDurasiPenanganan(item) {
 
       const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
       const ssdhId = item.fotoSesudahId || extractGoogleDriveFileId(item.fotoSesudah);
+      const progId = item.fotoProgressId || extractGoogleDriveFileId(item.fotoProgress);
 
       const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : "");
       const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : "");
+      const progUrl = progId ? ("https://lh3.googleusercontent.com/d/" + progId) : (item.fotoProgress && item.fotoProgress.startsWith("data:") ? item.fotoProgress : "");
 
-      const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
-      const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
+      const sblmList = (Array.isArray(item.fotoSebelumList) && item.fotoSebelumList.length > 0)
+        ? item.fotoSebelumList
+        : (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
+      const ssdhList = (Array.isArray(item.fotoSesudahList) && item.fotoSesudahList.length > 0)
+        ? item.fotoSesudahList
+        : (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
+      const progList = (Array.isArray(item.fotoProgressList) && item.fotoProgressList.length > 0)
+        ? item.fotoProgressList
+        : (progUrl ? [{ thumb: progUrl, id: progId }] : []);
 
-      let sblmImgTag = "";
-      if (sblmList && sblmList.length > 0) {
-        sblmImgTag = '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
-          sblmList.map((f, i) => {
+      const hasProgress = progList && progList.length > 0;
+      const hasSesudah = ssdhList && ssdhList.length > 0;
+      const is3Cols = hasProgress && hasSesudah;
+
+      function renderPrintImgBlock(fList, labelPrefix, emptyText) {
+        if (!fList || fList.length === 0) {
+          return `<div style="color: #94A3B8; font-size: 8.5pt; font-style: italic; padding: 20px 6px;">(${emptyText})</div>`;
+        }
+        const maxH = is3Cols ? (fList.length === 1 ? "165px" : "95px") : (fList.length === 1 ? "195px" : "125px");
+        return '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
+          fList.map((f, i) => {
             const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
-            const maxH = sblmList.length === 1 ? "210px" : "140px";
-            return `<div style="text-align:center; flex:1; min-width:80px; max-width:${sblmList.length === 1 ? '100%' : '50%'};">
-              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="Foto Sebelum #${i+1}">
-              ${sblmList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
+            return `<div style="text-align:center; flex:1; min-width:70px; max-width:${fList.length === 1 ? '100%' : '50%'};">
+              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="${labelPrefix} #${i+1}">
+              ${fList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
             </div>`;
           }).join("") + '</div>';
-      } else {
-        sblmImgTag = `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Tidak ada foto fisik sebelum pengerjaan)</div>`;
       }
 
-      let ssdhImgTag = "";
-      if (ssdhList && ssdhList.length > 0) {
-        ssdhImgTag = '<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">' + 
-          ssdhList.map((f, i) => {
-            const u = (f && (f.thumbUrl || f.thumb)) || (f && f.id ? "https://lh3.googleusercontent.com/d/" + f.id : (typeof f === 'string' ? f : ""));
-            const maxH = ssdhList.length === 1 ? "210px" : "140px";
-            return `<div style="text-align:center; flex:1; min-width:80px; max-width:${ssdhList.length === 1 ? '100%' : '50%'};">
-              <img src="${u}" referrerpolicy="no-referrer" style="max-height:${maxH}; max-width:100%; object-fit:contain; border-radius:4px; border:1px solid #CBD5E1;" alt="Foto Sesudah #${i+1}">
-              ${ssdhList.length > 1 ? `<div style="font-size:7pt; color:#64748B; margin-top:2px;">#${i+1}</div>` : ''}
-            </div>`;
-          }).join("") + '</div>';
-      } else {
-        ssdhImgTag = `<div style="color: #94A3B8; font-size: 9pt; font-style: italic;">(Belum ada foto fisik perbaikan sesudah)</div>`;
-      }
+      const sblmImgTag = renderPrintImgBlock(sblmList, "Foto Sebelum", "Tidak ada foto fisik sebelum pengerjaan");
+      const progImgTag = renderPrintImgBlock(progList, "Foto Progress", "Tidak ada foto saat pengerjaan");
+      const ssdhImgTag = renderPrintImgBlock(ssdhList, "Foto Sesudah", "Belum ada foto fisik perbaikan sesudah");
 
       const stLow = (item.status || "").toLowerCase();
       const isSelesai = stLow.indexOf("selesai") !== -1;
@@ -2567,31 +2584,91 @@ function formatDurasiPenanganan(item) {
           </div>
           ` : ''}
 
-          <!-- 3. DOKUMENTASI FOTO SEBELUM & SESUDAH -->
-          <div style="margin-bottom: 20px;">
+          <!-- 3. DOKUMENTASI FOTO HASIL PEKERJAAN -->
+          <div style="margin-bottom: 16px;">
             <div style="font-size: 9.5pt; font-weight: 800; color: #0F172A; margin-bottom: 6px; border-left: 4px solid #2563EB; padding-left: 6px;">
               3. DOKUMENTASI FOTO HASIL PEKERJAAN:
             </div>
-            <table style="width: 100%; border-collapse: separate; border-spacing: 10px 0;">
-              <tr>
-                <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
-                  <div style="font-size: 8.5pt; font-weight: 700; color: #991B1B; margin-bottom: 6px; background: #FEE2E2; padding: 4px; border-radius: 4px; border: 1px solid #FECACA;">
-                    [ FOTO SEBELUM PENANGANAN ]
-                  </div>
-                  <div style="min-height: 210px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
-                    ${sblmImgTag}
-                  </div>
-                </td>
-                <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
-                  <div style="font-size: 8.5pt; font-weight: 700; color: #14532D; margin-bottom: 6px; background: #DCFCE7; padding: 4px; border-radius: 4px; border: 1px solid #BBF7D0;">
-                    [ FOTO SESUDAH (PERBAIKAN TUNTAS) ]
-                  </div>
-                  <div style="min-height: 210px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
-                    ${ssdhImgTag}
-                  </div>
-                </td>
-              </tr>
-            </table>
+            ${(function() {
+              if (is3Cols) {
+                return `
+                  <table style="width: 100%; border-collapse: separate; border-spacing: 8px 0;">
+                    <tr>
+                      <td style="width: 33.33%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8pt; font-weight: 700; color: #991B1B; margin-bottom: 5px; background: #FEE2E2; padding: 3px 4px; border-radius: 4px; border: 1px solid #FECACA;">
+                          [ 1. FOTO SEBELUM (AWAL) ]
+                        </div>
+                        <div style="min-height: 175px; padding: 2px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${sblmImgTag}
+                        </div>
+                      </td>
+                      <td style="width: 33.33%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8pt; font-weight: 700; color: #92400E; margin-bottom: 5px; background: #FEF3C7; padding: 3px 4px; border-radius: 4px; border: 1px solid #FDE68A;">
+                          [ 2. FOTO SAAT PENGERJAAN ]
+                        </div>
+                        <div style="min-height: 175px; padding: 2px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${progImgTag}
+                        </div>
+                      </td>
+                      <td style="width: 33.33%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8pt; font-weight: 700; color: #14532D; margin-bottom: 5px; background: #DCFCE7; padding: 3px 4px; border-radius: 4px; border: 1px solid #BBF7D0;">
+                          [ 3. FOTO SESUDAH (TUNTAS) ]
+                        </div>
+                        <div style="min-height: 175px; padding: 2px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${ssdhImgTag}
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                `;
+              } else if (hasProgress && !hasSesudah) {
+                return `
+                  <table style="width: 100%; border-collapse: separate; border-spacing: 10px 0;">
+                    <tr>
+                      <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8.5pt; font-weight: 700; color: #991B1B; margin-bottom: 6px; background: #FEE2E2; padding: 4px; border-radius: 4px; border: 1px solid #FECACA;">
+                          [ FOTO SEBELUM PENANGANAN ]
+                        </div>
+                        <div style="min-height: 195px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${sblmImgTag}
+                        </div>
+                      </td>
+                      <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8.5pt; font-weight: 700; color: #92400E; margin-bottom: 6px; background: #FEF3C7; padding: 4px; border-radius: 4px; border: 1px solid #FDE68A;">
+                          [ FOTO SAAT PENGERJAAN (ON PROGRESS) ]
+                        </div>
+                        <div style="min-height: 195px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${progImgTag}
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                `;
+              } else {
+                return `
+                  <table style="width: 100%; border-collapse: separate; border-spacing: 10px 0;">
+                    <tr>
+                      <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8.5pt; font-weight: 700; color: #991B1B; margin-bottom: 6px; background: #FEE2E2; padding: 4px; border-radius: 4px; border: 1px solid #FECACA;">
+                          [ FOTO SEBELUM PENANGANAN ]
+                        </div>
+                        <div style="min-height: 195px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${sblmImgTag}
+                        </div>
+                      </td>
+                      <td style="width: 50%; vertical-align: top; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 8px; background: #FFFFFF; text-align: center;">
+                        <div style="font-size: 8.5pt; font-weight: 700; color: #14532D; margin-bottom: 6px; background: #DCFCE7; padding: 4px; border-radius: 4px; border: 1px solid #BBF7D0;">
+                          [ FOTO SESUDAH (PERBAIKAN TUNTAS) ]
+                        </div>
+                        <div style="min-height: 195px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #F8FAFC; border-radius: 6px; overflow: hidden;">
+                          ${ssdhImgTag}
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                `;
+              }
+            })()}
           </div>
 
           <!-- LEMBAR TANDA TANGAN (SESUAI PERAN & PILIHAN PENANDATANGAN) -->
@@ -2776,12 +2853,18 @@ function formatDurasiPenanganan(item) {
         const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : "");
         const ssdhUrl = ssdhId ? ("https://lh3.googleusercontent.com/d/" + ssdhId) : (item.fotoSesudah && item.fotoSesudah.startsWith("data:") ? item.fotoSesudah : "");
 
+        const progId = item.fotoProgressId || extractGoogleDriveFileId(item.fotoProgress);
+        const progUrl = progId ? ("https://lh3.googleusercontent.com/d/" + progId) : (item.fotoProgress && item.fotoProgress.startsWith("data:") ? item.fotoProgress : "");
+
         const sblmList = (Array.isArray(item.fotoSebelumList) && item.fotoSebelumList.length > 0)
           ? item.fotoSebelumList
           : (sblmUrl ? [{ thumb: sblmUrl, id: sblmId }] : []);
         const ssdhList = (Array.isArray(item.fotoSesudahList) && item.fotoSesudahList.length > 0)
           ? item.fotoSesudahList
           : (ssdhUrl ? [{ thumb: ssdhUrl, id: ssdhId }] : []);
+        const progList = (Array.isArray(item.fotoProgressList) && item.fotoProgressList.length > 0)
+          ? item.fotoProgressList
+          : (progUrl ? [{ thumb: progUrl, id: progId }] : []);
 
         function getImgSrc(f) {
           if (!f) return "";
@@ -2798,8 +2881,21 @@ function formatDurasiPenanganan(item) {
             hasAnyPhoto = true;
             fotoHtml += `
               <div style="text-align: center; display: inline-block;">
-                <img src="${u}" referrerpolicy="no-referrer" style="width: 38px; height: 38px; object-fit: cover; border-radius: 4px; border: 1.5px solid #DC2626 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Sblm #${fIdx + 1}" title="Foto Sebelum #${fIdx + 1}">
+                <img src="${u}" referrerpolicy="no-referrer" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #DC2626 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Sblm #${fIdx + 1}" title="Foto Sebelum #${fIdx + 1}">
                 ${sblmList.length > 1 ? `<div style="font-size: 6pt; color: #DC2626; font-weight: bold; line-height: 1; margin-top: 1px;">Sblm #${fIdx + 1}</div>` : ''}
+              </div>
+            `;
+          }
+        });
+
+        progList.forEach((f, fIdx) => {
+          const u = getImgSrc(f);
+          if (u) {
+            hasAnyPhoto = true;
+            fotoHtml += `
+              <div style="text-align: center; display: inline-block;">
+                <img src="${u}" referrerpolicy="no-referrer" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #D97706 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Prog #${fIdx + 1}" title="Foto On Progress #${fIdx + 1}">
+                ${progList.length > 1 ? `<div style="font-size: 6pt; color: #D97706; font-weight: bold; line-height: 1; margin-top: 1px;">Prog #${fIdx + 1}</div>` : ''}
               </div>
             `;
           }
@@ -2811,7 +2907,7 @@ function formatDurasiPenanganan(item) {
             hasAnyPhoto = true;
             fotoHtml += `
               <div style="text-align: center; display: inline-block;">
-                <img src="${u}" referrerpolicy="no-referrer" style="width: 38px; height: 38px; object-fit: cover; border-radius: 4px; border: 1.5px solid #16A34A !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Ssdh #${fIdx + 1}" title="Foto Sesudah #${fIdx + 1}">
+                <img src="${u}" referrerpolicy="no-referrer" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #16A34A !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;" alt="Ssdh #${fIdx + 1}" title="Foto Sesudah #${fIdx + 1}">
                 ${ssdhList.length > 1 ? `<div style="font-size: 6pt; color: #16A34A; font-weight: bold; line-height: 1; margin-top: 1px;">Ssdh #${fIdx + 1}</div>` : ''}
               </div>
             `;
@@ -5423,12 +5519,24 @@ function openEditChecklistModal(id) {
       const progList = item.fotoProgressList || [];
       if (progList.length > 0) {
         fotoProgressHtml = '<div class="row g-2">';
-        progList.forEach(function(f, idx) {
-          fotoProgressHtml += `<div class="col-4" style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto On Progress #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto On Progress #${idx + 1} (Klik perbesar)"><img src="${f.thumb}" referrerpolicy="no-referrer" style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${f.id}')"></div>`;
+        progList.forEach((f, idx) => {
+          fotoProgressHtml += `
+            <div class="${progList.length === 1 ? 'col-12' : (progList.length === 2 ? 'col-6' : 'col-4')}">
+              <div class="card p-1 bg-light border shadow-sm text-center h-100">
+                <div style="cursor: pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto On Progress #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Klik perbesar">
+                  <img src="${f.thumb}" referrerpolicy="no-referrer" class="img-fluid rounded" style="height: 105px; width: 100%; object-fit: cover; background: #fff;" onerror="handleImageFallback(this, '${f.id}')">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                  <span class="small fw-bold text-dark" style="font-size: 0.72rem;">#${idx + 1}</span>
+                  ${f.full ? `<a href="${f.full}" target="_blank" class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right"></i> Drive</a>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
         });
         fotoProgressHtml += '</div>';
       } else {
-        fotoProgressHtml = '<div class="p-2 bg-light text-center text-muted rounded border small"><i class="bi bi-camera me-1"></i>Belum ada foto saat pengerjaan</div>';
+        fotoProgressHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera me-1"></i>Belum ada foto pengerjaan</div>`;
       }
       // === Foto Sesudah ===
       if (ssdhList.length > 0) {
@@ -5707,18 +5815,64 @@ function openEditChecklistModal(id) {
           </div>
         </div>
 
-        <div class="row g-3 mt-2">
-          <div class="col-6">
-            <label class="small fw-bold text-secondary mb-1">[v] Foto Sebelum:</label>
-            ${fotoSebelumHtml}
-            <label class="small fw-bold text-secondary mb-1 mt-3"><i class="bi bi-images me-1 text-warning"></i>Foto On Progress:</label>
-            ${fotoProgressHtml}
-          </div>
-          <div class="col-6">
-            <label class="small fw-bold text-secondary mb-1">[v] Foto Sesudah:</label>
-            ${fotoSesudahHtml}
-          </div>
-        </div>
+        ${(function() {
+          if (progList.length > 0) {
+            return `
+              <div class="row g-2 mt-2">
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                  <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #2563EB !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                      <label class="small fw-bold text-primary mb-0"><i class="bi bi-camera me-1"></i>1. Foto Sebelum (Awal)</label>
+                      <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.65rem;">${sblmList.length} Foto</span>
+                    </div>
+                    ${fotoSebelumHtml}
+                  </div>
+                </div>
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                  <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #D97706 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                      <label class="small fw-bold text-warning mb-0"><i class="bi bi-clock-history me-1"></i>2. Foto On Progress</label>
+                      <span class="badge bg-warning bg-opacity-10 text-dark" style="font-size:0.65rem;">${progList.length} Foto</span>
+                    </div>
+                    ${fotoProgressHtml}
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #16A34A !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                      <label class="small fw-bold text-success mb-0"><i class="bi bi-check2-circle me-1"></i>3. Foto Sesudah (Selesai)</label>
+                      <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.65rem;">${ssdhList.length} Foto</span>
+                    </div>
+                    ${fotoSesudahHtml}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="row g-2 mt-2">
+                <div class="col-12 col-md-6 mb-2 mb-md-0">
+                  <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #2563EB !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                      <label class="small fw-bold text-primary mb-0"><i class="bi bi-camera me-1"></i>1. Foto Sebelum (Awal)</label>
+                      <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.65rem;">${sblmList.length} Foto</span>
+                    </div>
+                    ${fotoSebelumHtml}
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #16A34A !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                      <label class="small fw-bold text-success mb-0"><i class="bi bi-check2-circle me-1"></i>2. Foto Sesudah (Selesai)</label>
+                      <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.65rem;">${ssdhList.length} Foto</span>
+                    </div>
+                    ${fotoSesudahHtml}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        })()}
 
         ${updateSection}
 
