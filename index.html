@@ -1693,6 +1693,25 @@
                 </div>
               </div>
 
+              <!-- FOTO PROGRESS -->
+              <div class="col-12">
+                <div class="p-3 border rounded-3 bg-light">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-images me-1 text-warning"></i> Foto On Progress (Saat Pengerjaan)</span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning fw-bold" id="badgeEditCountProgress">0 / 3 Foto</span>
+                  </div>
+
+                  <div id="containerEditFotoProgressList" class="mb-2">
+                    <!-- Rendered dynamically -->
+                  </div>
+
+                  <button type="button" class="btn btn-outline-warning btn-sm w-100 py-1" onclick="triggerEditPhotoUpload('progress')">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Foto Progress
+                  </button>
+                  <input type="file" id="fileEditFotoProgress" accept="image/*" multiple class="d-none" onchange="handleEditPhotoSelected(this, 'progress')">
+                </div>
+              </div>
+
               <!-- FOTO SESUDAH -->
               <div class="col-12 col-md-6">
                 <div class="p-3 border rounded-3 bg-light h-100">
@@ -1789,6 +1808,8 @@
     let listFotoSebelum = [];
     let listFotoSesudah = [];
     let listUpdateFotoSesudah = [];
+        listUpdateFotoProgress = [];
+    let listUpdateFotoProgress = [];
     let base64FotoSebelum = "";
     let base64FotoSesudah = "";
     let base64UpdateFotoSesudah = "";
@@ -3805,8 +3826,8 @@ function formatDurasiPenanganan(item) {
         return;
       }
 
-      const camId = kategori === 'sebelum' ? 'fileFotoSebelumCam' : (kategori === 'sesudah' ? 'fileFotoSesudahCam' : 'fileUpdateSesudahCam');
-      const galId = kategori === 'sebelum' ? 'fileFotoSebelumGal' : (kategori === 'sesudah' ? 'fileFotoSesudahGal' : 'fileUpdateSesudahGal');
+      const camId = kategori === 'sebelum' ? 'fileFotoSebelumCam' : (kategori === 'sesudah' ? 'fileFotoSesudahCam' : (kategori === 'update_progress' ? 'fileUpdateProgressCam' : 'fileUpdateSesudahCam'));
+      const galId = kategori === 'sebelum' ? 'fileFotoSebelumGal' : (kategori === 'sesudah' ? 'fileFotoSesudahGal' : (kategori === 'update_progress' ? 'fileUpdateProgressGal' : 'fileUpdateSesudahGal'));
 
       if (mode === 'cam') {
         if (isMobileDevice()) {
@@ -3875,7 +3896,7 @@ function formatDurasiPenanganan(item) {
       const rawBase64 = canvas.toDataURL("image/jpeg", 0.88);
 
       compressImage(rawBase64, 960, 0.72, function(compressedBase64) {
-        const targetList = currentMultiWebcamCategory === 'sebelum' ? listFotoSebelum : (currentMultiWebcamCategory === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+        const targetList = currentMultiWebcamCategory === 'sebelum' ? listFotoSebelum : (currentMultiWebcamCategory === 'sesudah' ? listFotoSesudah : (currentMultiWebcamCategory === 'update_progress' ? listUpdateFotoProgress : listUpdateFotoSesudah));
         if (targetList.length < 3) {
           targetList.push({
             base64: compressedBase64,
@@ -3912,7 +3933,7 @@ function formatDurasiPenanganan(item) {
       const files = fileInput.files;
       if (!files || files.length === 0) return;
 
-      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : (kategori === 'update_progress' ? listUpdateFotoProgress : listUpdateFotoSesudah));
       const remainingSlots = 3 - targetList.length;
 
       if (remainingSlots <= 0) {
@@ -3962,7 +3983,7 @@ function formatDurasiPenanganan(item) {
     }
 
     function removePhoto(kategori, index) {
-      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : (kategori === 'update_progress' ? listUpdateFotoProgress : listUpdateFotoSesudah));
       if (index >= 0 && index < targetList.length) {
         targetList.splice(index, 1);
         renderPhotoList(kategori);
@@ -3970,9 +3991,9 @@ function formatDurasiPenanganan(item) {
     }
 
     function renderPhotoList(kategori) {
-      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : listUpdateFotoSesudah);
-      const containerId = kategori === 'sebelum' ? 'containerFotoSebelumList' : (kategori === 'sesudah' ? 'containerFotoSesudahList' : 'containerUpdateSesudahList');
-      const badgeId = kategori === 'sebelum' ? 'badgeCountSebelum' : (kategori === 'sesudah' ? 'badgeCountSesudah' : 'badgeCountUpdateSesudah');
+      const targetList = kategori === 'sebelum' ? listFotoSebelum : (kategori === 'sesudah' ? listFotoSesudah : (kategori === 'update_progress' ? listUpdateFotoProgress : listUpdateFotoSesudah));
+      const containerId = kategori === 'sebelum' ? 'containerFotoSebelumList' : (kategori === 'sesudah' ? 'containerFotoSesudahList' : (kategori === 'update_progress' ? 'containerUpdateProgressList' : 'containerUpdateSesudahList'));
+      const badgeId = kategori === 'sebelum' ? 'badgeCountSebelum' : (kategori === 'sesudah' ? 'badgeCountSesudah' : (kategori === 'update_progress' ? 'badgeCountUpdateProgress' : 'badgeCountUpdateSesudah'));
 
       const container = document.getElementById(containerId);
       const badge = document.getElementById(badgeId);
@@ -3993,6 +4014,7 @@ function formatDurasiPenanganan(item) {
       if (kategori === 'sebelum') base64FotoSebelum = targetList.length > 0 ? targetList[0].base64 : "";
       else if (kategori === 'sesudah') base64FotoSesudah = targetList.length > 0 ? targetList[0].base64 : "";
       else if (kategori === 'update_sesudah') base64UpdateFotoSesudah = targetList.length > 0 ? targetList[0].base64 : "";
+      // update_progress: no legacy compat needed
 
       if (count === 0) {
         container.innerHTML = `
@@ -4604,12 +4626,14 @@ function formatDurasiPenanganan(item) {
     // ==========================================
         let listEditFotoSebelum = [];
     let listEditFotoSesudah = [];
+    let listEditFotoProgress = [];
 
     function renderEditPhotoList(kategori) {
       const isSblm = kategori === 'sebelum';
-      const list = isSblm ? listEditFotoSebelum : listEditFotoSesudah;
-      const container = document.getElementById(isSblm ? "containerEditFotoSebelumList" : "containerEditFotoSesudahList");
-      const badge = document.getElementById(isSblm ? "badgeEditCountSebelum" : "badgeEditCountSesudah");
+      const isProgress = kategori === 'progress';
+      const list = isSblm ? listEditFotoSebelum : (isProgress ? listEditFotoProgress : listEditFotoSesudah);
+      const container = document.getElementById(isSblm ? "containerEditFotoSebelumList" : (isProgress ? "containerEditFotoProgressList" : "containerEditFotoSesudahList"));
+      const badge = document.getElementById(isSblm ? "badgeEditCountSebelum" : (isProgress ? "badgeEditCountProgress" : "badgeEditCountSesudah"));
       
       if (badge) {
         badge.innerText = `${list.length} / 3 Foto`;
@@ -4617,7 +4641,7 @@ function formatDurasiPenanganan(item) {
       if (!container) return;
 
       if (list.length === 0) {
-        container.innerHTML = `<div class="text-muted text-center py-2 small fst-italic border rounded-2 bg-white"><i class="bi bi-image me-1"></i>Belum ada foto ${isSblm ? 'sebelum' : 'sesudah'}.</div>`;
+        container.innerHTML = `<div class="text-muted text-center py-2 small fst-italic border rounded-2 bg-white"><i class="bi bi-image me-1"></i>Belum ada foto ${isSblm ? 'sebelum' : (isProgress ? 'saat pengerjaan' : 'sesudah')}.</div>`;
         return;
       }
 
@@ -4641,6 +4665,9 @@ function formatDurasiPenanganan(item) {
       if (kategori === 'sebelum') {
         listEditFotoSebelum.splice(index, 1);
         renderEditPhotoList('sebelum');
+      } else if (kategori === 'progress') {
+        listEditFotoProgress.splice(index, 1);
+        renderEditPhotoList('progress');
       } else {
         listEditFotoSesudah.splice(index, 1);
         renderEditPhotoList('sesudah');
@@ -4648,7 +4675,7 @@ function formatDurasiPenanganan(item) {
     }
 
     function triggerEditPhotoUpload(kategori) {
-      const list = kategori === 'sebelum' ? listEditFotoSebelum : listEditFotoSesudah;
+      const list = kategori === 'sebelum' ? listEditFotoSebelum : (kategori === 'progress' ? listEditFotoProgress : listEditFotoSesudah);
       if (list.length >= 3) {
         Swal.fire({
           icon: 'info',
@@ -4658,7 +4685,7 @@ function formatDurasiPenanganan(item) {
         });
         return;
       }
-      const inp = document.getElementById(kategori === 'sebelum' ? "fileEditFotoSebelum" : "fileEditFotoSesudah");
+      const inp = document.getElementById(kategori === 'sebelum' ? "fileEditFotoSebelum" : (kategori === 'progress' ? "fileEditFotoProgress" : "fileEditFotoSesudah"));
       if (inp) {
         inp.value = "";
         inp.click();
@@ -4668,7 +4695,7 @@ function formatDurasiPenanganan(item) {
     function handleEditPhotoSelected(fileInput, kategori) {
       const files = fileInput.files;
       if (!files || files.length === 0) return;
-      const targetList = kategori === 'sebelum' ? listEditFotoSebelum : listEditFotoSesudah;
+      const targetList = kategori === 'sebelum' ? listEditFotoSebelum : (kategori === 'progress' ? listEditFotoProgress : listEditFotoSesudah);
       const remainingSlots = 3 - targetList.length;
 
       if (remainingSlots <= 0) {
@@ -4803,8 +4830,19 @@ function openEditChecklistModal(id) {
         };
       }).filter(f => f.id || f.base64 || f.thumb);
 
+      const progListEdit = item.fotoProgressList || [];
+      listEditFotoProgress = progListEdit.map(f => {
+        const fid = f.id || extractGoogleDriveFileId(f.thumb || f.thumbUrl || f.url || (typeof f === 'string' ? f : ""));
+        return {
+          id: fid,
+          thumb: f.thumb || f.thumbUrl || f.url || (fid ? "https://lh3.googleusercontent.com/d/" + fid : ""),
+          base64: f.base64 || ""
+        };
+      }).filter(f => f.id || f.base64 || f.thumb);
+
       renderEditPhotoList('sebelum');
       renderEditPhotoList('sesudah');
+      renderEditPhotoList('progress');
 
       const editModal = new bootstrap.Modal(document.getElementById("modalEditChecklist"));
       editModal.show();
@@ -4833,7 +4871,8 @@ function openEditChecklistModal(id) {
         tindakan: document.getElementById("editChecklistTindakan").value.trim(),
         catatan: document.getElementById("editChecklistCatatan").value.trim(),
         fotoSebelumList: listEditFotoSebelum,
-        fotoSesudahList: listEditFotoSesudah
+        fotoSesudahList: listEditFotoSesudah,
+        fotoProgressList: listEditFotoProgress
       };
 
       showLoading("Menyimpan koreksi laporan...", "Memperbarui database Google Sheets...");
@@ -5028,11 +5067,21 @@ function openEditChecklistModal(id) {
 
         const sblmList = item.fotoSebelumList || (sblmUrl ? [{ thumb: sblmUrl, full: sblmFull, id: sblmId }] : []);
         const ssdhList = item.fotoSesudahList || (ssdhUrl ? [{ thumb: ssdhUrl, full: ssdhFull, id: ssdhId }] : []);
+        const progList = item.fotoProgressList || [];
 
         let sblmThumbsHtml = "";
         sblmList.forEach((f, idx) => {
           sblmThumbsHtml += `
             <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto Sebelum #${idx + 1} (Klik perbesar)">
+              <img src="${f.thumb}" referrerpolicy="no-referrer" style="width:30px;height:30px;object-fit:cover;border-radius:6px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${f.id}')">
+            </div>
+          `;
+        });
+
+        let progThumbsHtml = "";
+        progList.forEach((f, idx) => {
+          progThumbsHtml += `
+            <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto On Progress #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto On Progress #${idx + 1} (Klik perbesar)">
               <img src="${f.thumb}" referrerpolicy="no-referrer" style="width:30px;height:30px;object-fit:cover;border-radius:6px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${f.id}')">
             </div>
           `;
@@ -5053,6 +5102,11 @@ function openEditChecklistModal(id) {
               <span class="badge bg-primary bg-opacity-10 text-primary border" style="font-size:0.65rem;">Sblm (${sblmList.length})</span>
               <div class="d-flex gap-1 flex-wrap">${sblmThumbsHtml || '<span class="text-muted small">-</span>'}</div>
             </div>
+            ${progList.length > 0 ? `
+            <div class="d-flex gap-1 align-items-center mt-1">
+              <span class="badge bg-opacity-10 border" style="font-size:0.65rem; background:#EFF6FF; color:#2563EB; border-color:#BFDBFE;">Proses (${progList.length})</span>
+              <div class="d-flex gap-1 flex-wrap">${progThumbsHtml}</div>
+            </div>` : ''}
             ${ssdhList.length > 0 ? `
               <div class="d-flex gap-1 align-items-center">
                 <span class="badge bg-success bg-opacity-10 text-success border" style="font-size:0.65rem;">Ssdh (${ssdhList.length})</span>
@@ -5291,7 +5345,20 @@ function openEditChecklistModal(id) {
         fotoSebelumHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera-slash fs-4"></i><br>Tidak ada foto sebelum</div>`;
       }
 
+      let fotoProgressHtml = "";
       let fotoSesudahHtml = "";
+      // === Foto Progress ===
+      const progList = item.fotoProgressList || [];
+      if (progList.length > 0) {
+        fotoProgressHtml = '<div class="row g-2">';
+        progList.forEach(function(f, idx) {
+          fotoProgressHtml += `<div class="col-4" style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto On Progress #${idx + 1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Foto On Progress #${idx + 1} (Klik perbesar)"><img src="${f.thumb}" referrerpolicy="no-referrer" style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid #2563EB;" onerror="handleImageFallback(this, '${f.id}')"></div>`;
+        });
+        fotoProgressHtml += '</div>';
+      } else {
+        fotoProgressHtml = '<div class="p-2 bg-light text-center text-muted rounded border small"><i class="bi bi-camera me-1"></i>Belum ada foto saat pengerjaan</div>';
+      }
+      // === Foto Sesudah ===
       if (ssdhList.length > 0) {
         fotoSesudahHtml = '<div class="row g-2">';
         ssdhList.forEach((f, idx) => {
@@ -5400,6 +5467,25 @@ function openEditChecklistModal(id) {
                 <label class="form-label small fw-semibold">Tindakan Penyelesaian / Tambahan</label>
                 <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Filter sudah dicuci bersih, AC dingin normal">
               </div>
+              <div class="mb-3" id="sectionFotoProgressUpdate">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-images me-1 text-warning"></i>Foto Saat Pengerjaan / On Progress (Maks. 3)</label>
+                  <span class="badge bg-warning bg-opacity-10 text-warning fw-bold" id="badgeCountUpdateProgress">0 / 3 Foto</span>
+                </div>
+                <div id="containerUpdateProgressList" class="mb-2">
+                  <!-- Multi-photo rendered dynamically -->
+                </div>
+                <div class="d-flex gap-2 mb-1">
+                  <button type="button" class="btn btn-outline-warning btn-sm flex-fill py-1" onclick="triggerPhotoCapture('update_progress', 'cam')">
+                    <i class="bi bi-camera me-1"></i>Kamera
+                  </button>
+                  <button type="button" class="btn btn-outline-warning btn-sm flex-fill py-1" onclick="triggerPhotoCapture('update_progress', 'gal')">
+                    <i class="bi bi-images me-1"></i>Galeri
+                  </button>
+                </div>
+                <input type="file" id="fileUpdateProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
+                <input type="file" id="fileUpdateProgressGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
+              </div>
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                 <label class="form-label small fw-semibold mb-0">Lampirkan Foto Sesudah (Maks. 3 Foto)</label>
@@ -5477,6 +5563,8 @@ function openEditChecklistModal(id) {
           <div class="col-6">
             <label class="small fw-bold text-secondary mb-1">[v] Foto Sebelum:</label>
             ${fotoSebelumHtml}
+            <label class="small fw-bold text-secondary mb-1 mt-3"><i class="bi bi-images me-1 text-warning"></i>Foto On Progress:</label>
+            ${fotoProgressHtml}
           </div>
           <div class="col-6">
             <label class="small fw-bold text-secondary mb-1">[v] Foto Sesudah:</label>
@@ -5574,6 +5662,7 @@ function openEditChecklistModal(id) {
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
       const waktuMulaiInput = document.getElementById("updateWaktuMulaiInput") ? document.getElementById("updateWaktuMulaiInput").value : "";
       const waktuSelesaiInput = document.getElementById("updateWaktuSelesaiInput") ? document.getElementById("updateWaktuSelesaiInput").value : "";
+      const fotoProgressList = listUpdateFotoProgress.map(function(f) { return f.base64; });
 
       // Validasi Tanggal Selesai / Tunda Manual (Hanya Tanggal, Tanpa Jam)
       if (newStatus === "Selesai" || newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
@@ -5628,6 +5717,7 @@ function openEditChecklistModal(id) {
           catatanPimpinan: catatanPimpinan,
           waktuMulai: formattedWaktuMulai,
           waktuSelesai: formattedWaktuSelesai,
+          fotoProgressList: fotoProgressList,
           fotoSesudahList: listUpdateFotoSesudah.map(f => f.base64),
           fotoSesudahBase64: listUpdateFotoSesudah.length > 0 ? listUpdateFotoSesudah[0].base64 : ""
         }
