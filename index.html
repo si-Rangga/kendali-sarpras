@@ -2080,6 +2080,7 @@
         else if (action === "getChecklistHistory") runner.getChecklistHistory(data.filter, data.requestingUser);
         else if (action === "submitChecklist") runner.submitChecklist(data.payload);
         else if (action === "updateChecklistStatus") runner.updateChecklistStatus(data.payload);
+        else if (action === "saveProgressSusulan") runner.saveProgressSusulan(data.payload, data.requestingUser);
         else if (action === "updateChecklistDetails" || action === "editChecklist") runner.updateChecklistDetails(data.payload, data.requestingUser);
         else if (action === "saveMasterAset") runner.saveMasterAset(data.payload);
         else if (action === "exportToPrintableTemplate") runner.exportToPrintableTemplate(data.kategori, data.tanggal);
@@ -4254,28 +4255,54 @@ function formatDurasiPenanganan(item) {
       container.innerHTML = thumbsHtml;
     }
 
-    function compressImage(base64Str, maxDim, quality, callback) {
-      const img = new Image();
-      img.onload = function() {
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
+    function compressImage(input, maxDim, quality, callback) {
+      if (typeof maxDim === "function") {
+        callback = maxDim;
+        maxDim = 960;
+        quality = 0.72;
+      }
+      if (!maxDim) maxDim = 960;
+      if (!quality) quality = 0.72;
+
+      function doCompress(base64Str) {
+        if (!base64Str || typeof base64Str !== "string") {
+          if (callback) callback(base64Str || "");
+          return;
         }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        callback(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = base64Str;
+        const img = new Image();
+        img.onload = function() {
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          if (callback) callback(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = function() {
+          if (callback) callback(base64Str);
+        };
+        img.src = base64Str;
+      }
+
+      if (input instanceof Blob || input instanceof File) {
+        const r = new FileReader();
+        r.onload = function(ev) { doCompress(ev.target.result); };
+        r.onerror = function() { if (callback) callback(""); };
+        r.readAsDataURL(input);
+      } else {
+        doCompress(input);
+      }
     }
 
     function handleChecklistSubmit(e) {
@@ -4879,23 +4906,48 @@ function formatDurasiPenanganan(item) {
 
       const filesToProcess = Array.from(files).slice(0, remainingSlots);
       let processedCount = 0;
+      let isDone = false;
       showLoading("Mengompres Foto...", "Menyiapkan foto berkualitas ringan...");
 
+      // Batas waktu pengaman maksimal 10 detik agar tidak membeku jika file korup
+      const safetyCompressTimer = setTimeout(function() {
+        if (!isDone) {
+          isDone = true;
+          hideLoading();
+          renderEditPhotoList(kategori);
+          fileInput.value = "";
+        }
+      }, 10000);
+
+      function checkAllProcessed() {
+        processedCount++;
+        if (processedCount >= filesToProcess.length && !isDone) {
+          isDone = true;
+          clearTimeout(safetyCompressTimer);
+          hideLoading();
+          renderEditPhotoList(kategori);
+          fileInput.value = "";
+        }
+      }
+
       filesToProcess.forEach(file => {
-        compressImage(file, function(base64) {
-          if (targetList.length < 3) {
-            targetList.push({
-              base64: base64,
-              thumb: base64
-            });
-          }
-          processedCount++;
-          if (processedCount === filesToProcess.length) {
-            hideLoading();
-            renderEditPhotoList(kategori);
-            fileInput.value = "";
-          }
-        });
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
+            if (targetList.length < 3 && compressedBase64) {
+              targetList.push({
+                base64: compressedBase64,
+                thumb: compressedBase64,
+                name: file.name || ("Foto " + (targetList.length + 1))
+              });
+            }
+            checkAllProcessed();
+          });
+        };
+        reader.onerror = function() {
+          checkAllProcessed();
+        };
+        reader.readAsDataURL(file);
       });
     }
 
@@ -5561,6 +5613,87 @@ function openEditChecklistModal(id) {
         fotoSesudahHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera-slash fs-4"></i><br>Tidak ada foto sesudah</div>`;
       }
 
+      listSusulanFotoProgress = [];
+      let susulanSection = "";
+      const isMissingProgData = st.indexOf("selesai") !== -1 && (!item.waktuMulai || progList.length === 0);
+      if (isMissingProgData) {
+        const dLaporMin = formatOnlyDate(item.tanggal || item.timestamp);
+        const dSelesaiMax = formatOnlyDate(item.waktuSelesai || item.timestamp || new Date());
+        const defaultMulaiVal = formatOnlyDate(item.waktuMulai || item.tanggal || item.timestamp);
+
+        susulanSection = `
+          <div class="mt-4 p-3 border rounded-3 bg-white shadow-sm" style="border-left: 4.5px solid #D97706 !important; background: #FFFBEB;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <div>
+                <div class="fw-bold text-dark small">
+                  <i class="bi bi-clock-history text-warning me-1"></i> Lengkapi Data Pengerjaan (On Progress) Susulan
+                </div>
+                <div class="text-muted" style="font-size: 0.74rem;">
+                  Laporan ini sebelumnya langsung diselesaikan. Tim lapangan dapat melengkapi tanggal mulai pengerjaan fisik atau foto saat kerja di bawah.
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-3 shadow-sm" onclick="toggleProgressSusulanForm()" id="btnToggleProgressSusulan">
+                <i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang
+              </button>
+            </div>
+
+            <div id="containerProgressSusulanForm" class="d-none mt-3 pt-3 border-top">
+              <form onsubmit="handleSaveProgressSusulan(event, '${item.id}')">
+                <div class="row g-2 mb-2.5">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold text-dark mb-1">
+                      <i class="bi bi-calendar-event text-warning me-1"></i>Tanggal Mulai Pengerjaan / Pengawasan:
+                    </label>
+                    <input type="date" id="susulanWaktuMulai" class="form-control form-control-sm border-warning" value="${escapeHtml(defaultMulaiVal)}" min="${dLaporMin}" max="${dSelesaiMax}">
+                    <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.71rem;">
+                      <span><i class="bi bi-info-circle me-1"></i>Kapan mulai pengerjaan fisik / pengawasan.</span>
+                      <span class="text-secondary fw-semibold">Min: ${dLaporMin} | Max: ${dSelesaiMax}</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold text-secondary mb-1">
+                      <i class="bi bi-card-text text-primary me-1"></i>Catatan Pengerjaan Tambahan (Opsional):
+                    </label>
+                    <input type="text" id="susulanTindakan" class="form-control form-control-sm" placeholder="Contoh: Penggantian sparepart filter oleh teknisi">
+                    <div class="text-muted mt-1" style="font-size: 0.71rem;">
+                      <i class="bi bi-info-circle me-1"></i>Keterangan teknis pekerjaan yang dilakukan.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3 p-2.5 bg-white border rounded-2">
+                  <div class="d-flex justify-content-between align-items-center mb-1.5">
+                    <label class="form-label small fw-bold text-dark mb-0">
+                      <i class="bi bi-camera-fill text-warning me-1"></i>Foto Dokumentasi Saat Pengerjaan (Maksimal 3 Foto):
+                    </label>
+                    <span class="badge bg-warning bg-opacity-10 text-dark fw-bold" id="badgeCountSusulanProgress">0 / 3 Foto</span>
+                  </div>
+
+                  <div id="containerSusulanPhotoList" class="mb-2">
+                    <div class="text-muted text-center py-2 small fst-italic border rounded-2 bg-light"><i class="bi bi-image me-1"></i>Belum ada foto yang dipilih.</div>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold" onclick="triggerSusulanPhotoUpload('cam')">
+                      <i class="bi bi-camera-fill me-1"></i>Buka Kamera
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerSusulanPhotoUpload('gal')">
+                      <i class="bi bi-images me-1"></i>Pilih Galeri
+                    </button>
+                  </div>
+                  <input type="file" id="fileSusulanProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleSusulanPhotoSelected(this)">
+                  <input type="file" id="fileSusulanProgressGal" accept="image/*" multiple class="d-none" onchange="handleSusulanPhotoSelected(this)">
+                </div>
+
+                <button type="submit" id="btnSaveSusulan" class="btn btn-sm btn-warning text-dark fw-bold w-100 py-2 shadow-sm">
+                  <i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Data Pengerjaan Susulan
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
       let updateSection = "";
       if (st.indexOf("selesai") === -1) {
         updateSection = `
@@ -5875,6 +6008,7 @@ function openEditChecklistModal(id) {
         })()}
 
         ${updateSection}
+        ${susulanSection}
 
         <div class="mt-3 d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="handlePrintCurrentDetail()">
@@ -6068,6 +6202,224 @@ function openEditChecklistModal(id) {
       }, function(err) {
         hideLoading();
         restoreUpdateBtn();
+        if (isNetworkError(err)) {
+          showNetworkErrorAlert();
+        } else {
+          Swal.fire("Error", err.message || err.toString(), "error");
+        }
+      });
+    }
+
+    // ==========================================
+    // FITUR: LENGKAPI DATA PENGERJAAN (ON PROGRESS) SUSULAN
+    // ==========================================
+    let listSusulanFotoProgress = [];
+
+    function toggleProgressSusulanForm() {
+      const c = document.getElementById("containerProgressSusulanForm");
+      const btn = document.getElementById("btnToggleProgressSusulan");
+      if (!c) return;
+      if (c.classList.contains("d-none")) {
+        c.classList.remove("d-none");
+        if (btn) btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Tutup Form';
+      } else {
+        c.classList.add("d-none");
+        if (btn) btn.innerHTML = '<i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang';
+      }
+    }
+
+    function triggerSusulanPhotoUpload(type) {
+      if (listSusulanFotoProgress.length >= 3) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Maksimal 3 foto untuk kategori ini sudah terpenuhi. Hapus foto lama jika ingin mengganti.',
+          confirmButtonColor: '#1D4ED8'
+        });
+        return;
+      }
+      const inp = document.getElementById(type === 'cam' ? "fileSusulanProgressCam" : "fileSusulanProgressGal");
+      if (inp) {
+        inp.value = "";
+        inp.click();
+      }
+    }
+
+    function handleSusulanPhotoSelected(fileInput) {
+      const files = fileInput.files;
+      if (!files || files.length === 0) return;
+      const remainingSlots = 3 - listSusulanFotoProgress.length;
+
+      if (remainingSlots <= 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Maksimal 3 Foto',
+          text: 'Maksimal 3 foto sudah terpenuhi.',
+          confirmButtonColor: '#1D4ED8'
+        });
+        fileInput.value = "";
+        return;
+      }
+
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      let processedCount = 0;
+      let isDone = false;
+      showLoading("Mengompres Foto...", "Menyiapkan foto berkualitas ringan...");
+
+      const safetyTimer = setTimeout(function() {
+        if (!isDone) {
+          isDone = true;
+          hideLoading();
+          renderSusulanPhotoList();
+          fileInput.value = "";
+        }
+      }, 10000);
+
+      function checkDone() {
+        processedCount++;
+        if (processedCount >= filesToProcess.length && !isDone) {
+          isDone = true;
+          clearTimeout(safetyTimer);
+          hideLoading();
+          renderSusulanPhotoList();
+          fileInput.value = "";
+        }
+      }
+
+      filesToProcess.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
+            if (listSusulanFotoProgress.length < 3 && compressedBase64) {
+              listSusulanFotoProgress.push({
+                base64: compressedBase64,
+                thumb: compressedBase64,
+                name: file.name || ("Foto Progres " + (listSusulanFotoProgress.length + 1))
+              });
+            }
+            checkDone();
+          });
+        };
+        reader.onerror = function() {
+          checkDone();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderSusulanPhotoList() {
+      const container = document.getElementById("containerSusulanPhotoList");
+      const badge = document.getElementById("badgeCountSusulanProgress");
+      if (badge) badge.innerText = `${listSusulanFotoProgress.length} / 3 Foto`;
+      if (!container) return;
+
+      if (listSusulanFotoProgress.length === 0) {
+        container.innerHTML = `<div class="text-muted text-center py-2 small fst-italic border rounded-2 bg-light"><i class="bi bi-image me-1"></i>Belum ada foto yang dipilih.</div>`;
+        return;
+      }
+
+      let html = '<div class="d-flex flex-wrap gap-2">';
+      listSusulanFotoProgress.forEach((f, idx) => {
+        html += `
+          <div class="position-relative border rounded-2 bg-white p-1 shadow-sm" style="width: 70px; height: 70px;">
+            <img src="${escapeHtml(f.thumb || f.base64)}" class="w-100 h-100 rounded-1" style="object-fit: cover;">
+            <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 rounded-circle shadow" style="width: 20px; height: 20px; transform: translate(30%, -30%); line-height: 1;" onclick="removeSusulanPhoto(${idx})" title="Hapus foto ini">
+              <i class="bi bi-x small"></i>
+            </button>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function removeSusulanPhoto(idx) {
+      if (idx >= 0 && idx < listSusulanFotoProgress.length) {
+        listSusulanFotoProgress.splice(idx, 1);
+        renderSusulanPhotoList();
+      }
+    }
+
+    function handleSaveProgressSusulan(e, id) {
+      e.preventDefault();
+      const btn = document.getElementById("btnSaveSusulan");
+      const origHtml = btn ? btn.innerHTML : "";
+
+      if (!navigator.onLine) {
+        showNetworkErrorAlert();
+        return;
+      }
+
+      const waktuMulai = document.getElementById("susulanWaktuMulai") ? document.getElementById("susulanWaktuMulai").value : "";
+      const tindakan = document.getElementById("susulanTindakan") ? document.getElementById("susulanTindakan").value.trim() : "";
+
+      if (!waktuMulai && listSusulanFotoProgress.length === 0 && !tindakan) {
+        Swal.fire({
+          icon: "warning",
+          title: "Data Belum Diisi",
+          text: "Silakan isi tanggal mulai pengerjaan atau lampirkan minimal 1 foto dokumentasi pengerjaan.",
+          confirmButtonColor: "#1D4ED8"
+        });
+        return;
+      }
+
+      if (waktuMulai) {
+        const item = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
+        if (item) {
+          const tLapor = formatOnlyDate(item.tanggal || item.timestamp);
+          const tSelesai = formatOnlyDate(item.waktuSelesai || item.timestamp || new Date());
+          if (tLapor && waktuMulai < tLapor) {
+            Swal.fire("Peringatan", "Tanggal mulai pengerjaan tidak boleh lebih awal dari tanggal laporan (" + tLapor + ").", "warning");
+            return;
+          }
+          if (tSelesai && waktuMulai > tSelesai) {
+            Swal.fire("Peringatan", "Tanggal mulai pengerjaan tidak boleh melebihi tanggal selesai (" + tSelesai + ").", "warning");
+            return;
+          }
+        }
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan Data Susulan...';
+      }
+
+      const payload = {
+        id: id,
+        status: "Selesai",
+        waktuMulai: waktuMulai,
+        tindakan: tindakan,
+        fotoProgressList: listSusulanFotoProgress.map(f => f.base64)
+      };
+
+      showLoading("Menyimpan data pengerjaan susulan...", "Mengunggah foto ke Google Drive & database...");
+      runBackend("updateChecklistStatus", { payload: payload, requestingUser: currentUser }, function(res) {
+        hideLoading();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+
+        if (res && res.status === "success") {
+          listSusulanFotoProgress = [];
+          bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: res.message || "Data pengerjaan susulan berhasil disimpan.",
+            confirmButtonColor: "#1D4ED8"
+          });
+          loadHistory();
+          loadDashboard();
+        } else {
+          Swal.fire("Gagal", (res && res.message) || "Gagal menyimpan data susulan.", "error");
+        }
+      }, function(err) {
+        hideLoading();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
         if (isNetworkError(err)) {
           showNetworkErrorAlert();
         } else {
