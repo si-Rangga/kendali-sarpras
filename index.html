@@ -5530,6 +5530,7 @@ function openEditChecklistModal(id) {
       const st = item.status.toLowerCase();
       if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
       else if (st.indexOf("tindak") !== -1) badgeClass = "badge-tindak";
+      const isSelesai = st.indexOf("selesai") !== -1;
 
       const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
       const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
@@ -5613,27 +5614,49 @@ function openEditChecklistModal(id) {
         fotoSesudahHtml = `<div class="p-3 bg-light text-center text-muted rounded border small"><i class="bi bi-camera-slash fs-4"></i><br>Tidak ada foto sesudah</div>`;
       }
 
-      listSusulanFotoProgress = [];
+      // Inisialisasi data foto progress susulan dari data item yang ada
+      listSusulanFotoProgress = progList.map(f => {
+        const fid = f.id || extractGoogleDriveFileId(f.thumb || f.thumbUrl || f.url || (typeof f === 'string' ? f : ""));
+        return {
+          id: fid,
+          thumb: f.thumb || f.thumbUrl || f.url || (fid ? "https://lh3.googleusercontent.com/d/" + fid : ""),
+          base64: f.base64 || "",
+          name: f.name || "Foto Progress"
+        };
+      }).filter(f => f.id || f.base64 || f.thumb);
+
       let susulanSection = "";
-      const isMissingProgData = st.indexOf("selesai") !== -1 && (!item.waktuMulai || progList.length === 0);
-      if (isMissingProgData) {
+      if (isSelesai) {
+        const isMissingProg = (!item.waktuMulai || progList.length === 0);
         const dLaporMin = formatOnlyDate(item.tanggal || item.timestamp);
         const dSelesaiMax = formatOnlyDate(item.waktuSelesai || item.timestamp || new Date());
         const defaultMulaiVal = formatOnlyDate(item.waktuMulai || item.tanggal || item.timestamp);
 
+        const cardBgStyle = isMissingProg 
+          ? "border-left: 5px solid #F59E0B !important; background: #FFFBEB;" 
+          : "border-left: 5px solid #0D6EFD !important; background: #F0F7FF;";
+        const titleIcon = isMissingProg 
+          ? '<i class="bi bi-clock-history text-warning me-1"></i> Lengkapi Data Pengerjaan (On Progress) Susulan' 
+          : '<i class="bi bi-pencil-square text-primary me-1"></i> Kelola / Tambah Foto & Tanggal Pengerjaan (On Progress)';
+        const subtitleText = isMissingProg 
+          ? 'Laporan ini diselesaikan langsung. Tim lapangan atau admin dapat melengkapi tanggal mulai pengerjaan fisik atau foto saat kerja di bawah.' 
+          : `Data pengerjaan fisik tercatat (${progList.length}/3 foto). Anda dapat menambah foto dokumentasi atau memperbarui tanggal mulai pengerjaan.`;
+        const btnClass = isMissingProg ? "btn-warning text-dark" : "btn-primary text-white";
+        const btnText = isMissingProg ? '<i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang' : '<i class="bi bi-pencil-square me-1"></i> Kelola / Tambah Foto';
+
         susulanSection = `
-          <div class="mt-4 p-3 border rounded-3 bg-white shadow-sm" style="border-left: 4.5px solid #D97706 !important; background: #FFFBEB;">
+          <div class="mt-4 p-3 border rounded-3 bg-white shadow-sm" style="${cardBgStyle}">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
               <div>
                 <div class="fw-bold text-dark small">
-                  <i class="bi bi-clock-history text-warning me-1"></i> Lengkapi Data Pengerjaan (On Progress) Susulan
+                  ${titleIcon}
                 </div>
                 <div class="text-muted" style="font-size: 0.74rem;">
-                  Laporan ini sebelumnya langsung diselesaikan. Tim lapangan dapat melengkapi tanggal mulai pengerjaan fisik atau foto saat kerja di bawah.
+                  ${subtitleText}
                 </div>
               </div>
-              <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-3 shadow-sm" onclick="toggleProgressSusulanForm()" id="btnToggleProgressSusulan">
-                <i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang
+              <button type="button" class="btn btn-sm ${btnClass} fw-bold px-3 shadow-sm" onclick="toggleProgressSusulanForm()" id="btnToggleProgressSusulan">
+                ${btnText}
               </button>
             </div>
 
@@ -5666,7 +5689,7 @@ function openEditChecklistModal(id) {
                     <label class="form-label small fw-bold text-dark mb-0">
                       <i class="bi bi-camera-fill text-warning me-1"></i>Foto Dokumentasi Saat Pengerjaan (Maksimal 3 Foto):
                     </label>
-                    <span class="badge bg-warning bg-opacity-10 text-dark fw-bold" id="badgeCountSusulanProgress">0 / 3 Foto</span>
+                    <span class="badge bg-warning bg-opacity-10 text-dark fw-bold" id="badgeCountSusulanProgress">${listSusulanFotoProgress.length} / 3 Foto</span>
                   </div>
 
                   <div id="containerSusulanPhotoList" class="mb-2">
@@ -5685,9 +5708,12 @@ function openEditChecklistModal(id) {
                   <input type="file" id="fileSusulanProgressGal" accept="image/*" multiple class="d-none" onchange="handleSusulanPhotoSelected(this)">
                 </div>
 
-                <button type="submit" id="btnSaveSusulan" class="btn btn-sm btn-warning text-dark fw-bold w-100 py-2 shadow-sm">
-                  <i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Data Pengerjaan Susulan
-                </button>
+                <div class="d-flex justify-content-end gap-2">
+                  <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="toggleProgressSusulanForm()">Batal</button>
+                  <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold" id="btnSaveSusulan">
+                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Data Pengerjaan
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -5964,8 +5990,11 @@ function openEditChecklistModal(id) {
                 <div class="col-12 col-md-4 mb-2 mb-md-0">
                   <div class="p-2 border rounded-3 bg-white h-100 shadow-sm" style="border-top: 3px solid #D97706 !important;">
                     <div class="d-flex justify-content-between align-items-center mb-1.5">
-                      <label class="small fw-bold text-warning mb-0"><i class="bi bi-clock-history me-1"></i>2. Foto On Progress</label>
-                      <span class="badge bg-warning bg-opacity-10 text-dark" style="font-size:0.65rem;">${progList.length} Foto</span>
+                      <div class="d-flex align-items-center gap-1.5">
+                        <label class="small fw-bold text-warning mb-0"><i class="bi bi-clock-history me-1"></i>2. Foto On Progress</label>
+                        <span class="badge bg-warning bg-opacity-10 text-dark" style="font-size:0.65rem;">${progList.length} Foto</span>
+                      </div>
+                      ${isSelesai ? `<button type="button" class="btn btn-outline-warning btn-xs text-dark fw-bold py-0 px-1.5 shadow-sm" style="font-size: 0.70rem;" onclick="toggleProgressSusulanForm()" title="Lengkapi / Edit Foto & Tanggal Pengerjaan"><i class="bi bi-pencil-square me-1"></i>${progList.length === 0 ? 'Lengkapi' : 'Kelola'}</button>` : ''}
                     </div>
                     ${fotoProgressHtml}
                   </div>
@@ -6222,9 +6251,17 @@ function openEditChecklistModal(id) {
       if (c.classList.contains("d-none")) {
         c.classList.remove("d-none");
         if (btn) btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Tutup Form';
+        renderSusulanPhotoList();
+        setTimeout(() => {
+          c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
       } else {
         c.classList.add("d-none");
-        if (btn) btn.innerHTML = '<i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang';
+        if (btn) {
+          const item = currentDetailItemForPrint;
+          const isMissing = item && (!item.waktuMulai || (item.fotoProgressList || []).length === 0);
+          btn.innerHTML = isMissing ? '<i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang' : '<i class="bi bi-pencil-square me-1"></i> Kelola / Tambah Foto';
+        }
       }
     }
 
@@ -6292,6 +6329,7 @@ function openEditChecklistModal(id) {
           compressImage(e.target.result, 960, 0.72, function(compressedBase64) {
             if (listSusulanFotoProgress.length < 3 && compressedBase64) {
               listSusulanFotoProgress.push({
+                id: "",
                 base64: compressedBase64,
                 thumb: compressedBase64,
                 name: file.name || ("Foto Progres " + (listSusulanFotoProgress.length + 1))
@@ -6320,9 +6358,10 @@ function openEditChecklistModal(id) {
 
       let html = '<div class="d-flex flex-wrap gap-2">';
       listSusulanFotoProgress.forEach((f, idx) => {
+        const imgSrc = f.thumb || f.base64 || "";
         html += `
           <div class="position-relative border rounded-2 bg-white p-1 shadow-sm" style="width: 70px; height: 70px;">
-            <img src="${escapeHtml(f.thumb || f.base64)}" class="w-100 h-100 rounded-1" style="object-fit: cover;">
+            <img src="${escapeHtml(imgSrc)}" class="w-100 h-100 rounded-1" style="object-fit: cover;">
             <button type="button" class="btn btn-danger btn-sm p-0 position-absolute top-0 end-0 rounded-circle shadow" style="width: 20px; height: 20px; transform: translate(30%, -30%); line-height: 1;" onclick="removeSusulanPhoto(${idx})" title="Hapus foto ini">
               <i class="bi bi-x small"></i>
             </button>
@@ -6381,19 +6420,18 @@ function openEditChecklistModal(id) {
 
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan Data Susulan...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan Data...';
       }
 
       const payload = {
         id: id,
-        status: "Selesai",
         waktuMulai: waktuMulai,
         tindakan: tindakan,
-        fotoProgressList: listSusulanFotoProgress.map(f => f.base64)
+        fotoProgressList: listSusulanFotoProgress
       };
 
-      showLoading("Menyimpan data pengerjaan susulan...", "Mengunggah foto ke Google Drive & database...");
-      runBackend("updateChecklistStatus", { payload: payload, requestingUser: currentUser }, function(res) {
+      showLoading("Menyimpan data pengerjaan...", "Mengunggah foto ke Google Drive & memperbarui database...");
+      runBackend("saveProgressSusulan", { payload: payload, requestingUser: currentUser }, function(res) {
         hideLoading();
         if (btn) {
           btn.disabled = false;
@@ -6406,25 +6444,54 @@ function openEditChecklistModal(id) {
           Swal.fire({
             icon: "success",
             title: "Berhasil!",
-            text: res.message || "Data pengerjaan susulan berhasil disimpan.",
+            text: res.message || "Data pengerjaan susulan berhasil disimpan dan terintegrasi.",
             confirmButtonColor: "#1D4ED8"
           });
           loadHistory();
           loadDashboard();
         } else {
-          Swal.fire("Gagal", (res && res.message) || "Gagal menyimpan data susulan.", "error");
+          fallbackSaveSusulanViaUpdateStatus(payload, origHtml, btn);
         }
       }, function(err) {
+        fallbackSaveSusulanViaUpdateStatus(payload, origHtml, btn);
+      });
+    }
+
+    function fallbackSaveSusulanViaUpdateStatus(payload, origHtml, btn) {
+      const fallbackPayload = {
+        id: payload.id,
+        status: "Selesai",
+        waktuMulai: payload.waktuMulai,
+        tindakan: payload.tindakan,
+        fotoProgressList: (payload.fotoProgressList || []).map(f => (typeof f === 'string' ? f : (f.base64 || ""))).filter(b => b && b.length > 50)
+      };
+      runBackend("updateChecklistStatus", { payload: fallbackPayload, requestingUser: currentUser }, function(res2) {
         hideLoading();
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = origHtml;
         }
-        if (isNetworkError(err)) {
-          showNetworkErrorAlert();
+        if (res2 && res2.status === "success") {
+          listSusulanFotoProgress = [];
+          bootstrap.Modal.getInstance(document.getElementById("modalDetail")).hide();
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: res2.message || "Data pengerjaan susulan berhasil disimpan.",
+            confirmButtonColor: "#1D4ED8"
+          });
+          loadHistory();
+          loadDashboard();
         } else {
-          Swal.fire("Error", err.message || err.toString(), "error");
+          Swal.fire("Gagal", (res2 && res2.message) || "Gagal menyimpan data susulan.", "error");
         }
+      }, function(err2) {
+        hideLoading();
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+        Swal.fire("Error", err2.message || err2.toString(), "error");
       });
     }
 
