@@ -4054,6 +4054,26 @@ function formatDurasiPenanganan(item) {
       const rawBase64 = canvas.toDataURL("image/jpeg", 0.88);
 
       compressImage(rawBase64, 960, 0.72, function(compressedBase64) {
+        if (currentMultiWebcamCategory === 'susulan_progress') {
+          if (listSusulanFotoProgress.length < 3) {
+            listSusulanFotoProgress.push({
+              id: "",
+              base64: compressedBase64,
+              thumb: compressedBase64,
+              name: "Foto Webcam " + (listSusulanFotoProgress.length + 1)
+            });
+            renderSusulanPhotoList();
+          }
+          closeLaptopWebcam();
+          Swal.fire({
+            icon: 'success',
+            title: 'Foto Berhasil Diambil!',
+            timer: 1200,
+            showConfirmButton: false
+          });
+          return;
+        }
+
         const targetList = currentMultiWebcamCategory === 'sebelum' ? listFotoSebelum : (currentMultiWebcamCategory === 'sesudah' ? listFotoSesudah : (currentMultiWebcamCategory === 'update_progress' ? listUpdateFotoProgress : listUpdateFotoSesudah));
         if (targetList.length < 3) {
           targetList.push({
@@ -6275,10 +6295,24 @@ function openEditChecklistModal(id) {
         });
         return;
       }
-      const inp = document.getElementById(type === 'cam' ? "fileSusulanProgressCam" : "fileSusulanProgressGal");
-      if (inp) {
-        inp.value = "";
-        inp.click();
+
+      if (type === 'cam') {
+        if (isMobileDevice()) {
+          const inp = document.getElementById("fileSusulanProgressCam");
+          if (inp) {
+            inp.value = "";
+            inp.click();
+          }
+        } else {
+          // Buka Webcam jika diakses lewat Laptop / PC Desktop
+          openLaptopWebcamModalMulti('susulan_progress', 'fileSusulanProgressGal');
+        }
+      } else {
+        const inp = document.getElementById("fileSusulanProgressGal");
+        if (inp) {
+          inp.value = "";
+          inp.click();
+        }
       }
     }
 
