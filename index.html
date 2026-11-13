@@ -1659,25 +1659,29 @@
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold text-secondary">Status Pengerjaan</label>
-              <select id="editChecklistStatus" class="form-select">
-                <option value="Perlu Tindak Lanjut">Perlu Tindak Lanjut</option>
-                <option value="On Progress">On Progress (Sedang Dikerjakan)</option>
-                <option value="Selesai">Selesai (Tuntas Beres)</option>
-                <option value="Ditunda / Tidak Dikerjakan">Ditunda / Tidak Dikerjakan</option>
+              <select id="editChecklistStatus" class="form-select modern-dropdown fw-bold border-2 border-primary" onchange="onEditModalStatusChange(this.value)">
+                <option value="Perlu Tindak Lanjut">🔴 Perlu Tindak Lanjut</option>
+                <option value="On Progress">🟡 On Progress (Sedang Dikerjakan)</option>
+                <option value="Selesai">🟢 Selesai (Tuntas Beres)</option>
+                <option value="Ditunda / Tidak Dikerjakan">⚪ Ditunda / Tidak Dikerjakan</option>
               </select>
             </div>
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label small fw-semibold text-secondary">Tanggal Mulai Pengawasan / Pengerjaan</label>
+          <div class="row g-3 mb-3" id="rowEditWaktuPengerjaan">
+            <div class="col-12 col-md-6" id="containerEditWaktuMulai">
+              <label class="form-label small fw-semibold text-secondary" id="labelEditWaktuMulai">
+                <i class="bi bi-play-circle-fill text-warning me-1"></i>Tanggal Mulai Pengawasan / Pengerjaan
+              </label>
               <input type="date" id="editChecklistWaktuMulai" class="form-control">
-              <div class="form-text" style="font-size: 0.72rem;">Bisa dikosongkan jika pekerjaan belum mulai/on progress.</div>
+              <div class="form-text" style="font-size: 0.72rem;">Kapan pengerjaan fisik atau pengawasan vendor dimulai.</div>
             </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label small fw-semibold text-secondary">Tanggal Selesai / Ditunda</label>
+            <div class="col-12 col-md-6" id="containerEditWaktuSelesai">
+              <label class="form-label small fw-semibold text-secondary" id="labelEditWaktuSelesai">
+                <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai / Ditunda
+              </label>
               <input type="date" id="editChecklistWaktuSelesai" class="form-control">
-              <div class="form-text" style="font-size: 0.72rem;">Diisi jika status sudah Selesai atau Ditunda.</div>
+              <div class="form-text" style="font-size: 0.72rem;" id="helpEditWaktuSelesai">Diisi jika status sudah Selesai atau Ditunda.</div>
             </div>
           </div>
 
@@ -1686,14 +1690,63 @@
             <textarea id="editChecklistTemuan" class="form-control" rows="2" required placeholder="Rincian masalah fisik di lapangan..."></textarea>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Tindakan Teknis / Penanganan</label>
-            <textarea id="editChecklistTindakan" class="form-control" rows="2" placeholder="Tindakan perbaikan atau langkah yang diambil..."></textarea>
+          <!-- KONTROL TINDAKAN DINAMIS TERSTRUKTUR (SESUAI STATUS YANG DIPILIH ADMIN) -->
+          <!-- 1. Tindakan Awal / Temuan -->
+          <div class="mb-3" id="containerEditTindakanAwal">
+            <label class="form-label small fw-semibold text-secondary">
+              <i class="bi bi-flag-fill text-danger me-1"></i> Tindakan / Respon Awal Temuan:
+            </label>
+            <textarea id="editChecklistTindakanAwal" class="form-control" rows="2" placeholder="Instruksi awal atau respon penanganan saat temuan dicatat..."></textarea>
+            <div class="form-text" style="font-size: 0.72rem;">Catatan instruksi atau respon pertama kali saat checklist dibuat.</div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Catatan Proyek / Vendor / Arahan Pimpinan</label>
-            <textarea id="editChecklistCatatan" class="form-control" rows="2" placeholder="Catatan tambahan, disposisi, atau keterangan penundaan..."></textarea>
+          <!-- 2. Tindakan Saat Pengerjaan Fisik (On Progress) -->
+          <div class="mb-3" id="containerEditTindakanProgress">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label small fw-bold text-dark mb-0">
+                <i class="bi bi-tools text-warning me-1"></i> Tindakan Saat Pengerjaan Fisik (On Progress):
+              </label>
+              <span class="badge bg-warning bg-opacity-10 text-dark fw-semibold" style="font-size:0.7rem;">Pengerjaan Lapangan</span>
+            </div>
+            <textarea id="editChecklistTindakanProgress" class="form-control" rows="2" placeholder="Contoh: Teknisi membongkar unit, membersihkan filter & penggantian sparepart..."></textarea>
+            <div class="form-text" style="font-size: 0.72rem;">
+              <i class="bi bi-info-circle me-1"></i>Lengkapi di sini jika petugas lapangan lupa mencatat tindakan progres di HP.
+            </div>
+          </div>
+
+          <!-- 3. Tindakan Penyelesaian Akhir (Selesai) -->
+          <div class="mb-3" id="containerEditTindakanSelesai">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label small fw-bold text-dark mb-0">
+                <i class="bi bi-check2-circle text-success me-1"></i> Tindakan Penyelesaian / Hasil Akhir (Selesai):
+              </label>
+              <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size:0.7rem;">Tuntas Beres</span>
+            </div>
+            <textarea id="editChecklistTindakanSelesai" class="form-control" rows="2" placeholder="Contoh: Unit berfungsi normal kembali, pendinginan maksimal, area sudah bersih..."></textarea>
+            <div class="form-text" style="font-size: 0.72rem;">
+              <i class="bi bi-info-circle me-1"></i>Hasil akhir kondisi barang/sarpras setelah pekerjaan tuntas diperbaiki.
+            </div>
+          </div>
+
+          <!-- 4. Penundaan / Arahan Pimpinan (Ditunda) -->
+          <div id="containerEditAlasanTunda" class="d-none mb-3 p-3 border rounded-3 bg-warning bg-opacity-10">
+            <div class="fw-bold small text-dark mb-2">
+              <i class="bi bi-pause-circle-fill text-warning me-1"></i> Alasan & Arahan Penundaan (Pimpinan)
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold text-secondary mb-1">Pilihan Alasan Cepat (Kategori):</label>
+              <select id="editChecklistAlasanTundaSelect" class="form-select form-select-sm">
+                <option value="Keterbatasan Anggaran">💰 Keterbatasan Anggaran (Usul di RKA/RKBMN)</option>
+                <option value="Di Luar Wewenang">🏢 Di Luar Wewenang (Gedung Sewa / Pihak Ketiga / PU)</option>
+                <option value="Usul Hapus Aset">🗑️ Usulan Penghapusan / Penggantian Aset</option>
+                <option value="Arahan Khusus Pimpinan">📋 Arahan Khusus Pimpinan / Kebijakan Lain</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3" id="containerEditCatatan">
+            <label class="form-label small fw-semibold text-secondary" id="labelEditCatatan">Catatan Proyek / Vendor / Arahan Pimpinan</label>
+            <textarea id="editChecklistCatatan" class="form-control" rows="2" placeholder="Catatan tambahan, disposisi pimpinan, atau keterangan khusus..."></textarea>
           </div>
 
           <!-- KOREKSI & KELOLA FOTO LAPANGAN (SEBELUM & SESUDAH) -->
@@ -2324,6 +2377,110 @@
       return s;
     }
 
+    // Helper cerdas untuk memecah dan menggabungkan tahapan tindakan (Awal, Progres, Penyelesaian)
+    function parseTindakanParts(rawTindakan, itemStatus) {
+      rawTindakan = String(rawTindakan || "").trim();
+      if (!rawTindakan) {
+        return { awal: "", progress: "", selesai: "" };
+      }
+
+      // Pisahkan berdasarkan pemisah pipa '|'
+      const rawParts = rawTindakan.split("|").map(p => p.trim()).filter(Boolean);
+      if (rawParts.length <= 1) {
+        const single = rawParts[0] || rawTindakan;
+        const low = single.toLowerCase();
+        if (low.startsWith("penyelesaian:") || low.startsWith("[selesai]") || low.startsWith("selesai:")) {
+          return { awal: "", progress: "", selesai: single.replace(/^(penyelesaian:|\[selesai\]|selesai:)\s*/i, "").trim() };
+        } else if (low.startsWith("progres:") || low.startsWith("progress:") || low.startsWith("[progres]")) {
+          return { awal: "", progress: single.replace(/^(progres:|progress:|\[progres\])\s*/i, "").trim(), selesai: "" };
+        }
+        return { awal: single, progress: "", selesai: "" };
+      }
+
+      let awal = "";
+      let progressParts = [];
+      let selesaiParts = [];
+
+      // Periksa apakah ada awalan/label eksplisit
+      let hasExplicitLabels = false;
+      rawParts.forEach(p => {
+        const low = p.toLowerCase();
+        if (low.startsWith("penyelesaian:") || low.startsWith("[selesai]") || low.startsWith("selesai:") || low.startsWith("hasil akhir:")) {
+          hasExplicitLabels = true;
+        }
+      });
+
+      if (hasExplicitLabels) {
+        rawParts.forEach((p, idx) => {
+          const low = p.toLowerCase();
+          if (low.startsWith("penyelesaian:") || low.startsWith("[selesai]") || low.startsWith("selesai:") || low.startsWith("hasil akhir:")) {
+            selesaiParts.push(p.replace(/^(penyelesaian:|\[selesai\]|selesai:|hasil akhir:)\s*/i, "").trim());
+          } else if (low.startsWith("progres:") || low.startsWith("progress:") || low.startsWith("lanjutan:") || low.startsWith("susulan pengerjaan:") || low.startsWith("[progres]")) {
+            progressParts.push(p.replace(/^(progres:|progress:|lanjutan:|susulan pengerjaan:|\[progres\])\s*/i, "").trim());
+          } else if (idx === 0) {
+            awal = p.replace(/^\[awal\]\s*/i, "").trim();
+          } else {
+            progressParts.push(p);
+          }
+        });
+      } else {
+        // Parsing cerdas untuk data lama tanpa label eksplisit (termasuk format lama 'Lanjutan:')
+        const cleanParts = rawParts.map(p => p.replace(/^(lanjutan:|susulan pengerjaan:)\s*/i, "").trim());
+        awal = cleanParts[0].replace(/^\[awal\]\s*/i, "").trim();
+
+        const remaining = cleanParts.slice(1);
+        if (remaining.length === 1) {
+          const remText = remaining[0];
+          const remLow = remText.toLowerCase();
+          const stLow = String(itemStatus || "").toLowerCase();
+          if (remLow.indexOf("selesai") !== -1 || remLow.indexOf("tuntas") !== -1 || remLow.indexOf("beres") !== -1 || stLow.indexOf("selesai") !== -1) {
+            selesaiParts.push(remText);
+          } else {
+            progressParts.push(remText);
+          }
+        } else if (remaining.length >= 2) {
+          let foundSelesaiIdx = -1;
+          for (let i = remaining.length - 1; i >= 0; i--) {
+            const rLow = remaining[i].toLowerCase();
+            if (rLow.indexOf("selesai") !== -1 || rLow.indexOf("tuntas") !== -1 || rLow.indexOf("beres") !== -1) {
+              foundSelesaiIdx = i;
+              break;
+            }
+          }
+
+          if (foundSelesaiIdx !== -1) {
+            selesaiParts.push(remaining[foundSelesaiIdx]);
+            remaining.forEach((r, idx) => {
+              if (idx !== foundSelesaiIdx) progressParts.push(r);
+            });
+          } else {
+            progressParts = remaining.slice(0, remaining.length - 1);
+            selesaiParts = [remaining[remaining.length - 1]];
+          }
+        }
+      }
+
+      return {
+        awal: awal.trim(),
+        progress: progressParts.join(" | ").trim(),
+        selesai: selesaiParts.join(" | ").trim()
+      };
+    }
+
+    function buildCombinedTindakan(awal, progress, selesai) {
+      const parts = [];
+      if (awal && awal.trim()) {
+        parts.push(awal.trim());
+      }
+      if (progress && progress.trim()) {
+        parts.push("Progres: " + progress.trim());
+      }
+      if (selesai && selesai.trim()) {
+        parts.push("Penyelesaian: " + selesai.trim());
+      }
+      return parts.join(" | ");
+    }
+
         function calculateFullSlaDurations(item) {
       if (!item) return null;
       const tLapor = formatOnlyDate(item.tanggal || item.timestamp);
@@ -2576,7 +2733,19 @@ function formatDurasiPenanganan(item) {
               2. TINDAKAN TEKNIS / PENANGANAN:
             </div>
             <div style="border: 1px solid #CBD5E1; background: #F0FDF4; padding: 8px 12px; border-radius: 6px; font-size: 9pt; color: #0F172A; min-height: 40px;">
-              ${escapeHtml(item.tindakan || '-')}
+              ${(() => {
+                const parsedPrintT = parseTindakanParts(item.tindakan, item.status);
+                if (parsedPrintT.progress || parsedPrintT.selesai) {
+                  return `
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      ${parsedPrintT.awal ? `<div><span style="display:inline-block; font-size: 7.5pt; font-weight: 700; background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">[Awal/Lapor]</span> ${escapeHtml(parsedPrintT.awal)}</div>` : ''}
+                      ${parsedPrintT.progress ? `<div><span style="display:inline-block; font-size: 7.5pt; font-weight: 700; background: #FEF3C7; color: #92400E; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">[Pengerjaan]</span> ${escapeHtml(parsedPrintT.progress)}</div>` : ''}
+                      ${parsedPrintT.selesai ? `<div><span style="display:inline-block; font-size: 7.5pt; font-weight: 700; background: #DCFCE7; color: #166534; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">[Penyelesaian]</span> ${escapeHtml(parsedPrintT.selesai)}</div>` : ''}
+                    </div>
+                  `;
+                }
+                return escapeHtml(item.tindakan || '-');
+              })()}
             </div>
           </div>
 
@@ -3824,12 +3993,24 @@ function formatDurasiPenanganan(item) {
       const wsInp = document.getElementById("updateWaktuSelesaiInput");
       const wmInp = document.getElementById("updateWaktuMulaiInput");
 
+      // Kontainer Tindakan Dinamis
+      const cProgTind = document.getElementById("containerUpdateTindakanProgress");
+      const cSelTind = document.getElementById("containerUpdateTindakanSelesai");
+      const cTunTind = document.getElementById("containerUpdateTindakanTunda");
+      const bProg = document.getElementById("badgeUpdateTindakanProgress");
+      const hProg = document.getElementById("helpUpdateTindakanProgress");
+      const pInp = document.getElementById("updateTindakanProgressInput");
+      const sInp = document.getElementById("updateTindakanSelesaiInput");
+      const tInp = document.getElementById("updateTindakanTundaInput");
+
       // Kontainer Foto Acuan & Form Upload Foto
       const cPrevSblm = document.getElementById("containerPreviewFotoSebelum");
       const cPrevRiwayat = document.getElementById("containerPreviewFotoRiwayat");
       const sProg = document.getElementById("sectionFotoProgressUpdate");
       const sSsdh = document.getElementById("sectionFotoSesudahUpdate");
-      const lblTind = document.getElementById("labelUpdateTindakan");
+
+      const currentItem = currentDetailItemForPrint;
+      const parsed = currentItem ? parseTindakanParts(currentItem.tindakan, currentItem.status) : { awal: "", progress: "", selesai: "" };
 
       if (val === "Selesai") {
         if (cMulai) cMulai.classList.remove("d-none");
@@ -3843,6 +4024,20 @@ function formatDurasiPenanganan(item) {
             helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.';
           }
         }
+
+        // Tampilkan Tindakan Progres (bisa dilengkapi jika petugas lupa) & Tindakan Selesai
+        if (cProgTind) {
+          cProgTind.classList.remove("d-none");
+          if (bProg) bProg.innerText = "Pengerjaan Fisik (Progres)";
+          if (hProg) hProg.innerHTML = '<i class="bi bi-info-circle me-1"></i>Lengkapi di sini jika petugas lapangan lupa mencatat tindakan progres di HP.';
+          if (pInp && !pInp.value) pInp.value = parsed.progress;
+        }
+        if (cSelTind) {
+          cSelTind.classList.remove("d-none");
+          if (sInp && !sInp.value) sInp.value = parsed.selesai;
+        }
+        if (cTunTind) cTunTind.classList.add("d-none");
+
         // Tampilkan riwayat foto sebelumnya (Sebelum + Progress)
         if (cPrevRiwayat) cPrevRiwayat.classList.remove("d-none");
         if (cPrevSblm) cPrevSblm.classList.add("d-none");
@@ -3857,10 +4052,20 @@ function formatDurasiPenanganan(item) {
           const lSsdh = sSsdh.querySelector("label");
           if (lSsdh) lSsdh.innerHTML = '<i class="bi bi-camera-fill text-success me-1"></i>Ambil / Lampirkan Foto Sesudah (Hasil Akhir Beres)';
         }
-        if (lblTind) lblTind.innerText = "Tindakan Penyelesaian / Perbaikan:";
       } else if (val === "On Progress") {
         if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) cSelesai.classList.add("d-none");
+
+        // Tampilkan Tindakan Progres
+        if (cProgTind) {
+          cProgTind.classList.remove("d-none");
+          if (bProg) bProg.innerText = "Saat Pengerjaan";
+          if (hProg) hProg.innerHTML = '<i class="bi bi-info-circle me-1"></i>Rincian teknis yang sedang dikerjakan di lapangan.';
+          if (pInp && !pInp.value) pInp.value = parsed.progress || parsed.awal;
+        }
+        if (cSelTind) cSelTind.classList.add("d-none");
+        if (cTunTind) cTunTind.classList.add("d-none");
+
         // Tampilkan acuan foto sebelum (titik rusak) dan upload Foto On Progress
         if (cPrevSblm) cPrevSblm.classList.remove("d-none");
         if (sProg) {
@@ -3870,7 +4075,6 @@ function formatDurasiPenanganan(item) {
         }
         if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
         if (sSsdh) sSsdh.classList.add("d-none");
-        if (lblTind) lblTind.innerText = "Tindakan yang Sedang Dikerjakan:";
       } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
         if (cMulai) {
           cMulai.classList.add("d-none");
@@ -3889,21 +4093,30 @@ function formatDurasiPenanganan(item) {
             wsInp.removeAttribute("min");
           }
         }
+
+        if (cProgTind) cProgTind.classList.add("d-none");
+        if (cSelTind) cSelTind.classList.add("d-none");
+        if (cTunTind) {
+          cTunTind.classList.remove("d-none");
+          if (tInp && !tInp.value) tInp.value = parsed.progress || parsed.awal;
+        }
+
         // Sembunyikan semua foto saat ditunda
         if (cPrevSblm) cPrevSblm.classList.add("d-none");
         if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
         if (sProg) sProg.classList.add("d-none");
         if (sSsdh) sSsdh.classList.add("d-none");
-        if (lblTind) lblTind.innerText = "Catatan Arahan Penundaan:";
       } else {
         // Perlu Tindak Lanjut
         if (cMulai) cMulai.classList.remove("d-none");
         if (cSelesai) cSelesai.classList.add("d-none");
+        if (cProgTind) cProgTind.classList.add("d-none");
+        if (cSelTind) cSelTind.classList.add("d-none");
+        if (cTunTind) cTunTind.classList.add("d-none");
         if (cPrevSblm) cPrevSblm.classList.remove("d-none");
         if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
         if (sProg) sProg.classList.add("d-none");
         if (sSsdh) sSsdh.classList.add("d-none");
-        if (lblTind) lblTind.innerText = "Catatan Eskalasi / Arahan:";
       }
     }
 
@@ -4971,6 +5184,56 @@ function formatDurasiPenanganan(item) {
       });
     }
 
+    function onEditModalStatusChange(val) {
+      const cMulai = document.getElementById("containerEditWaktuMulai");
+      const cSelesai = document.getElementById("containerEditWaktuSelesai");
+      const lblSelesai = document.getElementById("labelEditWaktuSelesai");
+      const helpSelesai = document.getElementById("helpEditWaktuSelesai");
+      const cAwal = document.getElementById("containerEditTindakanAwal");
+      const cProg = document.getElementById("containerEditTindakanProgress");
+      const cSel = document.getElementById("containerEditTindakanSelesai");
+      const cTunda = document.getElementById("containerEditAlasanTunda");
+
+      if (val === "Perlu Tindak Lanjut") {
+        if (cMulai) cMulai.classList.add("d-none");
+        if (cSelesai) cSelesai.classList.add("d-none");
+        if (cAwal) cAwal.classList.remove("d-none");
+        if (cProg) cProg.classList.add("d-none");
+        if (cSel) cSel.classList.add("d-none");
+        if (cTunda) cTunda.classList.add("d-none");
+      } else if (val === "On Progress") {
+        if (cMulai) cMulai.classList.remove("d-none");
+        if (cSelesai) cSelesai.classList.add("d-none");
+        if (cAwal) cAwal.classList.remove("d-none");
+        if (cProg) cProg.classList.remove("d-none");
+        if (cSel) cSel.classList.add("d-none");
+        if (cTunda) cTunda.classList.add("d-none");
+      } else if (val === "Selesai") {
+        if (cMulai) cMulai.classList.remove("d-none");
+        if (cSelesai) {
+          cSelesai.classList.remove("d-none");
+          if (lblSelesai) lblSelesai.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai Pekerjaan';
+          if (helpSelesai) helpSelesai.innerText = "Diisi tanggal saat pekerjaan selesai diperbaiki.";
+        }
+        if (cAwal) cAwal.classList.remove("d-none");
+        // PENTING: Saat status Selesai, Admin dapat mengedit/mengisi Tindakan Progres (jika petugas lupa) DAN Tindakan Penyelesaian Akhir
+        if (cProg) cProg.classList.remove("d-none");
+        if (cSel) cSel.classList.remove("d-none");
+        if (cTunda) cTunda.classList.add("d-none");
+      } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
+        if (cMulai) cMulai.classList.add("d-none");
+        if (cSelesai) {
+          cSelesai.classList.remove("d-none");
+          if (lblSelesai) lblSelesai.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal Penundaan';
+          if (helpSelesai) helpSelesai.innerText = "Diisi tanggal arahan penundaan/penghentian pimpinan.";
+        }
+        if (cAwal) cAwal.classList.remove("d-none");
+        if (cProg) cProg.classList.remove("d-none");
+        if (cSel) cSel.classList.add("d-none");
+        if (cTunda) cTunda.classList.remove("d-none");
+      }
+    }
+
 function openEditChecklistModal(id) {
       const isAdmin = currentUser && currentUser.role && 
         (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
@@ -5040,8 +5303,31 @@ function openEditChecklistModal(id) {
 
       document.getElementById("editChecklistStatus").value = item.status || "Perlu Tindak Lanjut";
       document.getElementById("editChecklistTemuan").value = item.temuan || "";
-      document.getElementById("editChecklistTindakan").value = item.tindakan || "";
-      document.getElementById("editChecklistCatatan").value = item.catatan || "";
+      
+      // Auto-populate bidang tindakan terstruktur (Awal, Progres, Selesai)
+      const parsedEdit = parseTindakanParts(item.tindakan, item.status);
+      if (document.getElementById("editChecklistTindakanAwal")) {
+        document.getElementById("editChecklistTindakanAwal").value = parsedEdit.awal || "";
+      }
+      if (document.getElementById("editChecklistTindakanProgress")) {
+        document.getElementById("editChecklistTindakanProgress").value = parsedEdit.progress || "";
+      }
+      if (document.getElementById("editChecklistTindakanSelesai")) {
+        document.getElementById("editChecklistTindakanSelesai").value = parsedEdit.selesai || "";
+      }
+      if (document.getElementById("editChecklistCatatan")) {
+        document.getElementById("editChecklistCatatan").value = item.catatan || "";
+      }
+      if (document.getElementById("editChecklistAlasanTundaSelect")) {
+        const cat = item.catatan || "";
+        if (cat.indexOf("Anggaran") !== -1) document.getElementById("editChecklistAlasanTundaSelect").value = "Keterbatasan Anggaran";
+        else if (cat.indexOf("Wewenang") !== -1) document.getElementById("editChecklistAlasanTundaSelect").value = "Di Luar Wewenang";
+        else if (cat.indexOf("Hapus") !== -1) document.getElementById("editChecklistAlasanTundaSelect").value = "Usul Hapus Aset";
+        else if (cat.indexOf("Arahan") !== -1) document.getElementById("editChecklistAlasanTundaSelect").value = "Arahan Khusus Pimpinan";
+      }
+
+      // Sesuaikan tampilan form dinamis sesuai status laporan
+      onEditModalStatusChange(item.status || "Perlu Tindak Lanjut");
 
       // Inisialisasi daftar foto untuk diedit
       const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
@@ -5097,6 +5383,20 @@ function openEditChecklistModal(id) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
       }
 
+      const stVal = document.getElementById("editChecklistStatus").value;
+      const tAwal = (document.getElementById("editChecklistTindakanAwal")?.value || "").trim();
+      const tProg = (document.getElementById("editChecklistTindakanProgress")?.value || "").trim();
+      const tSel = (document.getElementById("editChecklistTindakanSelesai")?.value || "").trim();
+      const combinedTindakan = buildCombinedTindakan(tAwal, tProg, tSel);
+
+      let catatanVal = (document.getElementById("editChecklistCatatan")?.value || "").trim();
+      if (stVal && (stVal.indexOf("Ditunda") !== -1 || stVal.indexOf("Tidak Dikerjakan") !== -1)) {
+        const alasanSel = document.getElementById("editChecklistAlasanTundaSelect") ? document.getElementById("editChecklistAlasanTundaSelect").value : "";
+        if (alasanSel && catatanVal.indexOf(alasanSel) === -1) {
+          catatanVal = `[Alasan: ${alasanSel}] ${catatanVal}`.trim();
+        }
+      }
+
       const payload = {
         id: document.getElementById("editChecklistId").value,
         tanggal: document.getElementById("editChecklistTanggal").value,
@@ -5104,12 +5404,12 @@ function openEditChecklistModal(id) {
         objekLokasi: document.getElementById("editChecklistObjek").value.trim(),
         kodeAset: document.getElementById("editChecklistKodeAset").value.trim(),
         petugas: document.getElementById("editChecklistPetugas").value.trim(),
-        status: document.getElementById("editChecklistStatus").value,
+        status: stVal,
         waktuMulai: document.getElementById("editChecklistWaktuMulai") ? document.getElementById("editChecklistWaktuMulai").value : "",
         waktuSelesai: document.getElementById("editChecklistWaktuSelesai") ? document.getElementById("editChecklistWaktuSelesai").value : "",
         temuan: document.getElementById("editChecklistTemuan").value.trim(),
-        tindakan: document.getElementById("editChecklistTindakan").value.trim(),
-        catatan: document.getElementById("editChecklistCatatan").value.trim(),
+        tindakan: combinedTindakan,
+        catatan: catatanVal,
         fotoSebelumList: listEditFotoSebelum,
         fotoSesudahList: listEditFotoSesudah,
         fotoProgressList: listEditFotoProgress
@@ -5741,6 +6041,10 @@ function openEditChecklistModal(id) {
       }
 
       let updateSection = "";
+      const parsedDetailTindakan = parseTindakanParts(item.tindakan, item.status);
+      const defaultMulaiValForUpdate = formatOnlyDate(item.waktuMulai || item.tanggal || item.timestamp || new Date());
+      const defaultSelesaiValForUpdate = formatOnlyDate(item.waktuSelesai || new Date());
+
       if (st.indexOf("selesai") === -1) {
         updateSection = `
           <div class="mt-4 p-3 bg-light rounded-3 border">
@@ -5790,7 +6094,7 @@ function openEditChecklistModal(id) {
                   <label class="form-label small fw-semibold text-secondary mb-1">
                     <i class="bi bi-chat-left-text-fill me-1 text-primary"></i> Keterangan Bebas & Catatan Arahan Pimpinan:
                   </label>
-                  <textarea id="updateCatatanPimpinanInput" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, nomor nota dinas/disposisi pimpinan, atau rincian kendala..."></textarea>
+                  <textarea id="updateCatatanPimpinanInput" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, nomor nota dinas/disposisi pimpinan, atau rincian kendala...">${escapeHtml(item.catatan || "")}</textarea>
                   <div class="text-muted mt-1" style="font-size: 0.72rem;">
                     <i class="bi bi-info-circle me-1"></i>Keterangan bebas ini otomatis tercatat pada riwayat kendali dan lembar laporan cetak pimpinan.
                   </div>
@@ -5807,7 +6111,7 @@ function openEditChecklistModal(id) {
                     <i class="bi bi-calendar-check me-1"></i>Hari Ini
                   </button>
                 </div>
-                <input type="date" id="updateWaktuMulaiInput" class="form-control form-control-sm" onchange="validateWaktuMulaiManual(this)">
+                <input type="date" id="updateWaktuMulaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}" onchange="validateWaktuMulaiManual(this)">
                 <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
                   <span><i class="bi bi-info-circle me-1"></i>Kapan mulai pengerjaan fisik / pengawasan vendor.</span>
                   <span class="text-secondary fw-semibold">Min: Tgl Lapor</span>
@@ -5824,15 +6128,50 @@ function openEditChecklistModal(id) {
                     <i class="bi bi-calendar-check me-1"></i>Hari Ini
                   </button>
                 </div>
-                <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" onchange="validateWaktuSelesaiManual(this)">
+                <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultSelesaiValForUpdate)}" onchange="validateWaktuSelesaiManual(this)">
                 <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
                   <span id="helpWaktuSelesaiManual"><i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.</span>
                   <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Hari Ini</span>
                 </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label small fw-semibold" id="labelUpdateTindakan">Tindakan Penyelesaian / Tambahan</label>
-                <input type="text" id="updateTindakanInput" class="form-control form-control-sm" placeholder="Contoh: Sedang diperbaiki / filter sudah dibersihkan">
+
+              <!-- 1. TINDAKAN SAAT PENGERJAAN / ON PROGRESS -->
+              <div id="containerUpdateTindakanProgress" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #F59E0B !important;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-bold text-dark mb-0" id="labelUpdateTindakanProgress">
+                    <i class="bi bi-tools text-warning me-1"></i>Tindakan Saat Pengerjaan (On Progress):
+                  </label>
+                  <span class="badge bg-warning bg-opacity-10 text-dark fw-semibold" id="badgeUpdateTindakanProgress" style="font-size: 0.7rem;">Pengerjaan Fisik</span>
+                </div>
+                <textarea id="updateTindakanProgressInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Teknisi membongkar unit, cek kompresor & cuci filter...">${escapeHtml(parsedDetailTindakan.progress || '')}</textarea>
+                <div class="text-muted mt-1" style="font-size: 0.72rem;" id="helpUpdateTindakanProgress">
+                  <i class="bi bi-info-circle me-1"></i>Lengkapi di sini jika petugas lapangan lupa mencatat tindakan progres di HP.
+                </div>
+              </div>
+
+              <!-- 2. TINDAKAN PENYELESAIAN / HASIL AKHIR (SAAT SELESAI) -->
+              <div id="containerUpdateTindakanSelesai" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-bold text-dark mb-0">
+                    <i class="bi bi-check2-circle text-success me-1"></i>Tindakan Penyelesaian / Hasil Akhir:
+                  </label>
+                  <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size: 0.7rem;">Tuntas Beres</span>
+                </div>
+                <textarea id="updateTindakanSelesaiInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Unit berfungsi normal kembali, pendinginan maksimal, area sudah bersih...">${escapeHtml(parsedDetailTindakan.selesai || '')}</textarea>
+                <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                  <i class="bi bi-info-circle me-1"></i>Hasil akhir setelah pekerjaan tuntas diselesaikan.
+                </div>
+              </div>
+
+              <!-- 3. TINDAKAN YANG SEMPAT DILAKUKAN SEBELUM DITUNDA -->
+              <div id="containerUpdateTindakanTunda" class="mb-3 p-3 border rounded-3 bg-white d-none" style="border-left: 3.5px solid #64748B !important;">
+                <label class="form-label small fw-bold text-dark mb-1">
+                  <i class="bi bi-clock-history text-secondary me-1"></i>Tindakan yang Sempat Dilakukan Sebelum Ditunda:
+                </label>
+                <textarea id="updateTindakanTundaInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Sudah diperiksa teknisi, butuh penggantian suku cadang / usul anggaran...">${escapeHtml(parsedDetailTindakan.progress || parsedDetailTindakan.awal || '')}</textarea>
+                <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                  <i class="bi bi-info-circle me-1"></i>Catatan teknis yang sudah sempat dikerjakan sebelum arahan penundaan pimpinan.
+                </div>
               </div>
 
               <!-- PREVIEW FOTO ACUAN SEBELUM (MUNCUL SAAT ON PROGRESS) -->
@@ -5983,8 +6322,16 @@ function openEditChecklistModal(id) {
               <div class="p-2 bg-light rounded text-danger small">${escapeHtml(item.temuan)}</div>
             </div>
             <div class="mb-2">
-              <label class="small text-secondary fw-semibold">Tindakan Teknis:</label>
-              <div class="p-2 bg-light rounded small">${escapeHtml(item.tindakan)}</div>
+              <label class="small text-secondary fw-semibold mb-1 d-block"><i class="bi bi-wrench-adjustable me-1 text-primary"></i>Tindakan & Penanganan:</label>
+              ${parsedDetailTindakan.progress || parsedDetailTindakan.selesai ? `
+                <div class="p-2.5 bg-light rounded border small d-flex flex-column gap-1.5">
+                  ${parsedDetailTindakan.awal ? `<div><span class="badge bg-danger me-1">Awal/Lapor</span> ${escapeHtml(parsedDetailTindakan.awal)}</div>` : ''}
+                  ${parsedDetailTindakan.progress ? `<div><span class="badge bg-warning text-dark me-1">Pengerjaan</span> ${escapeHtml(parsedDetailTindakan.progress)}</div>` : ''}
+                  ${parsedDetailTindakan.selesai ? `<div><span class="badge bg-success me-1">Penyelesaian</span> ${escapeHtml(parsedDetailTindakan.selesai)}</div>` : ''}
+                </div>
+              ` : `
+                <div class="p-2 bg-light rounded small">${escapeHtml(item.tindakan || '-')}</div>
+              `}
             </div>
             ${item.catatan ? `
             <div>
@@ -6157,7 +6504,24 @@ function openEditChecklistModal(id) {
         restoreUpdateBtn();
         return;
       }
-      const tindakan = document.getElementById("updateTindakanInput").value;
+      const currentItem = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
+      const parsed = currentItem ? parseTindakanParts(currentItem.tindakan, currentItem.status) : { awal: "", progress: "", selesai: "" };
+
+      const tProg = document.getElementById("updateTindakanProgressInput") ? document.getElementById("updateTindakanProgressInput").value.trim() : "";
+      const tSel = document.getElementById("updateTindakanSelesaiInput") ? document.getElementById("updateTindakanSelesaiInput").value.trim() : "";
+      const tTun = document.getElementById("updateTindakanTundaInput") ? document.getElementById("updateTindakanTundaInput").value.trim() : "";
+
+      let finalTindakan = "";
+      if (newStatus === "On Progress") {
+        finalTindakan = buildCombinedTindakan(parsed.awal, tProg || parsed.progress, "");
+      } else if (newStatus === "Selesai") {
+        finalTindakan = buildCombinedTindakan(parsed.awal, tProg || parsed.progress, tSel || parsed.selesai);
+      } else if (newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
+        finalTindakan = buildCombinedTindakan(parsed.awal, tTun || parsed.progress, "");
+      } else {
+        finalTindakan = parsed.awal;
+      }
+
       const alasanTunda = document.getElementById("updateAlasanTundaSelect") ? document.getElementById("updateAlasanTundaSelect").value : "";
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
       const waktuMulaiInput = document.getElementById("updateWaktuMulaiInput") ? document.getElementById("updateWaktuMulaiInput").value : "";
@@ -6188,7 +6552,6 @@ function openEditChecklistModal(id) {
 
         // Pengecekan terhadap tanggal lapor (Hanya untuk status Selesai agar penundaan fleksibel tanpa notif janggal)
         if (!isTundaStatus) {
-          const currentItem = currentDetailItemForPrint || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
           if (currentItem) {
             const dLaporStr = formatOnlyDate(currentItem.tanggal || currentItem.timestamp);
             if (dLaporStr && waktuSelesaiInput < dLaporStr) {
@@ -6212,7 +6575,7 @@ function openEditChecklistModal(id) {
         payload: {
           id: id,
           status: newStatus,
-          tindakan: tindakan,
+          tindakan: finalTindakan,
           alasanTunda: alasanTunda,
           catatanPimpinan: catatanPimpinan,
           waktuMulai: formattedWaktuMulai,
@@ -6226,8 +6589,9 @@ function openEditChecklistModal(id) {
         restoreUpdateBtn();
         if (res && res.status === "success") {
           // Bersihkan seluruh isian update status dan foto sesudah
-          const actInp = document.getElementById("updateTindakanInput");
-          if (actInp) actInp.value = "";
+          if (document.getElementById("updateTindakanProgressInput")) document.getElementById("updateTindakanProgressInput").value = "";
+          if (document.getElementById("updateTindakanSelesaiInput")) document.getElementById("updateTindakanSelesaiInput").value = "";
+          if (document.getElementById("updateTindakanTundaInput")) document.getElementById("updateTindakanTundaInput").value = "";
           const catPimp = document.getElementById("updateCatatanPimpinanInput");
           if (catPimp) catPimp.value = "";
           listUpdateFotoSesudah = [];
