@@ -6977,98 +6977,128 @@ function openEditChecklistModal(id) {
       if (event && event.preventDefault) event.preventDefault();
 
       const btn = document.getElementById("btnSaveKelengkapan");
-      const origHtml = btn ? btn.innerHTML : "";
+      const origHtml = btn ? btn.innerHTML : '<i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Data & Foto';
 
-      const isAdmin = currentUser && currentUser.role && 
-        (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+      try {
+        const userObj = (typeof currentUser !== "undefined" && currentUser) ? currentUser : {};
+        const roleStr = String(userObj.role || "").toLowerCase();
+        const isAdmin = roleStr.indexOf("admin") !== -1 || roleStr.indexOf("pengawas") !== -1;
 
-      const currentItem = (Array.isArray(checklistData) ? checklistData.find(x => String(x.id) === String(id)) : null) || currentDetailItemForPrint;
+        // Cari item yang sedang aktif secara aman tanpa menyebabkan ReferenceError
+        const currentItem = (typeof currentDetailItemForPrint !== "undefined" && currentDetailItemForPrint && String(currentDetailItemForPrint.id) === String(id) ? currentDetailItemForPrint : null) ||
+          (typeof globalItemsCache !== "undefined" && globalItemsCache && globalItemsCache[id] ? globalItemsCache[id] : null) ||
+          (typeof currentHistoryData !== "undefined" && Array.isArray(currentHistoryData) ? currentHistoryData.find(x => String(x.id) === String(id)) : null) ||
+          (typeof currentDetailItemForPrint !== "undefined" ? currentDetailItemForPrint : null);
 
-      // Pengecekan Batas Toleransi 3 Hari untuk Non-Admin
-      if (currentItem && !isAdmin) {
-        const graceInfo = calculateGracePeriodInfo(currentItem);
-        if (graceInfo.isLocked) {
-          Swal.fire({
-            icon: "warning",
-            title: "Dokumen Terkunci",
-            text: "Masa toleransi pengisian data (3 hari sejak selesai) telah berakhir. Dokumen telah diarsipkan permanen. Silakan hubungi Administrator jika diperlukan koreksi.",
-            confirmButtonColor: "#16A34A"
-          });
-          return;
+        // Pengecekan Batas Toleransi 3 Hari untuk Non-Admin
+        if (currentItem && !isAdmin && typeof calculateGracePeriodInfo === "function") {
+          const graceInfo = calculateGracePeriodInfo(currentItem);
+          if (graceInfo && graceInfo.isLocked) {
+            Swal.fire({
+              icon: "warning",
+              title: "Dokumen Terkunci",
+              text: "Masa toleransi pengisian data (3 hari sejak selesai) telah berakhir. Dokumen telah diarsipkan permanen. Silakan hubungi Administrator jika diperlukan koreksi.",
+              confirmButtonColor: "#16A34A"
+            });
+            return;
+          }
         }
-      }
 
-      // Gabungkan rincian tindakan multi-tahap
-      const parsed = currentItem ? parseTindakanParts(currentItem.tindakan, currentItem.status) : { awal: "", progress: "", selesai: "" };
-      const tProg = document.getElementById("kelengkapanTindakanProgress") ? document.getElementById("kelengkapanTindakanProgress").value.trim() : "";
-      const tSel = document.getElementById("kelengkapanTindakanSelesai") ? document.getElementById("kelengkapanTindakanSelesai").value.trim() : "";
-      const finalTindakan = buildCombinedTindakan(parsed.awal, tProg, tSel);
+        // Gabungkan rincian tindakan multi-tahap
+        const parsed = (currentItem && typeof parseTindakanParts === "function") 
+          ? parseTindakanParts(currentItem.tindakan, currentItem.status) 
+          : { awal: "", progress: "", selesai: "" };
+        const tProg = document.getElementById("kelengkapanTindakanProgress") ? document.getElementById("kelengkapanTindakanProgress").value.trim() : "";
+        const tSel = document.getElementById("kelengkapanTindakanSelesai") ? document.getElementById("kelengkapanTindakanSelesai").value.trim() : "";
+        const finalTindakan = (typeof buildCombinedTindakan === "function")
+          ? buildCombinedTindakan(parsed.awal, tProg, tSel)
+          : (tSel || tProg || parsed.selesai || parsed.progress || parsed.awal);
 
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
-      }
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+        }
 
-      const payload = {
-        id: id,
-        kodeAset: currentItem ? (currentItem.kodeAset || currentItem.objekLokasi || id) : id,
-        tindakan: finalTindakan,
-        fotoProgressList: listKelengkapanFotoProgress,
-        fotoSesudahList: listKelengkapanFotoSesudah
-      };
+        const payload = {
+          id: id,
+          kodeAset: currentItem ? (currentItem.kodeAset || currentItem.objekLokasi || id) : id,
+          tindakan: finalTindakan,
+          fotoProgressList: (typeof listKelengkapanFotoProgress !== "undefined" && Array.isArray(listKelengkapanFotoProgress)) ? listKelengkapanFotoProgress : [],
+          fotoSesudahList: (typeof listKelengkapanFotoSesudah !== "undefined" && Array.isArray(listKelengkapanFotoSesudah)) ? listKelengkapanFotoSesudah : []
+        };
 
-      showLoading("Menyimpan kelengkapan data...", "Mengunggah foto dan memperbarui database...");
-      runBackend("saveKelengkapanSelesai", { payload: payload, requestingUser: currentUser }, function(res) {
-        hideLoading();
+        showLoading("Menyimpan kelengkapan data...", "Mengunggah foto dan memperbarui database...");
+        runBackend("saveKelengkapanSelesai", { payload: payload, requestingUser: userObj }, function(res) {
+          hideLoading();
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+          }
+
+          if (res && res.status === "success") {
+            Swal.fire({
+              icon: "success",
+              title: "Berhasil Disimpan!",
+              text: res.message || "Data foto dan tindakan berhasil diperbarui.",
+              confirmButtonColor: "#16A34A",
+              timer: 2000,
+              showConfirmButton: false
+            });
+
+            // Perbarui data lokal secara instan
+            if (currentItem) {
+              currentItem.tindakan = finalTindakan;
+              currentItem.fotoProgressList = [...(payload.fotoProgressList || [])];
+              currentItem.fotoSesudahList = [...(payload.fotoSesudahList || [])];
+            }
+
+            // Tutup detail modal dan reload dashboard
+            const modalDetailEl = document.getElementById("modalDetail");
+            if (modalDetailEl && typeof bootstrap !== "undefined" && bootstrap.Modal) {
+              const modalDetail = bootstrap.Modal.getInstance(modalDetailEl);
+              if (modalDetail) modalDetail.hide();
+            }
+
+            if (typeof loadDashboard === "function") {
+              loadDashboard();
+            }
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Gagal Menyimpan",
+              text: (res && res.message) || "Terjadi kendala saat menyimpan kelengkapan data.",
+              confirmButtonColor: "#DC2626"
+            });
+          }
+        }, function(err) {
+          hideLoading();
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+          }
+          Swal.fire("Error", (err && err.message) || String(err) || "Gagal menghubungi server", "error");
+        });
+      } catch (errCatch) {
+        console.error("Error in handleSaveKelengkapanSelesai:", errCatch);
+        if (typeof hideLoading === "function") hideLoading();
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = origHtml;
         }
-
-        if (res && res.status === "success") {
-          Swal.fire({
-            icon: "success",
-            title: "Berhasil Disimpan!",
-            text: res.message || "Data foto dan tindakan berhasil diperbarui.",
-            confirmButtonColor: "#16A34A",
-            timer: 2000,
-            showConfirmButton: false
-          });
-
-          // Perbarui data lokal secara instan
-          if (currentItem) {
-            currentItem.tindakan = finalTindakan;
-            currentItem.fotoProgressList = [...listKelengkapanFotoProgress];
-            currentItem.fotoSesudahList = [...listKelengkapanFotoSesudah];
-          }
-
-          // Tutup detail modal dan reload dashboard
-          const modalDetailEl = document.getElementById("modalDetail");
-          if (modalDetailEl) {
-            const modalDetail = bootstrap.Modal.getInstance(modalDetailEl);
-            if (modalDetail) modalDetail.hide();
-          }
-
-          loadDashboard();
-        } else {
+        if (typeof Swal !== "undefined" && Swal.fire) {
           Swal.fire({
             icon: "error",
-            title: "Gagal Menyimpan",
-            text: (res && res.message) || "Terjadi kendala saat menyimpan kelengkapan data.",
+            title: "Terjadi Kesalahan",
+            text: "Gagal memproses simpan: " + (errCatch.message || errCatch),
             confirmButtonColor: "#DC2626"
           });
+        } else {
+          alert("Gagal memproses simpan: " + (errCatch.message || errCatch));
         }
-      }, function(err) {
-        hideLoading();
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = origHtml;
-        }
-        Swal.fire("Error", err.message || err.toString(), "error");
-      });
+      }
     }
 
-    // ==========================================
+        // ==========================================
     // FUNGSI KOMPATIBILITAS MUNDUR (LEGACY ALIASES)
     // ==========================================
     function toggleProgressSusulanForm() {
