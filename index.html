@@ -5877,10 +5877,11 @@ function openEditChecklistModal(id) {
       document.getElementById("modalDetailTitle").innerText = `Detail Checklist: ${item.id}`;
       
       let badgeClass = "badge-selesai";
-      const st = item.status.toLowerCase();
+      const st = String(item.status || "").toLowerCase();
       if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
       else if (st.indexOf("tindak") !== -1) badgeClass = "badge-tindak";
       const isSelesai = st.indexOf("selesai") !== -1;
+      const parsedDetailTindakan = parseTindakanParts(item.tindakan, item.status);
 
       const sblmId = item.fotoSebelumId || extractGoogleDriveFileId(item.fotoSebelum);
       const sblmUrl = sblmId ? ("https://lh3.googleusercontent.com/d/" + sblmId) : (item.fotoSebelum && item.fotoSebelum.startsWith("data:") ? item.fotoSebelum : (item.fotoSebelum && item.fotoSebelum.indexOf("http") === 0 ? item.fotoSebelum : ""));
@@ -6128,7 +6129,6 @@ function openEditChecklistModal(id) {
       }
 
       let updateSection = "";
-      const parsedDetailTindakan = parseTindakanParts(item.tindakan, item.status);
       const defaultMulaiValForUpdate = formatOnlyDate(item.waktuMulai || item.tanggal || item.timestamp || new Date());
       const defaultSelesaiValForUpdate = formatOnlyDate(item.waktuSelesai || new Date());
 
