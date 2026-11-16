@@ -6015,7 +6015,7 @@ function openEditChecklistModal(id) {
                       : 'Laporan berstatus Selesai. Selama batas toleransi 3 hari, tim lapangan dapat melengkapi foto hasil akhir, foto saat kerja, dan rincian tindakan.'}
                   </div>
                 </div>
-                <button type="button" class="btn btn-sm btn-success fw-bold px-3 shadow-sm" onclick="togglePanelKelengkapanForm()" id="btnToggleKelengkapan">
+                <button type="button" class="btn btn-sm btn-primary fw-bold px-3 shadow-sm" style="background-color: #1D4ED8; border-color: #1D4ED8;" onclick="togglePanelKelengkapanForm()" id="btnToggleKelengkapan">
                   <i class="bi bi-pencil-square me-1"></i> Buka Form Kelengkapan
                 </button>
               </div>
@@ -6023,87 +6023,102 @@ function openEditChecklistModal(id) {
               <div id="containerKelengkapanForm" class="d-none mt-3 pt-3 border-top">
                 <form onsubmit="handleSaveKelengkapanSelesai(event, '${item.id}')">
                   
-                  <!-- 1. KELENGKAPAN TINDAKAN (PROGRES & SELESAI) -->
-                  <div class="row g-2 mb-3">
-                    <div class="col-12 col-md-6">
-                      <label class="form-label small fw-bold text-dark mb-1">
-                        <i class="bi bi-tools text-warning me-1"></i>Tindakan Saat Pengerjaan (On Progress):
-                      </label>
-                      <textarea id="kelengkapanTindakanProgress" class="form-control form-control-sm" rows="2" placeholder="Rincian teknis yang dikerjakan teknisi di lokasi...">${escapeHtml(parsedDetailTindakan.progress || '')}</textarea>
-                      <div class="text-muted mt-1" style="font-size: 0.71rem;">
-                        <i class="bi bi-info-circle me-1"></i>Lengkapi jika petugas lupa mencatat rincian pengerjaan saat di HP.
-                      </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                      <label class="form-label small fw-bold text-dark mb-1">
-                        <i class="bi bi-check2-circle text-success me-1"></i>Tindakan Penyelesaian / Hasil Akhir:
-                      </label>
-                      <textarea id="kelengkapanTindakanSelesai" class="form-control form-control-sm" rows="2" placeholder="Kondisi akhir barang setelah selesai diperbaiki...">${escapeHtml(parsedDetailTindakan.selesai || '')}</textarea>
-                      <div class="text-muted mt-1" style="font-size: 0.71rem;">
-                        <i class="bi bi-info-circle me-1"></i>Kondisi akhir barang setelah pekerjaan tuntas.
-                      </div>
-                    </div>
-                  </div>
+                  <div class="row g-3 mb-3">
 
-                  <!-- 2. KELENGKAPAN FOTO (PROGRES & SESUDAH) -->
-                  <div class="row g-2 mb-3">
-                    <!-- FOTO PROGRES -->
-                    <div class="col-12 col-md-6">
-                      <div class="p-2.5 bg-white border rounded-3 h-100 shadow-sm" style="border-left: 3.5px solid #F59E0B !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-1.5">
-                          <label class="form-label small fw-bold text-dark mb-0">
-                            <i class="bi bi-clock-history text-warning me-1"></i>Foto Saat Pengerjaan:
-                          </label>
+                    <!-- KARTU 1: FASE PENGERJAAN (ON PROGRESS) -->
+                    <div class="col-12 col-lg-6">
+                      <div class="p-3 bg-white border rounded-3 h-100 shadow-sm" style="border-left: 4px solid #F59E0B !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                          <span class="fw-bold small text-dark d-flex align-items-center">
+                            <i class="bi bi-tools text-warning fs-6 me-1.5"></i>1. Tindakan & Foto Saat Pengerjaan
+                          </span>
                           <span class="badge bg-warning bg-opacity-10 text-dark fw-bold" id="badgeCountKelengkapanProgress">${listKelengkapanFotoProgress.length} / 3 Foto</span>
                         </div>
-                        <div id="containerKelengkapanPhotoProgressList" class="mb-2"></div>
-                        <div class="d-flex gap-2">
-                          <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('progress', 'cam')">
-                            <i class="bi bi-camera-fill me-1"></i>Kamera
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('progress', 'gal')">
-                            <i class="bi bi-images me-1"></i>Galeri
-                          </button>
+
+                        <!-- Catatan Tindakan Pengerjaan -->
+                        <div class="mb-2.5">
+                          <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                            Catatan Tindakan Saat Pengerjaan (On Progress):
+                          </label>
+                          <textarea id="kelengkapanTindakanProgress" class="form-control form-control-sm" rows="2" placeholder="Rincian teknis yang dikerjakan teknisi di lokasi...">${escapeHtml(parsedDetailTindakan.progress || '')}</textarea>
+                          <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-info-circle me-1"></i>Lengkapi jika petugas lupa mencatat rincian pengerjaan saat di HP.
+                          </div>
                         </div>
-                        <input type="file" id="fileKelengkapanProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'progress')">
-                        <input type="file" id="fileKelengkapanProgressGal" accept="image/*" multiple class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'progress')">
+
+                        <!-- Foto Saat Pengerjaan -->
+                        <div>
+                          <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                            Bukti Foto Saat Pengerjaan:
+                          </label>
+                          <div id="containerKelengkapanPhotoProgressList" class="mb-2"></div>
+                          <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold shadow-xs" onclick="triggerKelengkapanPhoto('progress', 'cam')">
+                              <i class="bi bi-camera-fill me-1"></i>Kamera
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('progress', 'gal')">
+                              <i class="bi bi-images me-1"></i>Galeri
+                            </button>
+                          </div>
+                          <input type="file" id="fileKelengkapanProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'progress')">
+                          <input type="file" id="fileKelengkapanProgressGal" accept="image/*" multiple class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'progress')">
+                        </div>
                       </div>
                     </div>
 
-                    <!-- FOTO SESUDAH -->
-                    <div class="col-12 col-md-6">
-                      <div class="p-2.5 bg-white border rounded-3 h-100 shadow-sm" style="border-left: 3.5px solid #16A34A !important;">
-                        <div class="d-flex justify-content-between align-items-center mb-1.5">
-                          <label class="form-label small fw-bold text-dark mb-0">
-                            <i class="bi bi-camera-fill text-success me-1"></i>Foto Sesudah (Hasil Akhir):
-                          </label>
+                    <!-- KARTU 2: FASE PENYELESAIAN (HASIL AKHIR) -->
+                    <div class="col-12 col-lg-6">
+                      <div class="p-3 bg-white border rounded-3 h-100 shadow-sm" style="border-left: 4px solid #16A34A !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                          <span class="fw-bold small text-dark d-flex align-items-center">
+                            <i class="bi bi-check2-circle text-success fs-6 me-1.5"></i>2. Tindakan & Foto Penyelesaian
+                          </span>
                           <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountKelengkapanSesudah">${listKelengkapanFotoSesudah.length} / 3 Foto</span>
                         </div>
-                        <div id="containerKelengkapanPhotoSesudahList" class="mb-2"></div>
-                        <div class="d-flex gap-2">
-                          <button type="button" class="btn btn-success btn-sm flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('sesudah', 'cam')">
-                            <i class="bi bi-camera-fill me-1"></i>Kamera
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('sesudah', 'gal')">
-                            <i class="bi bi-images me-1"></i>Galeri
-                          </button>
+
+                        <!-- Catatan Tindakan Penyelesaian -->
+                        <div class="mb-2.5">
+                          <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                            Catatan Tindakan Penyelesaian / Hasil Akhir:
+                          </label>
+                          <textarea id="kelengkapanTindakanSelesai" class="form-control form-control-sm" rows="2" placeholder="Kondisi akhir barang setelah selesai diperbaiki...">${escapeHtml(parsedDetailTindakan.selesai || '')}</textarea>
+                          <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-info-circle me-1"></i>Kondisi akhir barang setelah pekerjaan tuntas.
+                          </div>
                         </div>
-                        <input type="file" id="fileKelengkapanSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'sesudah')">
-                        <input type="file" id="fileKelengkapanSesudahGal" accept="image/*" multiple class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'sesudah')">
+
+                        <!-- Foto Sesudah / Hasil Akhir -->
+                        <div>
+                          <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                            Bukti Foto Sesudah (Hasil Akhir):
+                          </label>
+                          <div id="containerKelengkapanPhotoSesudahList" class="mb-2"></div>
+                          <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success btn-sm flex-fill py-1 fw-semibold shadow-xs" onclick="triggerKelengkapanPhoto('sesudah', 'cam')">
+                              <i class="bi bi-camera-fill me-1"></i>Kamera
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerKelengkapanPhoto('sesudah', 'gal')">
+                              <i class="bi bi-images me-1"></i>Galeri
+                            </button>
+                          </div>
+                          <input type="file" id="fileKelengkapanSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'sesudah')">
+                          <input type="file" id="fileKelengkapanSesudahGal" accept="image/*" multiple class="d-none" onchange="handleKelengkapanPhotoSelected(this, 'sesudah')">
+                        </div>
                       </div>
                     </div>
+
                   </div>
 
-                  <!-- 3. TOMBOL AKSI -->
+                  <!-- 3. TOMBOL AKSI: OPSI 1 BIRU PRIMER -->
                   <div class="d-flex justify-content-end gap-2 pt-2 border-top">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="togglePanelKelengkapanForm()">Batal</button>
-                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm" id="btnSaveKelengkapan">
-                      <i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Perubahan Data & Foto
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" id="btnSaveKelengkapan" style="background-color: #1D4ED8; border-color: #1D4ED8;">
+                      <i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Data & Foto
                     </button>
                   </div>
 
                 </form>
-              </div>
+              </div></div>
             </div>
           `;
         } else {
@@ -6756,6 +6771,8 @@ function openEditChecklistModal(id) {
         if (btn) {
           btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Tutup Form';
           btn.className = 'btn btn-sm btn-outline-secondary fw-semibold px-3';
+          btn.style.backgroundColor = '';
+          btn.style.borderColor = '';
         }
         renderKelengkapanPhotoList('progress');
         renderKelengkapanPhotoList('sesudah');
@@ -6766,7 +6783,9 @@ function openEditChecklistModal(id) {
         c.classList.add("d-none");
         if (btn) {
           btn.innerHTML = '<i class="bi bi-pencil-square me-1"></i> Buka Form Kelengkapan';
-          btn.className = 'btn btn-sm btn-success fw-bold px-3 shadow-sm';
+          btn.className = 'btn btn-sm btn-primary fw-bold px-3 shadow-sm';
+          btn.style.backgroundColor = '#1D4ED8';
+          btn.style.borderColor = '#1D4ED8';
         }
       }
     }
