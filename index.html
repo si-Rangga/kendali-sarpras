@@ -3964,7 +3964,11 @@ function formatDurasiPenanganan(item) {
     function onUpdateStatusChange(val) {
       const hint = document.getElementById("hintSelectStatusEmpty");
       const dyn = document.getElementById("containerDynamicStatusFields");
-      
+      const cardProg = document.getElementById("cardOnProgressUpdate");
+      const cardSel = document.getElementById("cardSelesaiUpdate");
+      const cardTun = document.getElementById("cardTundaUpdate");
+      const btnSubmit = document.getElementById("btnSubmitUpdateStatus");
+
       // Jika belum memilih status (nilai kosong), sembunyikan semua form bawahnya
       if (!val) {
         if (hint) hint.classList.remove("d-none");
@@ -3975,149 +3979,32 @@ function formatDurasiPenanganan(item) {
       if (hint) hint.classList.add("d-none");
       if (dyn) dyn.classList.remove("d-none");
 
-      // 1. Kontrol Tampilan Alasan Tunda
-      const cTunda = document.getElementById("containerAlasanTunda");
-      if (cTunda) {
-        if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
-          cTunda.classList.remove("d-none");
-        } else {
-          cTunda.classList.add("d-none");
+      // Sembunyikan semua kartu terlebih dahulu (Zero Confusion di HP)
+      if (cardProg) cardProg.classList.add("d-none");
+      if (cardSel) cardSel.classList.add("d-none");
+      if (cardTun) cardTun.classList.add("d-none");
+
+      if (val === "On Progress") {
+        if (cardProg) cardProg.classList.remove("d-none");
+        if (btnSubmit) {
+          btnSubmit.innerHTML = '<i class="bi bi-tools me-1.5"></i> Simpan Status: On Progress';
+          btnSubmit.className = "btn btn-warning text-dark w-100 py-2.5 fw-bold shadow-sm";
+          btnSubmit.style.borderRadius = "10px";
         }
-      }
-
-      // 2. Kontrol Tampilan Input Waktu Mulai & Waktu Selesai Manual
-      const cMulai = document.getElementById("containerWaktuMulaiManual");
-      const cSelesai = document.getElementById("containerWaktuSelesaiManual");
-      const lblMulai = document.getElementById("labelWaktuMulaiManual");
-      const lblSelesai = document.getElementById("labelWaktuSelesaiManual");
-      const helpSelesai = document.getElementById("helpWaktuSelesaiManual");
-      const wsInp = document.getElementById("updateWaktuSelesaiInput");
-      const wmInp = document.getElementById("updateWaktuMulaiInput");
-
-      // Kontainer Tindakan Dinamis
-      const cProgTind = document.getElementById("containerUpdateTindakanProgress");
-      const cSelTind = document.getElementById("containerUpdateTindakanSelesai");
-      const cTunTind = document.getElementById("containerUpdateTindakanTunda");
-      const bProg = document.getElementById("badgeUpdateTindakanProgress");
-      const hProg = document.getElementById("helpUpdateTindakanProgress");
-      const pInp = document.getElementById("updateTindakanProgressInput");
-      const sInp = document.getElementById("updateTindakanSelesaiInput");
-      const tInp = document.getElementById("updateTindakanTundaInput");
-
-      // Kontainer Foto Acuan & Form Upload Foto
-      const cPrevSblm = document.getElementById("containerPreviewFotoSebelum");
-      const cPrevRiwayat = document.getElementById("containerPreviewFotoRiwayat");
-      const sProg = document.getElementById("sectionFotoProgressUpdate");
-      const sSsdh = document.getElementById("sectionFotoSesudahUpdate");
-
-      const currentItem = currentDetailItemForPrint;
-      const parsed = currentItem ? parseTindakanParts(currentItem.tindakan, currentItem.status) : { awal: "", progress: "", selesai: "" };
-
-      if (val === "Selesai") {
-        if (cMulai) cMulai.classList.remove("d-none");
-        if (cSelesai) {
-          cSelesai.classList.remove("d-none");
-          cSelesai.style.setProperty("border-left", "3.5px solid #16A34A", "important");
-          if (lblSelesai) {
-            lblSelesai.innerHTML = '<i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai Pekerjaan:';
-          }
-          if (helpSelesai) {
-            helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.';
-          }
+      } else if (val === "Selesai") {
+        if (cardSel) cardSel.classList.remove("d-none");
+        if (btnSubmit) {
+          btnSubmit.innerHTML = '<i class="bi bi-check2-circle me-1.5"></i> Simpan Status: Selesai';
+          btnSubmit.className = "btn btn-success text-white w-100 py-2.5 fw-bold shadow-sm";
+          btnSubmit.style.borderRadius = "10px";
         }
-
-        // Tampilkan Tindakan Progres (bisa dilengkapi jika petugas lupa) & Tindakan Selesai
-        if (cProgTind) {
-          cProgTind.classList.remove("d-none");
-          if (bProg) bProg.innerText = "Pengerjaan Fisik (Progres)";
-          if (hProg) hProg.innerHTML = '<i class="bi bi-info-circle me-1"></i>Lengkapi di sini jika petugas lapangan lupa mencatat tindakan progres di HP.';
-          if (pInp && !pInp.value) pInp.value = parsed.progress;
-        }
-        if (cSelTind) {
-          cSelTind.classList.remove("d-none");
-          if (sInp && !sInp.value) sInp.value = parsed.selesai;
-        }
-        if (cTunTind) cTunTind.classList.add("d-none");
-
-        // Tampilkan riwayat foto sebelumnya (Sebelum + Progress)
-        if (cPrevRiwayat) cPrevRiwayat.classList.remove("d-none");
-        if (cPrevSblm) cPrevSblm.classList.add("d-none");
-        // Tampilkan upload Foto Progress (opsional jika teknisi punya foto saat bekerja) dan Foto Sesudah (utama)
-        if (sProg) {
-          sProg.classList.remove("d-none");
-          const lProg = sProg.querySelector("label");
-          if (lProg) lProg.innerHTML = '<i class="bi bi-camera-fill text-warning me-1"></i>Foto Saat Pengerjaan / On Progress <small class="text-muted fw-normal">(Opsional jika ada foto saat bekerja)</small>';
-        }
-        if (sSsdh) {
-          sSsdh.classList.remove("d-none");
-          const lSsdh = sSsdh.querySelector("label");
-          if (lSsdh) lSsdh.innerHTML = '<i class="bi bi-camera-fill text-success me-1"></i>Ambil / Lampirkan Foto Sesudah (Hasil Akhir Beres)';
-        }
-      } else if (val === "On Progress") {
-        if (cMulai) cMulai.classList.remove("d-none");
-        if (cSelesai) cSelesai.classList.add("d-none");
-
-        // Tampilkan Tindakan Progres
-        if (cProgTind) {
-          cProgTind.classList.remove("d-none");
-          if (bProg) bProg.innerText = "Saat Pengerjaan";
-          if (hProg) hProg.innerHTML = '<i class="bi bi-info-circle me-1"></i>Rincian teknis yang sedang dikerjakan di lapangan.';
-          if (pInp && !pInp.value) pInp.value = parsed.progress || parsed.awal;
-        }
-        if (cSelTind) cSelTind.classList.add("d-none");
-        if (cTunTind) cTunTind.classList.add("d-none");
-
-        // Tampilkan acuan foto sebelum (titik rusak) dan upload Foto On Progress
-        if (cPrevSblm) cPrevSblm.classList.remove("d-none");
-        if (sProg) {
-          sProg.classList.remove("d-none");
-          const lProg = sProg.querySelector("label");
-          if (lProg) lProg.innerHTML = '<i class="bi bi-camera-fill text-warning me-1"></i>Ambil / Lampirkan Foto Saat Pengerjaan (On Progress)';
-        }
-        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
-        if (sSsdh) sSsdh.classList.add("d-none");
       } else if (val && (val.indexOf("Ditunda") !== -1 || val.indexOf("Tidak Dikerjakan") !== -1)) {
-        if (cMulai) {
-          cMulai.classList.add("d-none");
-          if (wmInp) wmInp.value = "";
+        if (cardTun) cardTun.classList.remove("d-none");
+        if (btnSubmit) {
+          btnSubmit.innerHTML = '<i class="bi bi-pause-circle me-1.5"></i> Simpan Status: Ditunda';
+          btnSubmit.className = "btn btn-secondary text-white w-100 py-2.5 fw-bold shadow-sm";
+          btnSubmit.style.borderRadius = "10px";
         }
-        if (cSelesai) {
-          cSelesai.classList.remove("d-none");
-          cSelesai.style.setProperty("border-left", "3.5px solid #64748B", "important");
-          if (lblSelesai) {
-            lblSelesai.innerHTML = '<i class="bi bi-pause-circle-fill text-secondary me-1"></i>Tanggal Penundaan:';
-          }
-          if (helpSelesai) {
-            helpSelesai.innerHTML = '<i class="bi bi-info-circle me-1"></i>Tanggal kapan penundaan diarahkan (fleksibel, bisa sebelum hari ini).';
-          }
-          if (wsInp) {
-            wsInp.removeAttribute("min");
-          }
-        }
-
-        if (cProgTind) cProgTind.classList.add("d-none");
-        if (cSelTind) cSelTind.classList.add("d-none");
-        if (cTunTind) {
-          cTunTind.classList.remove("d-none");
-          if (tInp && !tInp.value) tInp.value = parsed.progress || parsed.awal;
-        }
-
-        // Sembunyikan semua foto saat ditunda
-        if (cPrevSblm) cPrevSblm.classList.add("d-none");
-        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
-        if (sProg) sProg.classList.add("d-none");
-        if (sSsdh) sSsdh.classList.add("d-none");
-      } else {
-        // Perlu Tindak Lanjut
-        if (cMulai) cMulai.classList.remove("d-none");
-        if (cSelesai) cSelesai.classList.add("d-none");
-        if (cProgTind) cProgTind.classList.add("d-none");
-        if (cSelTind) cSelTind.classList.add("d-none");
-        if (cTunTind) cTunTind.classList.add("d-none");
-        if (cPrevSblm) cPrevSblm.classList.remove("d-none");
-        if (cPrevRiwayat) cPrevRiwayat.classList.add("d-none");
-        if (sProg) sProg.classList.add("d-none");
-        if (sSsdh) sSsdh.classList.add("d-none");
       }
     }
 
@@ -6184,212 +6071,218 @@ function openEditChecklistModal(id) {
 
               <!-- Kontainer Form Dinamis (Tersembunyi sampai status dipilih) -->
               <div id="containerDynamicStatusFields" class="d-none">
-              <div id="containerAlasanTunda" class="d-none mb-3 p-3 border rounded-3 bg-warning bg-opacity-10">
-                <div class="d-flex align-items-center mb-2 text-dark">
-                  <i class="bi bi-pause-circle-fill text-warning fs-5 me-2"></i>
-                  <div>
-                    <div class="fw-bold small">Penundaan / Penghentian Pekerjaan (Arahan Pimpinan)</div>
-                    <div class="text-muted" style="font-size: 0.72rem;">Timer durasi dibekukan & tidak memotong indikator kinerja petugas</div>
+
+                <!-- ========================================== -->
+                <!-- KARTU 1: KHUSUS ON PROGRESS (KUNING)       -->
+                <!-- ========================================== -->
+                <div id="cardOnProgressUpdate" class="p-3 bg-white border rounded-3 shadow-sm mb-3 d-none" style="border-left: 4.5px solid #F59E0B !important;">
+                  <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                    <span class="fw-bold small text-dark d-flex align-items-center">
+                      <i class="bi bi-tools text-warning fs-5 me-1.5"></i>🟡 Fase Pengerjaan (On Progress)
+                    </span>
+                    <span class="badge bg-warning bg-opacity-10 text-dark fw-bold" id="badgeCountUpdateProgress">0 / 3 Foto</span>
                   </div>
-                </div>
 
-                <!-- Pilihan Alasan Cepat -->
-                <div class="mb-2">
-                  <label class="form-label small fw-semibold text-secondary mb-1">
-                    <i class="bi bi-tag-fill me-1 text-primary"></i> Pilihan Alasan Cepat (Kategori):
-                  </label>
-                  <select id="updateAlasanTundaSelect" class="form-select form-select-sm">
-                    <option value="Keterbatasan Anggaran">💰 Keterbatasan Anggaran (Usul di RKA/RKBMN)</option>
-                    <option value="Di Luar Wewenang">🏢 Di Luar Wewenang (Gedung Sewa / Pihak Ketiga / PU)</option>
-                    <option value="Usul Hapus Aset">🗑️ Usulan Penghapusan / Penggantian Aset</option>
-                    <option value="Arahan Khusus Pimpinan">📋 Arahan Khusus Pimpinan / Kebijakan Lain</option>
-                  </select>
-                </div>
-
-                <!-- Keterangan Bebas / Catatan Arahan Pimpinan -->
-                <div class="mb-1">
-                  <label class="form-label small fw-semibold text-secondary mb-1">
-                    <i class="bi bi-chat-left-text-fill me-1 text-primary"></i> Keterangan Bebas & Catatan Arahan Pimpinan:
-                  </label>
-                  <textarea id="updateCatatanPimpinanInput" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, nomor nota dinas/disposisi pimpinan, atau rincian kendala...">${escapeHtml(item.catatan || "")}</textarea>
-                  <div class="text-muted mt-1" style="font-size: 0.72rem;">
-                    <i class="bi bi-info-circle me-1"></i>Keterangan bebas ini otomatis tercatat pada riwayat kendali dan lembar laporan cetak pimpinan.
+                  <!-- Tanggal Mulai Pengerjaan -->
+                  <div class="mb-2.5">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label small fw-bold text-dark mb-0" style="font-size: 0.78rem;">
+                        <i class="bi bi-play-circle-fill text-warning me-1"></i>Tanggal Mulai Pengawasan / Pengerjaan:
+                      </label>
+                      <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuMulaiNow()" title="Pilih tanggal hari ini">
+                        <i class="bi bi-calendar-check me-1"></i>Hari Ini
+                      </button>
+                    </div>
+                    <input type="date" id="updateWaktuMulaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}" onchange="validateWaktuMulaiManual(this)">
+                    <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.7rem;">
+                      <span><i class="bi bi-info-circle me-1"></i>Kapan mulai pengerjaan fisik atau pengawasan di lokasi.</span>
+                      <span class="text-secondary fw-semibold">Min: Tgl Lapor</span>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <!-- TANGGAL MULAI PENGERJAAN / PENGAWASAN -->
-              <div id="containerWaktuMulaiManual" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #F59E0B !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-bold text-dark mb-0" id="labelWaktuMulaiManual">
-                    <i class="bi bi-play-circle-fill text-warning me-1"></i>Tanggal Mulai Pengawasan / Pengerjaan:
-                  </label>
-                  <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuMulaiNow()" title="Pilih tanggal hari ini">
-                    <i class="bi bi-calendar-check me-1"></i>Hari Ini
-                  </button>
-                </div>
-                <input type="date" id="updateWaktuMulaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}" onchange="validateWaktuMulaiManual(this)">
-                <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
-                  <span><i class="bi bi-info-circle me-1"></i>Kapan mulai pengerjaan fisik / pengawasan vendor.</span>
-                  <span class="text-secondary fw-semibold">Min: Tgl Lapor</span>
-                </div>
-              </div>
-
-              <!-- EDIT MANUAL TANGGAL SELESAI / TUNDA (HANYA TANGGAL, MAKSIMAL: HARI INI) -->
-              <div id="containerWaktuSelesaiManual" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-bold text-dark mb-0" id="labelWaktuSelesaiManual">
-                    <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai Pekerjaan:
-                  </label>
-                  <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuSelesaiNow()" title="Pilih tanggal hari ini">
-                    <i class="bi bi-calendar-check me-1"></i>Hari Ini
-                  </button>
-                </div>
-                <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultSelesaiValForUpdate)}" onchange="validateWaktuSelesaiManual(this)">
-                <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
-                  <span id="helpWaktuSelesaiManual"><i class="bi bi-info-circle me-1"></i>Bisa disesuaikan jika teknisi baru lapor selesai hari ini.</span>
-                  <span class="text-danger fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Maksimal: Hari Ini</span>
-                </div>
-              </div>
-
-              <!-- 1. TINDAKAN SAAT PENGERJAAN / ON PROGRESS -->
-              <div id="containerUpdateTindakanProgress" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #F59E0B !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-bold text-dark mb-0" id="labelUpdateTindakanProgress">
-                    <i class="bi bi-tools text-warning me-1"></i>Tindakan Saat Pengerjaan (On Progress):
-                  </label>
-                  <span class="badge bg-warning bg-opacity-10 text-dark fw-semibold" id="badgeUpdateTindakanProgress" style="font-size: 0.7rem;">Pengerjaan Fisik</span>
-                </div>
-                <textarea id="updateTindakanProgressInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Teknisi membongkar unit, cek kompresor & cuci filter...">${escapeHtml(parsedDetailTindakan.progress || '')}</textarea>
-                <div class="text-muted mt-1" style="font-size: 0.72rem;" id="helpUpdateTindakanProgress">
-                  <i class="bi bi-info-circle me-1"></i>Lengkapi di sini jika petugas lapangan lupa mencatat tindakan progres di HP.
-                </div>
-              </div>
-
-              <!-- 2. TINDAKAN PENYELESAIAN / HASIL AKHIR (SAAT SELESAI) -->
-              <div id="containerUpdateTindakanSelesai" class="mb-3 p-3 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-bold text-dark mb-0">
-                    <i class="bi bi-check2-circle text-success me-1"></i>Tindakan Penyelesaian / Hasil Akhir:
-                  </label>
-                  <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size: 0.7rem;">Tuntas Beres</span>
-                </div>
-                <textarea id="updateTindakanSelesaiInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Unit berfungsi normal kembali, pendinginan maksimal, area sudah bersih...">${escapeHtml(parsedDetailTindakan.selesai || '')}</textarea>
-                <div class="text-muted mt-1" style="font-size: 0.72rem;">
-                  <i class="bi bi-info-circle me-1"></i>Hasil akhir setelah pekerjaan tuntas diselesaikan.
-                </div>
-              </div>
-
-              <!-- 3. TINDAKAN YANG SEMPAT DILAKUKAN SEBELUM DITUNDA -->
-              <div id="containerUpdateTindakanTunda" class="mb-3 p-3 border rounded-3 bg-white d-none" style="border-left: 3.5px solid #64748B !important;">
-                <label class="form-label small fw-bold text-dark mb-1">
-                  <i class="bi bi-clock-history text-secondary me-1"></i>Tindakan yang Sempat Dilakukan Sebelum Ditunda:
-                </label>
-                <textarea id="updateTindakanTundaInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Sudah diperiksa teknisi, butuh penggantian suku cadang / usul anggaran...">${escapeHtml(parsedDetailTindakan.progress || parsedDetailTindakan.awal || '')}</textarea>
-                <div class="text-muted mt-1" style="font-size: 0.72rem;">
-                  <i class="bi bi-info-circle me-1"></i>Catatan teknis yang sudah sempat dikerjakan sebelum arahan penundaan pimpinan.
-                </div>
-              </div>
-
-              <!-- PREVIEW FOTO ACUAN SEBELUM (MUNCUL SAAT ON PROGRESS) -->
-              <div id="containerPreviewFotoSebelum" class="mb-3 p-2.5 border rounded-3 bg-white d-none" style="border-left: 3.5px solid #2563EB !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1.5">
-                  <span class="small fw-bold text-dark"><i class="bi bi-camera me-1 text-primary"></i>Foto Temuan Awal Saat Laporan Dibuat (Sebelum):</span>
-                  <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold" style="font-size:0.7rem;">Acuan Perbaikan</span>
-                </div>
-                ${sblmList && sblmList.length > 0 ? `
-                  <div class="d-flex flex-wrap gap-2">
-                    ${sblmList.map((f, i) => `
-                      <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${i+1} - ${escapeHtml(item.objekLokasi)}', '${f.full}')" title="Klik perbesar">
-                        <img src="${f.thumb}" class="rounded border shadow-sm" style="width:58px;height:58px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
-                      </div>
-                    `).join('')}
+                  <!-- Catatan Tindakan Pengerjaan -->
+                  <div class="mb-2.5">
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      Catatan Tindakan Saat Pengerjaan (On Progress):
+                    </label>
+                    <textarea id="updateTindakanProgressInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Teknisi membongkar unit, cek kompresor & cuci filter...">${escapeHtml(parsedDetailTindakan.progress || '')}</textarea>
+                    <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                      <i class="bi bi-info-circle me-1"></i>Rincian teknis yang sedang dikerjakan teknisi di lokasi.
+                    </div>
                   </div>
-                  <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-info-circle me-1"></i>Periksa foto di atas untuk memastikan titik kerusakan yang perlu dikerjakan.</div>
-                ` : '<div class="text-muted small fst-italic">Tidak ada foto kondisi awal yang dilampirkan.</div>'}
-              </div>
 
-              <!-- PREVIEW RIWAYAT FOTO SEBELUM + PROGRESS (MUNCUL SAAT SELESAI) -->
-              <div id="containerPreviewFotoRiwayat" class="mb-3 p-2.5 border rounded-3 bg-white" style="border-left: 3.5px solid #16A34A !important;">
-                <div class="d-flex justify-content-between align-items-center mb-1.5">
-                  <span class="small fw-bold text-dark"><i class="bi bi-clock-history me-1 text-success"></i>Riwayat Dokumentasi Sebelumnya:</span>
-                  <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="font-size:0.7rem;">Foto Pembanding</span>
-                </div>
-                <div class="d-flex flex-wrap gap-3">
+                  <!-- Foto Temuan Awal (Acuan Teknisi) -->
                   ${sblmList && sblmList.length > 0 ? `
-                    <div>
-                      <div class="small fw-semibold text-secondary mb-1" style="font-size:0.7rem;">1. Foto Sebelum (Awal):</div>
-                      <div class="d-flex gap-1">
+                    <div class="mb-2.5 p-2 bg-light rounded-2 border">
+                      <div class="small fw-semibold text-secondary mb-1" style="font-size: 0.72rem;">
+                        <i class="bi bi-camera me-1 text-primary"></i>Foto Temuan Awal (Acuan Perbaikan):
+                      </div>
+                      <div class="d-flex gap-1.5 flex-wrap">
                         ${sblmList.map((f, i) => `
                           <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${i+1}', '${f.full}')" title="Foto Sebelum #${i+1} (Klik perbesar)">
-                            <img src="${f.thumb}" class="rounded border shadow-sm" style="width:50px;height:50px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
+                            <img src="${f.thumb}" class="rounded border shadow-xs" style="width:48px;height:48px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
                           </div>
                         `).join('')}
                       </div>
                     </div>
                   ` : ''}
-                  ${progList && progList.length > 0 ? `
+
+                  <!-- Bukti Foto Saat Pengerjaan -->
+                  <div>
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      Bukti Foto Saat Pengerjaan (Maks 3 Foto):
+                    </label>
+                    <div id="containerUpdateProgressList" class="mb-2"></div>
+                    <div class="d-flex gap-2">
+                      <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold shadow-xs" onclick="triggerPhotoCapture('update_progress', 'cam')">
+                        <i class="bi bi-camera-fill me-1"></i>Buka Kamera
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_progress', 'gal')">
+                        <i class="bi bi-images me-1"></i>Pilih Galeri
+                      </button>
+                    </div>
+                    <input type="file" id="fileUpdateProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
+                    <input type="file" id="fileUpdateProgressGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
+                  </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- KARTU 2: KHUSUS SELESAI (HIJAU)            -->
+                <!-- ========================================== -->
+                <div id="cardSelesaiUpdate" class="p-3 bg-white border rounded-3 shadow-sm mb-3 d-none" style="border-left: 4.5px solid #16A34A !important;">
+                  <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                    <span class="fw-bold small text-dark d-flex align-items-center">
+                      <i class="bi bi-check2-circle text-success fs-5 me-1.5"></i>🟢 Fase Penyelesaian (Hasil Akhir Beres)
+                    </span>
+                    <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountUpdateSesudah">0 / 3 Foto</span>
+                  </div>
+
+                  <!-- Tanggal Selesai & Tanggal Mulai (Jika belum tercatat) -->
+                  <div class="row g-2 mb-2.5">
+                    ${!item.waktuMulai ? `
+                      <div class="col-12 col-sm-6">
+                        <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                          <i class="bi bi-play-circle text-warning me-1"></i>Tanggal Mulai Kerja:
+                        </label>
+                        <input type="date" id="updateWaktuMulaiSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}">
+                        <div class="text-muted mt-0.5" style="font-size:0.68rem;"><i class="bi bi-info-circle me-1"></i>Kapan pengerjaan fisik dimulai.</div>
+                      </div>
+                      <div class="col-12 col-sm-6">
+                    ` : '<div class="col-12">'}
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold text-dark mb-0" style="font-size: 0.78rem;">
+                          <i class="bi bi-calendar2-check-fill text-success me-1"></i>Tanggal Selesai Pekerjaan:
+                        </label>
+                        <button type="button" class="btn btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 0.72rem; border-radius: 6px;" onclick="resetWaktuSelesaiNow()" title="Pilih tanggal hari ini">
+                          <i class="bi bi-calendar-check me-1"></i>Hari Ini
+                        </button>
+                      </div>
+                      <input type="date" id="updateWaktuSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultSelesaiValForUpdate)}" onchange="validateWaktuSelesaiManual(this)">
+                      <div class="text-muted mt-0.5" style="font-size:0.68rem;"><i class="bi bi-info-circle me-1"></i>Tanggal saat perbaikan tuntas (Maks: Hari ini).</div>
+                    </div>
+                  </div>
+
+                  <!-- Catatan Tindakan Penyelesaian -->
+                  <div class="mb-2.5">
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      Catatan Tindakan Penyelesaian / Kondisi Akhir:
+                    </label>
+                    <textarea id="updateTindakanSelesaiInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Unit AC normal dingin kembali, talang sudah ditambal & diuji siram tidak bocor...">${escapeHtml(parsedDetailTindakan.selesai || '')}</textarea>
+                    <div class="text-muted mt-1" style="font-size: 0.7rem;">
+                      <i class="bi bi-info-circle me-1"></i>Rincian hasil penanganan setelah pekerjaan tuntas.
+                    </div>
+                  </div>
+
+                  <!-- Foto Temuan Awal (Sebagai Pembanding Sebelum vs Sesudah) -->
+                  ${sblmList && sblmList.length > 0 ? `
+                    <div class="mb-2.5 p-2 bg-light rounded-2 border">
+                      <div class="small fw-semibold text-secondary mb-1" style="font-size: 0.72rem;">
+                        <i class="bi bi-camera me-1 text-primary"></i>Foto Temuan Awal (Pembanding Sebelum Perbaikan):
+                      </div>
+                      <div class="d-flex gap-1.5 flex-wrap">
+                        ${sblmList.map((f, i) => `
+                          <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Sebelum #${i+1}', '${f.full}')" title="Foto Sebelum #${i+1} (Klik perbesar)">
+                            <img src="${f.thumb}" class="rounded border shadow-xs" style="width:48px;height:48px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- Bukti Foto Sesudah (Hasil Akhir) -->
+                  <div>
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      Bukti Foto Hasil Akhir / Sesudah (Maks 3 Foto):
+                    </label>
+                    <div id="containerUpdateSesudahList" class="mb-2"></div>
+                    <div class="d-flex gap-2">
+                      <button type="button" class="btn btn-success btn-sm flex-fill py-1 fw-semibold shadow-xs" onclick="triggerPhotoCapture('update_sesudah', 'cam')">
+                        <i class="bi bi-camera-fill me-1"></i>Buka Kamera
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_sesudah', 'gal')">
+                        <i class="bi bi-images me-1"></i>Pilih Galeri
+                      </button>
+                    </div>
+                    <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
+                    <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
+                  </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- KARTU 3: KHUSUS PENUNDAAN (ARAHAN PIMPINAN)-->
+                <!-- ========================================== -->
+                <div id="cardTundaUpdate" class="p-3 bg-white border rounded-3 shadow-sm mb-3 d-none" style="border-left: 4.5px solid #64748B !important;">
+                  <div class="d-flex align-items-center mb-2 pb-1 border-bottom">
+                    <i class="bi bi-pause-circle-fill text-secondary fs-5 me-2"></i>
                     <div>
-                      <div class="small fw-semibold text-warning mb-1" style="font-size:0.7rem;">2. Foto Progress (Pengerjaan):</div>
-                      <div class="d-flex gap-1">
-                        ${progList.map((f, i) => `
-                          <div style="cursor:pointer;" onclick="openPhotoLightbox('${f.thumb}', 'Foto Progress #${i+1}', '${f.full}')" title="Foto Progress #${i+1} (Klik perbesar)">
-                            <img src="${f.thumb}" class="rounded border border-warning shadow-sm" style="width:50px;height:50px;object-fit:cover;" onerror="handleImageFallback(this, '${f.id}')">
-                          </div>
-                        `).join('')}
-                      </div>
+                      <div class="fw-bold small text-dark">⚪ Penundaan Pekerjaan (Arahan Pimpinan)</div>
+                      <div class="text-muted" style="font-size: 0.72rem;">Timer durasi dibekukan & tidak memotong indikator kinerja petugas</div>
                     </div>
-                  ` : ''}
-                  ${(!sblmList || sblmList.length === 0) && (!progList || progList.length === 0) ? '<div class="text-muted small fst-italic">Belum ada foto sebelum maupun progress.</div>' : ''}
-                </div>
-                <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-info-circle me-1"></i>Bandingkan kondisi barang sebelum dikerjakan dengan hasil perbaikan di bawah.</div>
-              </div>
+                  </div>
 
-              <!-- INPUT FOTO ON PROGRESS (MUNCUL SAAT ON PROGRESS) -->
-              <div class="mb-3 d-none" id="sectionFotoProgressUpdate">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-camera-fill text-warning me-1"></i>Ambil / Lampirkan Foto Saat Pengerjaan (On Progress)</label>
-                  <span class="badge bg-warning bg-opacity-10 text-warning fw-bold" id="badgeCountUpdateProgress">0 / 3 Foto</span>
-                </div>
-                <div id="containerUpdateProgressList" class="mb-2">
-                  <!-- Multi-photo rendered dynamically -->
-                </div>
-                <div class="d-flex gap-2 mb-1">
-                  <button type="button" class="btn btn-warning btn-sm text-dark flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_progress', 'cam')">
-                    <i class="bi bi-camera-fill me-1"></i>Buka Kamera
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_progress', 'gal')">
-                    <i class="bi bi-images me-1"></i>Pilih Galeri
-                  </button>
-                </div>
-                <input type="file" id="fileUpdateProgressCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
-                <input type="file" id="fileUpdateProgressGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_progress')">
-              </div>
+                  <!-- Tanggal Penundaan -->
+                  <div class="mb-2.5">
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      <i class="bi bi-calendar-event text-secondary me-1"></i>Tanggal Penundaan:
+                    </label>
+                    <input type="date" id="updateWaktuTundaInput" class="form-control form-control-sm" value="${escapeHtml(defaultSelesaiValForUpdate)}">
+                  </div>
 
-              <!-- INPUT FOTO SESUDAH (MUNCUL SAAT SELESAI) -->
-              <div class="mb-3" id="sectionFotoSesudahUpdate">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label small fw-semibold mb-0"><i class="bi bi-camera-fill text-success me-1"></i>Ambil / Lampirkan Foto Sesudah (Hasil Akhir)</label>
-                  <span class="badge bg-success bg-opacity-10 text-success fw-bold" id="badgeCountUpdateSesudah">0 / 3 Foto</span>
-                </div>
-                <div id="containerUpdateSesudahList" class="mb-2">
-                  <!-- Multi-photo rendered dynamically -->
-                </div>
-                <div class="d-flex gap-2 mb-1">
-                  <button type="button" class="btn btn-success btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_sesudah', 'cam')">
-                    <i class="bi bi-camera-fill me-1"></i>Buka Kamera
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-1 fw-semibold" onclick="triggerPhotoCapture('update_sesudah', 'gal')">
-                    <i class="bi bi-images me-1"></i>Pilih Galeri
-                  </button>
-                </div>
-                <input type="file" id="fileUpdateSesudahCam" accept="image/*" capture="environment" class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
-                <input type="file" id="fileUpdateSesudahGal" accept="image/*" multiple class="d-none" onchange="handleMultiPhotoSelected(this, 'update_sesudah')">
-              </div>
+                  <!-- Pilihan Alasan Cepat -->
+                  <div class="mb-2.5">
+                    <label class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.78rem;">
+                      <i class="bi bi-tag-fill me-1 text-primary"></i> Pilihan Alasan Cepat (Kategori):
+                    </label>
+                    <select id="updateAlasanTundaSelect" class="form-select form-select-sm">
+                      <option value="Keterbatasan Anggaran">💰 Keterbatasan Anggaran (Usul di RKA/RKBMN)</option>
+                      <option value="Di Luar Wewenang">🏢 Di Luar Wewenang (Gedung Sewa / Pihak Ketiga / PU)</option>
+                      <option value="Usul Hapus Aset">🗑️ Usulan Penghapusan / Penggantian Aset</option>
+                      <option value="Arahan Khusus Pimpinan">📋 Arahan Khusus Pimpinan / Kebijakan Lain</option>
+                    </select>
+                  </div>
 
-              <button type="submit" id="btnSubmitUpdateStatus" class="btn btn-sm btn-success w-100 py-2 fw-semibold shadow-sm">
-                <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
-              </button>
+                  <!-- Keterangan Bebas / Catatan Arahan Pimpinan -->
+                  <div class="mb-2.5">
+                    <label class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.78rem;">
+                      <i class="bi bi-chat-left-text-fill me-1 text-primary"></i> Keterangan Bebas & Catatan Arahan Pimpinan:
+                    </label>
+                    <textarea id="updateCatatanPimpinanInput" class="form-control form-control-sm" rows="3" placeholder="Tuliskan keterangan bebas, arahan lisan/tertulis pimpinan, atau rincian kendala...">${escapeHtml(item.catatan || "")}</textarea>
+                  </div>
+
+                  <!-- Tindakan yang Sempat Dilakukan -->
+                  <div>
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
+                      <i class="bi bi-clock-history text-secondary me-1"></i>Tindakan yang Sempat Dilakukan Sebelum Ditunda (Opsional):
+                    </label>
+                    <textarea id="updateTindakanTundaInput" class="form-control form-control-sm" rows="2" placeholder="Contoh: Sudah diperiksa teknisi, butuh penggantian suku cadang / usul anggaran...">${escapeHtml(parsedDetailTindakan.progress || parsedDetailTindakan.awal || '')}</textarea>
+                  </div>
+                </div>
+
+                <!-- Tombol Submit Dinamis -->
+                <button type="submit" id="btnSubmitUpdateStatus" class="btn btn-primary w-100 py-2.5 fw-bold shadow-sm" style="border-radius: 10px;">
+                  <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Status
+                </button>
+
               </div><!-- /containerDynamicStatusFields -->
             </form>
           </div>
@@ -6613,9 +6506,39 @@ function openEditChecklistModal(id) {
 
       const alasanTunda = document.getElementById("updateAlasanTundaSelect") ? document.getElementById("updateAlasanTundaSelect").value : "";
       const catatanPimpinan = document.getElementById("updateCatatanPimpinanInput") ? document.getElementById("updateCatatanPimpinanInput").value : "";
-      const waktuMulaiInput = document.getElementById("updateWaktuMulaiInput") ? document.getElementById("updateWaktuMulaiInput").value : "";
-      const waktuSelesaiInput = document.getElementById("updateWaktuSelesaiInput") ? document.getElementById("updateWaktuSelesaiInput").value : "";
-      const fotoProgressList = listUpdateFotoProgress.map(function(f) { return f.base64; });
+      
+      let waktuMulaiInput = "";
+      let waktuSelesaiInput = "";
+      let fotoProgressList = [];
+      let fotoSesudahList = [];
+
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      if (newStatus === "On Progress") {
+        const wmInp = document.getElementById("updateWaktuMulaiInput");
+        waktuMulaiInput = wmInp ? wmInp.value : "";
+        if (!waktuMulaiInput) waktuMulaiInput = todayStr;
+        fotoProgressList = listUpdateFotoProgress.map(function(f) { return f.base64; });
+      } else if (newStatus === "Selesai") {
+        const wsInp = document.getElementById("updateWaktuSelesaiInput");
+        waktuSelesaiInput = wsInp ? wsInp.value : "";
+        if (!waktuSelesaiInput) waktuSelesaiInput = todayStr;
+
+        const wmSelInp = document.getElementById("updateWaktuMulaiSelesaiInput");
+        if (wmSelInp && wmSelInp.value) {
+          waktuMulaiInput = wmSelInp.value;
+        } else if (currentItem && currentItem.waktuMulai) {
+          waktuMulaiInput = formatOnlyDate(currentItem.waktuMulai);
+        } else {
+          waktuMulaiInput = waktuSelesaiInput;
+        }
+
+        fotoSesudahList = listUpdateFotoSesudah.map(function(f) { return f.base64; });
+      } else if (newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
+        const wtInp = document.getElementById("updateWaktuTundaInput");
+        waktuSelesaiInput = wtInp ? wtInp.value : todayStr;
+        waktuMulaiInput = currentItem && currentItem.waktuMulai ? formatOnlyDate(currentItem.waktuMulai) : "";
+      }
 
       // Validasi Tanggal Selesai / Tunda Manual (Hanya Tanggal, Tanpa Jam)
       if (newStatus === "Selesai" || newStatus.indexOf("Ditunda") !== -1 || newStatus.indexOf("Tidak Dikerjakan") !== -1) {
