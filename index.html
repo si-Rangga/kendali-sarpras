@@ -5578,7 +5578,7 @@ function openEditChecklistModal(id) {
       }
 
       let html = "";
-      data.forEach(item => {
+      data.forEach((item, idx) => {
         let badgeClass = "badge-selesai";
         const st = (item.status || "").toLowerCase();
         if (st.indexOf("progress") !== -1) badgeClass = "badge-progress";
@@ -5703,7 +5703,7 @@ function openEditChecklistModal(id) {
             <td>${docBadge}</td>
             <td class="small">${escapeHtml(item.petugas || '-')}</td>
             <td class="text-center text-nowrap">
-              <button class="btn btn-sm btn-outline-primary" onclick="showDetailModal('${item.id}')" title="Lihat Detail & Perbarui">
+              <button class="btn btn-sm btn-outline-primary" onclick="showDetailModal('${item.id}', ${idx})" title="Lihat Detail & Perbarui">
                 <i class="bi bi-eye"></i> Detail
               </button>
               ${isAdmin ? `
@@ -5864,10 +5864,25 @@ function openEditChecklistModal(id) {
       }
     }
 
-    function showDetailModal(id) {
+    function showDetailModal(id, itemIndex) {
       const isAdmin = currentUser && currentUser.role && 
         (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
-      const item = globalItemsCache[id] || (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => x.id === id) : null);
+      
+      // 1. Prioritaskan item langsung dari indeks baris yang diklik (mengisolasi jika ada ID duplikat)
+      let item = null;
+      if (typeof itemIndex === "number" && Array.isArray(currentHistoryData) && currentHistoryData[itemIndex]) {
+        const candidate = currentHistoryData[itemIndex];
+        if (candidate && String(candidate.id) === String(id)) {
+          item = candidate;
+        }
+      }
+
+      // 2. Fallback pencarian cache dan array
+      if (!item) {
+        item = (typeof globalItemsCache !== "undefined" && globalItemsCache && globalItemsCache[id] ? globalItemsCache[id] : null) || 
+               (Array.isArray(currentHistoryData) ? currentHistoryData.find(x => String(x.id) === String(id)) : null);
+      }
+
       if (!item) {
         console.warn("Item tidak ditemukan:", id);
         return;
