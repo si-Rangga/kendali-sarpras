@@ -4733,6 +4733,13 @@ function formatDurasiPenanganan(item) {
       document.getElementById("barPrasarana").style.width = Math.round(((stats.prasarana || 0) / total) * 100) + "%";
       document.getElementById("barProyek").style.width = Math.round(((stats.proyek || 0) / total) * 100) + "%";
 
+      // Update badge cakupan petugas di dashboard
+      const badgePet = document.getElementById("petugasFilterBadge");
+      if (badgePet) {
+        const isAdmin = currentUser && currentUser.role && (currentUser.role.toLowerCase().indexOf("admin") !== -1 || currentUser.role.toLowerCase().indexOf("pengawas") !== -1);
+        badgePet.innerText = isAdmin ? "Seluruh Tim" : (currentUser && currentUser.nama ? currentUser.nama : "Pribadi");
+      }
+
       // Render rekap per petugas
       renderPetugasBreakdown(stats.perPetugas || stats.petugasBreakdown);
     }
