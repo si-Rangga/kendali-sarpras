@@ -3915,6 +3915,9 @@ function formatDurasiPenanganan(item) {
     function validateWaktuMulaiManual(inputEl) {
       if (!inputEl || !inputEl.value) return;
       const todayStr = new Date().toISOString().split("T")[0];
+      const currentItem = currentDetailItemForPrint;
+      const dLaporStr = currentItem ? formatOnlyDate(currentItem.tanggal || currentItem.timestamp) : "";
+
       if (inputEl.value > todayStr) {
         Swal.fire({
           icon: "warning",
@@ -3922,11 +3925,25 @@ function formatDurasiPenanganan(item) {
           text: "Tanggal mulai pengerjaan tidak boleh melebihi tanggal hari ini (" + todayStr + ")!"
         });
         inputEl.value = todayStr;
+        return;
+      }
+      if (dLaporStr && inputEl.value < dLaporStr) {
+        Swal.fire({
+          icon: "warning",
+          title: "Tanggal Terlalu Awal",
+          text: "Tanggal mulai tidak boleh lebih awal dari tanggal laporan dibuat (" + dLaporStr + ")!"
+        });
+        inputEl.value = dLaporStr;
+        return;
       }
       const selInp = document.getElementById("updateWaktuSelesaiInput");
       if (selInp && selInp.value && inputEl.value > selInp.value) {
         selInp.value = inputEl.value;
       }
+    }
+
+    function validateWaktuMulaiSelesaiManual(inputEl) {
+      validateWaktuMulaiManual(inputEl);
     }
 
     function validateWaktuSelesaiManual(inputEl) {
@@ -3946,17 +3963,34 @@ function formatDurasiPenanganan(item) {
         return;
       }
 
-      // 2. KHUSUS STATUS SELESAI: periksa urutan tanggal selesai vs mulai pengerjaan
-      // Pada menu Ditunda, jangan pernah bandingkan atau tampilkan notifikasi urutan terbalik
+      // 2. KHUSUS STATUS SELESAI: periksa batas tanggal terhadap tanggal lapor & mulai kerja
       if (!isTunda) {
-        const mulInp = document.getElementById("updateWaktuMulaiInput");
-        if (mulInp && mulInp.value && inputEl.value < mulInp.value) {
+        const currentItem = currentDetailItemForPrint;
+        const dLaporStr = currentItem ? formatOnlyDate(currentItem.tanggal || currentItem.timestamp) : "";
+
+        // Batas minimal tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat
+        if (dLaporStr && inputEl.value < dLaporStr) {
           Swal.fire({
             icon: "warning",
-            title: "Urutan Tanggal Terbalik",
-            text: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai pengerjaan (" + mulInp.value + ")!"
+            title: "Tanggal Terlalu Awal",
+            text: "Tanggal selesai tidak boleh lebih awal dari tanggal laporan dibuat (" + dLaporStr + ")!"
           });
-          inputEl.value = mulInp.value;
+          inputEl.value = dLaporStr;
+          return;
+        }
+
+        // Ambil elemen tanggal mulai yang AKTIF di kartu saat ini
+        let mulInp = null;
+        if (selStatus === "Selesai") {
+          mulInp = document.getElementById("updateWaktuMulaiSelesaiInput");
+        }
+        if (!mulInp) {
+          mulInp = document.getElementById("updateWaktuMulaiInput");
+        }
+
+        // Jika tanggal selesai dimajukan sebelum tanggal mulai, otomatis sesuaikan tanggal mulai (same-day repair)
+        if (mulInp && mulInp.value && inputEl.value < mulInp.value) {
+          mulInp.value = inputEl.value;
         }
       }
     }
@@ -6164,7 +6198,7 @@ function openEditChecklistModal(id) {
                         <label class="form-label small fw-bold text-dark mb-1" style="font-size: 0.78rem;">
                           <i class="bi bi-play-circle text-warning me-1"></i>Tanggal Mulai Kerja:
                         </label>
-                        <input type="date" id="updateWaktuMulaiSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}">
+                        <input type="date" id="updateWaktuMulaiSelesaiInput" class="form-control form-control-sm" value="${escapeHtml(defaultMulaiValForUpdate)}" onchange="validateWaktuMulaiSelesaiManual(this)">
                         <div class="text-muted mt-0.5" style="font-size:0.68rem;"><i class="bi bi-info-circle me-1"></i>Kapan pengerjaan fisik dimulai.</div>
                       </div>
                       <div class="col-12 col-sm-6">
@@ -6426,12 +6460,20 @@ function openEditChecklistModal(id) {
         const todayStr = new Date().toISOString().split("T")[0];
         const minDate = formatOnlyDate(item.tanggal || item.timestamp);
 
+        const defaultMulai = formatOnlyDate(item.waktuMulai || item.tanggal || item.timestamp) || todayStr;
+
         const wmInp = document.getElementById("updateWaktuMulaiInput");
         if (wmInp) {
-          const defaultMulai = formatOnlyDate(item.waktuMulai) || todayStr;
           wmInp.value = defaultMulai;
           wmInp.max = todayStr;
           if (minDate) wmInp.min = minDate;
+        }
+
+        const wmSelInp = document.getElementById("updateWaktuMulaiSelesaiInput");
+        if (wmSelInp) {
+          wmSelInp.value = defaultMulai;
+          wmSelInp.max = todayStr;
+          if (minDate) wmSelInp.min = minDate;
         }
 
         const wsInp = document.getElementById("updateWaktuSelesaiInput");
@@ -6600,6 +6642,11 @@ function openEditChecklistModal(id) {
         hideLoading();
         restoreUpdateBtn();
         if (res && res.status === "success") {
+          if (newStatus === "Selesai") {
+            try {
+              localStorage.setItem("STATUS_SELESAI_AT_" + id, new Date().toISOString());
+            } catch (e) {}
+          }
           // Bersihkan seluruh isian update status dan foto sesudah
           if (document.getElementById("updateTindakanProgressInput")) document.getElementById("updateTindakanProgressInput").value = "";
           if (document.getElementById("updateTindakanSelesaiInput")) document.getElementById("updateTindakanSelesaiInput").value = "";
@@ -6650,42 +6697,59 @@ function openEditChecklistModal(id) {
     function calculateGracePeriodInfo(item) {
       if (!item) return { isLocked: false, remainingDays: 3, diffDays: 0, dateSelesaiStr: "Hari Ini" };
 
-      const rawDate = item.waktuSelesai || item.tanggalSelesai || item.tanggal || item.timestamp || "";
-      let dSelesai = null;
+      // Prioritas 1: Kapan tombol selesai di-klik di aplikasi (dari server atau localStorage)
+      let clickDateStr = item.statusSelesaiAt || "";
+      if (!clickDateStr) {
+        try {
+          clickDateStr = localStorage.getItem("STATUS_SELESAI_AT_" + item.id) || "";
+        } catch (e) {}
+      }
 
-      const formatted = typeof formatOnlyDate === 'function' ? formatOnlyDate(rawDate) : "";
-      if (formatted && formatted.includes('-')) {
-        const parts = formatted.split('-');
-        if (parts.length === 3) {
-          dSelesai = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      let dReference = null;
+      if (clickDateStr) {
+        const cleanClick = String(clickDateStr).replace(" ", "T");
+        const dClick = new Date(cleanClick);
+        if (!isNaN(dClick.getTime())) {
+          dReference = dClick;
         }
       }
 
-      if (!dSelesai || isNaN(dSelesai.getTime())) {
-        if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
-          dSelesai = rawDate;
-        } else if (!isNaN(Date.parse(rawDate))) {
-          dSelesai = new Date(rawDate);
+      // Prioritas 2: Fallback ke waktuSelesai / tanggalLapor jika data lama belum ada catatan klik
+      if (!dReference) {
+        const rawDate = item.waktuSelesai || item.tanggalSelesai || item.tanggal || item.timestamp || "";
+        const formatted = typeof formatOnlyDate === 'function' ? formatOnlyDate(rawDate) : "";
+        if (formatted && formatted.includes('-')) {
+          const parts = formatted.split('-');
+          if (parts.length === 3) {
+            dReference = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          }
+        }
+        if (!dReference || isNaN(dReference.getTime())) {
+          if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+            dReference = rawDate;
+          } else if (!isNaN(Date.parse(rawDate))) {
+            dReference = new Date(rawDate);
+          }
         }
       }
 
-      if (!dSelesai || isNaN(dSelesai.getTime())) {
+      if (!dReference || isNaN(dReference.getTime())) {
         return { isLocked: false, remainingDays: 3, diffDays: 0, dateSelesaiStr: "Hari Ini" };
       }
 
       const now = new Date();
       const dNowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const dSelesaiOnly = new Date(dSelesai.getFullYear(), dSelesai.getMonth(), dSelesai.getDate()).getTime();
+      const dRefOnly = new Date(dReference.getFullYear(), dReference.getMonth(), dReference.getDate()).getTime();
 
-      const diffDays = Math.floor((dNowOnly - dSelesaiOnly) / (1000 * 60 * 60 * 24));
-      const remainingDays = Math.max(0, 3 - diffDays);
+      const diffDays = Math.floor((dNowOnly - dRefOnly) / (1000 * 60 * 60 * 24));
+      const remainingDays = Math.max(0, 3 - Math.max(0, diffDays));
       const isLocked = diffDays >= 3;
 
       let dateSelesaiStr = "";
       try {
-        dateSelesaiStr = dSelesai.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        dateSelesaiStr = dReference.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
       } catch (e) {
-        dateSelesaiStr = formatted || String(rawDate);
+        dateSelesaiStr = typeof formatOnlyDate === 'function' ? formatOnlyDate(dReference) : "";
       }
 
       return {
